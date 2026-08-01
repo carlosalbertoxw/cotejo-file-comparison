@@ -6,6 +6,7 @@
   "author": "Carlos Alberto",
   "// desktopName": "Lo usan los escritorios de Linux como WM_CLASS para asociar la ventana con su lanzador",
   "// dev": "El -- final del script dev reenvia a Electron lo que venga detras. Sin el, `npm run dev -- izquierda derecha` le pasa las rutas a electron-vite, que las toma por su punto de entrada y aborta. Va fuera de scripts: cualquier clave ahi dentro sale listada como si fuera ejecutable.",
+  "// package": "El --publish never es obligatorio en CI: electron-builder detecta que corre ahi y se pone a publicar en GitHub Releases por su cuenta, que falla sin GH_TOKEN. De la publicacion se encarga el workflow.",
   "desktopName": "cotejo.desktop",
   "license": "MIT",
   "private": true,
@@ -20,9 +21,9 @@
     "icon": "node scripts/make-icon.mjs",
     "notices": "node scripts/make-notices.mjs",
     "dist:prepare": "npm run build && npm run icon && npm run notices",
-    "package": "npm run dist:prepare && electron-builder --win --config electron-builder.yml",
-    "package:linux": "npm run dist:prepare && electron-builder --linux --config electron-builder.yml",
-    "package:mac": "npm run dist:prepare && electron-builder --mac --config electron-builder.yml"
+    "package": "npm run dist:prepare && electron-builder --win --config electron-builder.yml --publish never",
+    "package:linux": "npm run dist:prepare && electron-builder --linux --config electron-builder.yml --publish never",
+    "package:mac": "npm run dist:prepare && electron-builder --mac --config electron-builder.yml --publish never"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
