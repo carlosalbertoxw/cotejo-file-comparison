@@ -109,3 +109,12 @@ src/
 El motor de comparación (`src/renderer/diff/`) es TypeScript puro sin dependencias de UI, y corre
 en un Web Worker para que un archivo grande no congele la interfaz. La suite de tests lo verifica
 contra una implementación de LCS por programación dinámica sobre cientos de casos aleatorios.
+
+## Licencia
+
+[MIT](LICENSE) © 2026 Carlos Alberto.
+
+Todo lo que se distribuye con la aplicación es software libre con licencia permisiva: 29 paquetes
+MIT y uno BSD-3-Clause (`diff`), más el propio Electron (MIT), que ya incluye en el paquete los
+avisos de Chromium y Node. Las herramientas que solo intervienen en el build —TypeScript
+(Apache-2.0) y `sharp`, cuyo binario de libvips es LGPL-3.0— no llegan al instalador.
