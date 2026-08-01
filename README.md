@@ -9,7 +9,16 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
+## Instalación
+
+Para Windows hay dos ejecutables, con la misma aplicación dentro: **`Cotejo Setup <versión>.exe`**,
+que instala con acceso directo y desinstalador sin pedir permisos de administrador, y
+**`Cotejo <versión> portable.exe`**, que se abre tal cual sin instalar nada. Los genera
+`npm run package` en `release/`.
+
 ## Uso
+
+Para trabajar sobre el código:
 
 ```bash
 npm install
@@ -94,8 +103,20 @@ npm run typecheck
 npm run package
 ```
 
-`package` genera un instalador NSIS en `release/`. Antes de empaquetar regenera el icono y los
-avisos de terceros, así que no hay que acordarse de ejecutarlos a mano.
+`package` deja en `release/` dos ejecutables, y antes de empaquetar regenera el icono y los avisos
+de terceros, así que no hay que acordarse de ejecutarlos a mano.
+
+| Archivo | Qué es |
+| --- | --- |
+| `Cotejo Setup <versión>.exe` | Instalador. Pregunta la carpeta de destino, crea el acceso directo y la entrada para desinstalar. Instala para el usuario actual, sin permisos de administrador. |
+| `Cotejo <versión> portable.exe` | Ejecutable suelto. Se abre sin instalar nada y no deja rastro en el menú de inicio. |
+
+Los dos contienen exactamente la misma aplicación y pesan casi lo mismo. La carpeta
+`release/win-unpacked/` no es un entregable: es la aplicación montada que ambos empaquetan dentro.
+
+El portable no guarda su configuración junto al ejecutable. El idioma, las pestañas y las
+preferencias van a `%APPDATA%\cotejo` del equipo donde se ejecute, igual que en la versión
+instalada, así que llevarse el `.exe` en un USB no se lleva los ajustes.
 
 El icono se edita en `build/icon.svg`; `npm run icon` lo rasteriza a `build/icon.png` y
 electron-builder genera desde ahí el `.ico` multi-resolución que necesita Windows.

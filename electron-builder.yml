@@ -16,9 +16,14 @@ extraResources:
 win:
   target:
     - nsis
+    - portable
   # electron-builder genera el .ico multi-resolucion a partir de este PNG.
   icon: build/icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Cotejo
+portable:
+  # Sin "portable" en el nombre los dos .exe solo se distinguen por la palabra
+  # "Setup", que es poco para elegir cual descargar.
+  artifactName: ${productName} ${version} portable.${ext}
