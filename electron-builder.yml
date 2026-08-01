@@ -6,6 +6,13 @@ directories:
 files:
   - out/**/*
   - package.json
+# Junto al ejecutable, donde el usuario puede leerlos sin abrir el asar. Lo
+# exigen las licencias MIT y BSD del codigo de terceros que va en el bundle.
+extraResources:
+  - from: LICENSE
+    to: LICENSE.txt
+  - from: THIRD-PARTY-NOTICES.txt
+    to: THIRD-PARTY-NOTICES.txt
 win:
   target:
     - nsis

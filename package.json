@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "icon": "node scripts/make-icon.mjs",
-    "package": "npm run build && npm run icon && electron-builder --win --config electron-builder.yml"
+    "notices": "node scripts/make-notices.mjs",
+    "package": "npm run build && npm run icon && npm run notices && electron-builder --win --config electron-builder.yml"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

@@ -28,6 +28,15 @@ npm run dev -- ruta/izquierda ruta/derecha
 Dos carpetas abren una comparación de carpetas; cualquier otra combinación, una de texto. Arrastrar
 uno o dos archivos o carpetas sobre la ventana hace lo mismo.
 
+## Idiomas
+
+La interfaz está en **español, inglés, francés y portugués de Brasil**. Al primer arranque Cotejo
+toma el idioma del sistema, y si no es ninguno de esos cuatro se queda en español. El selector está
+en la barra de pestañas y en la pantalla de bienvenida; lo que elijas se recuerda.
+
+Las fechas y los tamaños siguen al idioma activo, así que el separador decimal y el orden de la
+fecha son los que espera cada región.
+
 ## Cómo leerlo
 
 Cotejo usa **cálido contra frío** en vez de la pareja rojo/verde habitual: se distingue mejor con
@@ -85,21 +94,38 @@ npm run typecheck
 npm run package
 ```
 
-`package` genera un instalador NSIS en `release/`.
+`package` genera un instalador NSIS en `release/`. Antes de empaquetar regenera el icono y los
+avisos de terceros, así que no hay que acordarse de ejecutarlos a mano.
 
 El icono se edita en `build/icon.svg`; `npm run icon` lo rasteriza a `build/icon.png` y
 electron-builder genera desde ahí el `.ico` multi-resolución que necesita Windows.
+
+`npm run notices` regenera `THIRD-PARTY-NOTICES.txt`. El script no lleva una lista de librerías
+escrita a mano: lee los `import` de `src/`, añade las dependencias de producción —que van al
+instalador aunque no se importen— y cierra el árbol siguiendo el `dependencies` de cada paquete.
+Añadir una librería nueva no obliga a tocar nada.
+
+### Traducciones
+
+Los catálogos viven en `src/renderer/i18n/locales/`, uno por idioma, con `es.json` como fuente de
+verdad. Las claves están tipadas contra ese archivo, así que una clave inventada falla el
+`typecheck`, y un test comprueba que los cuatro catálogos tienen exactamente el mismo conjunto de
+claves para que no se cuele una traducción a medias.
+
+Al escribir un mensaje nuevo, la frase va entera en la clave. Componer una frase juntando trozos
+funciona en español y se rompe en cuanto cambia el orden de las palabras en otro idioma.
 
 ### Estructura
 
 ```
 build/         Icono (SVG como fuente de verdad)
-scripts/       Utilidades de build
+scripts/       Utilidades de build: icono y avisos de terceros
 src/
-  shared/      Tipos y canales IPC compartidos por los tres procesos
+  shared/      Tipos, canales IPC y códigos de error compartidos por los tres procesos
   main/        Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera
   preload/     contextBridge -> window.api (contextIsolation activado)
   renderer/
+    i18n/      Catálogos de traducción, detección de idioma y traducción de errores IPC
     diff/      Motor de comparación (normalize -> lineDiff -> pairing -> inlineDiff -> align)
     components/
       text/    Vista de texto: paneles, alineación, gutters, merge, mapa lateral
@@ -114,7 +140,13 @@ contra una implementación de LCS por programación dinámica sobre cientos de c
 
 [MIT](LICENSE) © 2026 Carlos Alberto.
 
-Todo lo que se distribuye con la aplicación es software libre con licencia permisiva: 29 paquetes
-MIT y uno BSD-3-Clause (`diff`), más el propio Electron (MIT), que ya incluye en el paquete los
-avisos de Chromium y Node. Las herramientas que solo intervienen en el build —TypeScript
-(Apache-2.0) y `sharp`, cuyo binario de libvips es LGPL-3.0— no llegan al instalador.
+Todo lo que se distribuye con la aplicación es software libre con licencia permisiva: 23 paquetes
+MIT y uno BSD-3-Clause (`diff`), más el propio Electron (MIT), que ya coloca junto al ejecutable
+sus avisos de Chromium y Node. Los avisos de copyright de esos 24 paquetes están en
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), que se genera solo y viaja en el instalador
+junto a la licencia de Cotejo, porque el minificador borra del bundle los comentarios legales que
+MIT y BSD exigen conservar.
+
+Las herramientas que solo intervienen en el build no llegan al instalador, así que sus licencias no
+alcanzan a lo que se distribuye. Es lo que permite usar `sharp` para generar el icono pese a que su
+binario de libvips sea LGPL-3.0.
