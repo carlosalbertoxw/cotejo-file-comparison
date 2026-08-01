@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { EditorView } from '@codemirror/view'
 import type { DiffBlock, Side, TextFilePayload } from '@shared/types'
+import { errorText } from '../../i18n/errorMessage'
 import { useSettings } from '../../state/settingsStore'
 import { useSession } from '../../state/sessionStore'
 import { useDiff } from './useDiff'
@@ -28,6 +30,7 @@ interface SideState {
 const EMPTY_SIDE: SideState = { payload: null, content: '', error: null }
 
 export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const tab = useSession((state) => state.tabs.find((item) => item.id === tabId))
   const updateTab = useSession((state) => state.updateTab)
   const diffOptions = useSettings((state) => state.diffOptions)
@@ -80,7 +83,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         const payload = await window.api.readTextFile(path)
         setter({ payload, content: payload.content, error: null })
       } catch (loadError) {
-        setter({ payload: null, content: '', error: (loadError as Error).message })
+        setter({ payload: null, content: '', error: errorText(loadError) })
       }
     },
     []
@@ -89,13 +92,13 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   const pickSide = useCallback(
     async (side: Side): Promise<void> => {
       const path = await window.api.pickFile(
-        side === 'left' ? 'Archivo izquierdo' : 'Archivo derecho'
+        t(side === 'left' ? 'textDiff.pickLeftTitle' : 'textDiff.pickRightTitle')
       )
       if (!path) return
       updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
       await loadSide(side, path)
     },
-    [tabId, updateTab, loadSide]
+    [tabId, updateTab, loadSide, t]
   )
 
   // Las rutas viven en la pestana; este efecto es quien las convierte en contenido.
@@ -331,27 +334,30 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
       </div>
 
       <div className="status-bar">
-        {!hasBoth && <span>Elige los dos archivos que quieres comparar.</span>}
+        {!hasBoth && <span>{t('textDiff.pickBoth')}</span>}
         {hasBoth && result && (
           <>
             <span>
               <span className="swatch changed" />
-              {result.stats.changed} cambiadas
+              {t('textDiff.changed', { count: result.stats.changed })}
             </span>
             <span>
               <span className="swatch orphan" />
-              {result.stats.leftOnly} solo izquierda · {result.stats.rightOnly} solo derecha
+              {t('textDiff.onlySides', {
+                left: result.stats.leftOnly,
+                right: result.stats.rightOnly
+              })}
             </span>
-            <span>{result.stats.equal} iguales</span>
-            {result.stats.ignored > 0 && <span>{result.stats.ignored} ignoradas</span>}
+            <span>{t('textDiff.equal', { count: result.stats.equal })}</span>
+            {result.stats.ignored > 0 && (
+              <span>{t('textDiff.ignored', { count: result.stats.ignored })}</span>
+            )}
           </>
         )}
         <span className="grow" />
-        {result?.inlineSkipped && (
-          <span className="warn">Resaltado intra-linea desactivado (archivo muy grande)</span>
-        )}
+        {result?.inlineSkipped && <span className="warn">{t('textDiff.inlineSkipped')}</span>}
         {error && <span className="warn">{error}</span>}
-        {pending && <span>Comparando…</span>}
+        {pending && <span>{t('textDiff.comparing')}</span>}
       </div>
     </>
   )

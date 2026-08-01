@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSession } from './state/sessionStore'
 import { TabBar } from './components/common/TabBar'
 import { TextCompareView } from './components/text/TextCompareView'
@@ -6,6 +7,7 @@ import { DirCompareView } from './components/dir/DirCompareView'
 import { WelcomeView } from './components/common/WelcomeView'
 
 export function App(): React.JSX.Element {
+  const { t } = useTranslation()
   const tabs = useSession((state) => state.tabs)
   const activeId = useSession((state) => state.activeId)
   const openTab = useSession((state) => state.openTab)
@@ -66,8 +68,12 @@ export function App(): React.JSX.Element {
   // El titulo de la ventana sigue a la pestana activa, como en cualquier editor.
   useEffect(() => {
     const active = tabs.find((tab) => tab.id === activeId)
-    document.title = active ? `${active.title} — Cotejo` : 'Cotejo'
-  }, [tabs, activeId])
+    const title =
+      active &&
+      (active.title ||
+        t(active.kind === 'text' ? 'tabs.defaultTitleText' : 'tabs.defaultTitleDir'))
+    document.title = title ? `${title} — Cotejo` : 'Cotejo'
+  }, [tabs, activeId, t])
 
   const onDrop = useCallback(
     (event: React.DragEvent): void => {

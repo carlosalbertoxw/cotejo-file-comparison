@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useSession } from '../../state/sessionStore'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function WelcomeView(): React.JSX.Element {
+  const { t } = useTranslation()
   const openTab = useSession((state) => state.openTab)
 
   return (
@@ -13,14 +16,13 @@ export function WelcomeView(): React.JSX.Element {
           </span>
           <h2>Cotejo</h2>
         </div>
-        <p>Pon dos cosas una al lado de la otra y mira en que se diferencian.</p>
+        <p>{t('welcome.tagline')}</p>
         <div className="choices">
-          <button onClick={() => openTab('text')}>Comparar archivos de texto</button>
-          <button onClick={() => openTab('dir')}>Comparar carpetas</button>
+          <button onClick={() => openTab('text')}>{t('welcome.compareText')}</button>
+          <button onClick={() => openTab('dir')}>{t('welcome.compareDirs')}</button>
         </div>
-        <p className="hint">
-          También puedes arrastrar dos archivos o dos carpetas sobre esta ventana.
-        </p>
+        <p className="hint">{t('welcome.hint')}</p>
+        <LanguageSwitcher />
       </div>
     </div>
   )

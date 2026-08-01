@@ -2,6 +2,7 @@ import { shell } from 'electron'
 import { cp, mkdir, rename, rm, stat, readdir } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type { FileOpItem, FileOpKind, FileOpPlan, FileOpRequest, Side } from '@shared/types'
+import { ipcError } from '@shared/ipc-errors'
 
 export interface FileOpCallbacks {
   onProgress?: (done: number, total: number, currentPath: string) => void
@@ -23,13 +24,13 @@ function otherSide(side: Side): Side {
  */
 function safeJoin(root: string, relPath: string): string {
   if (isAbsolute(relPath)) {
-    throw new Error(`Se esperaba una ruta relativa, no "${relPath}"`)
+    throw ipcError('absolutePathRejected', { path: relPath })
   }
   const base = resolve(root)
   const full = resolve(base, relPath)
   const rel = relative(base, full)
   if (rel === '' || rel === '..' || rel.startsWith(`..${sep}`)) {
-    throw new Error(`Ruta fuera de la carpeta comparada: "${relPath}"`)
+    throw ipcError('pathOutsideRoot', { path: relPath })
   }
   return full
 }

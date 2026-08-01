@@ -2,6 +2,7 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { parseIpcError } from '../src/shared/ipc-errors'
 import {
   decodeText,
   detectEol,
@@ -91,14 +92,30 @@ describe('lectura y escritura sobre disco', () => {
     expect(await readFile(path, 'utf8')).toBe('﻿hola\nmundo\nfin\n')
   })
 
-  it('rechaza un archivo binario con un mensaje claro', async () => {
+  it('rechaza un archivo binario con un error codificado', async () => {
     const path = join(dir, 'binario.bin')
     await writeFile(path, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x1a]))
-    await expect(readTextFile(path)).rejects.toThrow(/binario/i)
+    const error = await readTextFile(path).then(
+      () => null,
+      (reason: Error) => reason
+    )
+    expect(error).toBeInstanceOf(Error)
+    expect(parseIpcError((error as Error).message)).toMatchObject({
+      code: 'binaryFile',
+      params: { path }
+    })
   })
 
-  it('rechaza una carpeta', async () => {
-    await expect(readTextFile(dir)).rejects.toThrow(/carpeta/i)
+  it('rechaza una carpeta con un error codificado', async () => {
+    const error = await readTextFile(dir).then(
+      () => null,
+      (reason: Error) => reason
+    )
+    expect(error).toBeInstanceOf(Error)
+    expect(parseIpcError((error as Error).message)).toMatchObject({
+      code: 'notAFile',
+      params: { path: dir }
+    })
   })
 
   it('devuelve tamaño y fecha junto al contenido', async () => {

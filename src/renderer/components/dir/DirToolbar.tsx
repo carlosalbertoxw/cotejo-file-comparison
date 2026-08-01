@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CompareMode, ScanFilters, Side } from '@shared/types'
 
 interface Props {
@@ -19,11 +20,11 @@ interface Props {
   onSync: () => void
 }
 
-const MODE_HELP: Record<CompareMode, string> = {
-  quick: 'Compara tamaño y fecha de modificacion. Rapido, pero se fia de la fecha.',
-  size: 'Compara solo el tamaño. El mas rapido y el menos fiable.',
-  content: 'Lee y hashea los dos archivos. Es el unico modo que no se equivoca.'
-}
+const MODE_HELP_KEY = {
+  quick: 'dirCompare.modeHelpQuick',
+  size: 'dirCompare.modeHelpSize',
+  content: 'dirCompare.modeHelpContent'
+} as const satisfies Record<CompareMode, string>
 
 export function DirToolbar({
   mode,
@@ -42,6 +43,7 @@ export function DirToolbar({
   onDelete,
   onSync
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [showFilters, setShowFilters] = useState(false)
 
   return (
@@ -52,17 +54,17 @@ export function DirToolbar({
           onClick={running ? onCancel : onCompare}
           disabled={!canCompare && !running}
         >
-          {running ? 'Cancelar' : 'Comparar'}
+          {running ? t('dirCompare.cancel') : t('dirCompare.compare')}
         </button>
 
         <span className="sep" />
 
-        <label title={MODE_HELP[mode]}>
-          Modo
+        <label title={t(MODE_HELP_KEY[mode])}>
+          {t('dirCompare.mode')}
           <select value={mode} onChange={(event) => onModeChange(event.target.value as CompareMode)}>
-            <option value="quick">Rapido (tamaño + fecha)</option>
-            <option value="size">Solo tamaño</option>
-            <option value="content">Contenido (hash)</option>
+            <option value="quick">{t('dirCompare.modeQuick')}</option>
+            <option value="size">{t('dirCompare.modeSize')}</option>
+            <option value="content">{t('dirCompare.modeContent')}</option>
           </select>
         </label>
 
@@ -72,48 +74,72 @@ export function DirToolbar({
             checked={onlyDifferences}
             onChange={(event) => onOnlyDifferencesChange(event.target.checked)}
           />
-          Solo diferencias
+          {t('dirCompare.onlyDifferences')}
         </label>
 
         <button onClick={() => setShowFilters((value) => !value)}>
-          Filtros {showFilters ? '▴' : '▾'}
+          {t('dirCompare.filters')} {showFilters ? '▴' : '▾'}
         </button>
 
         <span className="sep" />
 
-        <button disabled={!hasSelection} onClick={() => onCopy('left')} title="Copiar la seleccion a la derecha">
-          Copiar ▶
+        <button
+          disabled={!hasSelection}
+          onClick={() => onCopy('left')}
+          title={t('dirCompare.copyRightTooltip')}
+        >
+          {t('dirCompare.copyRight')}
         </button>
-        <button disabled={!hasSelection} onClick={() => onCopy('right')} title="Copiar la seleccion a la izquierda">
-          ◀ Copiar
+        <button
+          disabled={!hasSelection}
+          onClick={() => onCopy('right')}
+          title={t('dirCompare.copyLeftTooltip')}
+        >
+          {t('dirCompare.copyLeft')}
         </button>
-        <button disabled={!hasSelection} onClick={() => onMove('left')} title="Mover la seleccion a la derecha">
-          Mover ▶
+        <button
+          disabled={!hasSelection}
+          onClick={() => onMove('left')}
+          title={t('dirCompare.moveRightTooltip')}
+        >
+          {t('dirCompare.moveRight')}
         </button>
-        <button disabled={!hasSelection} onClick={() => onMove('right')} title="Mover la seleccion a la izquierda">
-          ◀ Mover
+        <button
+          disabled={!hasSelection}
+          onClick={() => onMove('right')}
+          title={t('dirCompare.moveLeftTooltip')}
+        >
+          {t('dirCompare.moveLeft')}
         </button>
 
         <span className="sep" />
 
-        <button disabled={!hasSelection} onClick={() => onDelete('left')} title="Mover a la papelera (lado izquierdo)">
-          Borrar izq.
+        <button
+          disabled={!hasSelection}
+          onClick={() => onDelete('left')}
+          title={t('dirCompare.deleteLeftTooltip')}
+        >
+          {t('dirCompare.deleteLeft')}
         </button>
-        <button disabled={!hasSelection} onClick={() => onDelete('right')} title="Mover a la papelera (lado derecho)">
-          Borrar der.
+        <button
+          disabled={!hasSelection}
+          onClick={() => onDelete('right')}
+          title={t('dirCompare.deleteRightTooltip')}
+        >
+          {t('dirCompare.deleteRight')}
         </button>
 
         <span className="spacer" />
 
-        <button onClick={onSync} title="Copiar a la derecha todo lo que falta o difiere">
-          Sincronizar ▶
+        <button onClick={onSync} title={t('dirCompare.syncTooltip')}>
+          {t('dirCompare.sync')}
         </button>
       </div>
 
       {showFilters && (
         <div className="toolbar filters">
-          <label title="Globs separados por coma. Se aplican a la ruta relativa.">
-            Excluir
+          <label title={t('dirCompare.excludeTooltip')}>
+            {t('dirCompare.exclude')}
             <input
               type="text"
               size={40}
@@ -123,8 +149,8 @@ export function DirToolbar({
               }
             />
           </label>
-          <label title="Si se rellena, solo se incluyen los archivos que casen.">
-            Incluir solo
+          <label title={t('dirCompare.includeOnlyTooltip')}>
+            {t('dirCompare.includeOnly')}
             <input
               type="text"
               size={30}
@@ -143,11 +169,11 @@ export function DirToolbar({
                 onFiltersChange({ ...filters, includeHidden: event.target.checked })
               }
             />
-            Incluir ocultos
+            {t('dirCompare.includeHidden')}
           </label>
           <span className="spacer" />
           <button onClick={onCompare} disabled={!canCompare || running}>
-            Aplicar y comparar
+            {t('dirCompare.applyAndCompare')}
           </button>
         </div>
       )}

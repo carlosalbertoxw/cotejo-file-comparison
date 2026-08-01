@@ -1,5 +1,6 @@
 import { readFile, writeFile, stat } from 'node:fs/promises'
 import type { Eol, TextFilePayload } from '@shared/types'
+import { ipcError } from '@shared/ipc-errors'
 
 /** Umbral por encima del cual nos negamos a cargar el archivo en un panel. */
 export const MAX_TEXT_BYTES = 64 * 1024 * 1024
@@ -53,18 +54,17 @@ export function encodeText(content: string, eol: Eol, encoding: 'utf8' | 'utf8-b
 
 export async function readTextFile(path: string): Promise<TextFilePayload> {
   const info = await stat(path)
-  if (info.isDirectory()) throw new Error(`"${path}" es una carpeta, no un archivo.`)
+  if (info.isDirectory()) throw ipcError('notAFile', { path })
   if (info.size > MAX_TEXT_BYTES) {
-    throw new Error(
-      `El archivo mide ${(info.size / 1024 / 1024).toFixed(1)} MB y supera el limite de ${
-        MAX_TEXT_BYTES / 1024 / 1024
-      } MB.`
-    )
+    throw ipcError('fileTooLarge', {
+      size: (info.size / 1024 / 1024).toFixed(1),
+      limit: MAX_TEXT_BYTES / 1024 / 1024
+    })
   }
 
   const buffer = await readFile(path)
   if (looksBinary(buffer)) {
-    throw new Error(`"${path}" parece un archivo binario y no se puede comparar como texto.`)
+    throw ipcError('binaryFile', { path })
   }
 
   return { path, ...decodeText(buffer), size: info.size, mtimeMs: info.mtimeMs }

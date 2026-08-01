@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface Props {
   title: string
   message: React.ReactNode
@@ -10,11 +12,12 @@ interface Props {
 export function ConfirmDialog({
   title,
   message,
-  confirmLabel = 'Aceptar',
+  confirmLabel,
   danger,
   onConfirm,
   onCancel
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <div
       className="dialog-backdrop"
@@ -26,9 +29,9 @@ export function ConfirmDialog({
         <h3>{title}</h3>
         <div className="dialog-body">{message}</div>
         <div className="dialog-actions">
-          <button onClick={onCancel}>Cancelar</button>
+          <button onClick={onCancel}>{t('common.cancel')}</button>
           <button className={danger ? '' : 'primary'} onClick={onConfirm} autoFocus>
-            {confirmLabel}
+            {confirmLabel ?? t('common.accept')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type {
   CompareProgress,
   CompareResponse,
@@ -10,6 +11,7 @@ import type {
 } from '@shared/types'
 import { useSession } from '../../state/sessionStore'
 import { useSettings } from '../../state/settingsStore'
+import { errorText } from '../../i18n/errorMessage'
 import { PathBar } from '../common/PathBar'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { DirTable, flattenTree, type FlatRow } from './DirTable'
@@ -28,13 +30,14 @@ interface PendingOp {
   plan: FileOpPlan
 }
 
-const OP_TITLE: Record<FileOpKind, string> = {
-  copy: 'Confirmar copia',
-  move: 'Confirmar movimiento',
-  delete: 'Confirmar borrado'
-}
+const OP_TITLE_KEY = {
+  copy: 'dirCompare.confirmCopy',
+  move: 'dirCompare.confirmMove',
+  delete: 'dirCompare.confirmDelete'
+} as const satisfies Record<FileOpKind, string>
 
 export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const tab = useSession((state) => state.tabs.find((item) => item.id === tabId))
   const updateTab = useSession((state) => state.updateTab)
   const openTab = useSession((state) => state.openTab)
@@ -89,7 +92,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       walk(result.root)
       setExpanded(toExpand)
     } catch (error) {
-      setMessage((error as Error).message)
+      setMessage(errorText(error))
     } finally {
       setRunning(false)
       setProgress(null)
@@ -106,12 +109,12 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
   const pickSide = useCallback(
     async (side: Side): Promise<void> => {
       const path = await window.api.pickDirectory(
-        side === 'left' ? 'Carpeta izquierda' : 'Carpeta derecha'
+        t(side === 'left' ? 'dirCompare.pickLeftTitle' : 'dirCompare.pickRightTitle')
       )
       if (!path) return
       updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
     },
-    [tabId, updateTab]
+    [tabId, updateTab, t]
   )
 
   // Comparar en cuanto estan las dos rutas, y de nuevo si cambia el modo.
@@ -184,7 +187,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
           .map((node) => ({ relPath: node.relPath, isDir: node.isDir, from }))
 
       if (items.length === 0) {
-        setMessage('No hay nada seleccionado en ese lado.')
+        setMessage(t('dirCompare.nothingSelected'))
         return
       }
 
@@ -197,7 +200,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       })
       setPendingOp({ kind, from, items, plan })
     },
-    [tab?.leftPath, tab?.rightPath, selected, nodeByPath]
+    [tab?.leftPath, tab?.rightPath, selected, nodeByPath, t]
   )
 
   const confirmOp = useCallback(async (): Promise<void> => {
@@ -222,17 +225,21 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       const failures = result.failed.length
       setMessage(
         failures === 0
-          ? `${result.succeeded} elementos procesados.`
-          : `${result.succeeded} procesados, ${failures} con error: ${result.failed[0]?.message ?? ''}`
+          ? t('dirCompare.processed', { count: result.succeeded })
+          : t('dirCompare.processedWithErrors', {
+              succeeded: result.succeeded,
+              failed: failures,
+              message: errorText(result.failed[0]?.message ?? '')
+            })
       )
     } catch (error) {
-      setMessage((error as Error).message)
+      setMessage(errorText(error))
     } finally {
       stop()
       setOpProgress(null)
       await runCompare()
     }
-  }, [pendingOp, tab?.leftPath, tab?.rightPath, runCompare])
+  }, [pendingOp, tab?.leftPath, tab?.rightPath, runCompare, t])
 
   /** Sincronizar: llevar a la derecha todo lo que falta o difiere en la izquierda. */
   const syncToRight = useCallback((): void => {
@@ -294,7 +301,9 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 
       {progress && (
         <div className="progress-line">
-          <span>{progress.phase === 'scanning' ? 'Explorando' : 'Comparando contenido'}</span>
+          <span>
+            {t(progress.phase === 'scanning' ? 'dirCompare.scanning' : 'dirCompare.hashing')}
+          </span>
           <div className="track">
             <div
               className="fill"
@@ -312,7 +321,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 
       {opProgress && (
         <div className="progress-line">
-          <span>Procesando archivos</span>
+          <span>{t('dirCompare.processing')}</span>
           <div className="track">
             <div
               className="fill"
@@ -336,39 +345,42 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         />
       ) : (
         <div className="empty-state">
-          <p>
-            {running
-              ? 'Comparando…'
-              : 'Elige las dos carpetas que quieres comparar.'}
-          </p>
+          <p>{running ? t('dirCompare.comparing') : t('dirCompare.pickBoth')}</p>
         </div>
       )}
 
       <div className="status-bar">
         {response && (
           <>
-            <span>{differenceCount} diferencias</span>
-            <span>{response.stats.same} iguales</span>
+            <span>{t('dirCompare.differences', { count: differenceCount })}</span>
+            <span>{t('dirCompare.same', { count: response.stats.same })}</span>
             <span>
-              {response.stats.leftOnly} solo izquierda · {response.stats.rightOnly} solo derecha
+              {t('dirCompare.onlySides', {
+                left: response.stats.leftOnly,
+                right: response.stats.rightOnly
+              })}
             </span>
             {response.errors.length > 0 && (
               <span className="warn" title={response.errors.map((e) => e.relPath).join('\n')}>
-                {response.errors.length} rutas ilegibles
+                {t('dirCompare.unreadable', { count: response.errors.length })}
               </span>
             )}
           </>
         )}
         <span className="grow" />
         {message && <span>{message}</span>}
-        {active && selected.size > 0 && <span>{selected.size} seleccionados</span>}
+        {active && selected.size > 0 && (
+          <span>{t('dirCompare.selectedCount', { count: selected.size })}</span>
+        )}
       </div>
 
       {pendingOp && (
         <ConfirmDialog
-          title={OP_TITLE[pendingOp.kind]}
+          title={t(OP_TITLE_KEY[pendingOp.kind])}
           danger={pendingOp.kind === 'delete'}
-          confirmLabel={pendingOp.kind === 'delete' ? 'Mover a la papelera' : 'Continuar'}
+          confirmLabel={t(
+            pendingOp.kind === 'delete' ? 'dirCompare.confirmToTrash' : 'dirCompare.confirmContinue'
+          )}
           onCancel={() => setPendingOp(null)}
           onConfirm={() => void confirmOp()}
           message={<OpSummary op={pendingOp} />}
@@ -379,33 +391,49 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 }
 
 function OpSummary({ op }: { op: PendingOp }): React.JSX.Element {
+  const { t } = useTranslation()
   const { plan } = op
-  const direction = op.from === 'left' ? 'de izquierda a derecha' : 'de derecha a izquierda'
+
+  // Frases completas por clave: los sintagmas pluralizados ({{files}}, {{dirs}})
+  // se resuelven antes y se interpolan, para no concatenar fragmentos que no
+  // sobreviven al orden de palabras de otros idiomas.
+  const scopeKey =
+    op.kind === 'delete'
+      ? op.from === 'left'
+        ? 'opSummary.scopeDeleteLeft'
+        : 'opSummary.scopeDeleteRight'
+      : op.from === 'left'
+        ? 'opSummary.scopeLtr'
+        : 'opSummary.scopeRtl'
 
   return (
     <div>
       <p>
-        {plan.fileCount} archivos y {plan.dirCount} carpetas ({formatSize(plan.totalBytes)})
-        {op.kind === 'delete' ? ` en el lado ${op.from === 'left' ? 'izquierdo' : 'derecho'}` : ` ${direction}`}
-        .
+        {t(scopeKey, {
+          files: t('opSummary.fileCount', { count: plan.fileCount }),
+          dirs: t('opSummary.dirCount', { count: plan.dirCount }),
+          size: formatSize(plan.totalBytes)
+        })}
       </p>
 
       {op.kind === 'delete' ? (
-        <p>Se moveran a la Papelera de reciclaje de Windows, asi que podras recuperarlos.</p>
+        <p>{t('opSummary.trashNotice')}</p>
       ) : plan.overwrites.length > 0 ? (
         <>
           <p className="danger">
-            Se sobrescribiran {plan.overwrites.length} archivos que ya existen en el destino:
+            {t('opSummary.overwriteWarning', { count: plan.overwrites.length })}
           </p>
           <ul>
             {plan.overwrites.slice(0, 50).map((path) => (
               <li key={path}>{path}</li>
             ))}
-            {plan.overwrites.length > 50 && <li>… y {plan.overwrites.length - 50} mas</li>}
+            {plan.overwrites.length > 50 && (
+              <li>{t('opSummary.overflowMore', { count: plan.overwrites.length - 50 })}</li>
+            )}
           </ul>
         </>
       ) : (
-        <p>No se sobrescribe nada: todos los destinos son nuevos.</p>
+        <p>{t('opSummary.noOverwrites')}</p>
       )}
     </div>
   )

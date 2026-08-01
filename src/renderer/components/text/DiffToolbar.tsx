@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { DiffOptions } from '@shared/types'
 
 interface Props {
@@ -27,48 +28,50 @@ export function DiffToolbar({
   onReload,
   onSave
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
+
   return (
     <div className="toolbar">
-      <button onClick={onPrev} disabled={blockCount === 0} title="Diferencia anterior (Shift+F7)">
-        ▲ Anterior
+      <button onClick={onPrev} disabled={blockCount === 0} title={t('textDiff.prevTooltip')}>
+        {t('textDiff.prev')}
       </button>
-      <button onClick={onNext} disabled={blockCount === 0} title="Diferencia siguiente (F7)">
-        ▼ Siguiente
+      <button onClick={onNext} disabled={blockCount === 0} title={t('textDiff.nextTooltip')}>
+        {t('textDiff.next')}
       </button>
       <span className="count">
         {blockCount === 0
-          ? 'Sin diferencias'
+          ? t('textDiff.noDifferences')
           : `${activeBlock >= 0 ? activeBlock + 1 : '–'} / ${blockCount}`}
       </span>
 
       <span className="sep" />
 
-      <label title="Ignora la indentacion y el espaciado interno">
+      <label title={t('textDiff.whitespaceTooltip')}>
         <input
           type="checkbox"
           checked={options.ignoreWhitespace}
           onChange={(event) => onOptionChange('ignoreWhitespace', event.target.checked)}
         />
-        Espacios
+        {t('textDiff.whitespace')}
       </label>
-      <label title="Ignora las diferencias de mayusculas y minusculas">
+      <label title={t('textDiff.caseTooltip')}>
         <input
           type="checkbox"
           checked={options.ignoreCase}
           onChange={(event) => onOptionChange('ignoreCase', event.target.checked)}
         />
-        Mayusculas
+        {t('textDiff.case')}
       </label>
-      <label title="Ignora las lineas en blanco">
+      <label title={t('textDiff.blankLinesTooltip')}>
         <input
           type="checkbox"
           checked={options.ignoreBlankLines}
           onChange={(event) => onOptionChange('ignoreBlankLines', event.target.checked)}
         />
-        Lineas en blanco
+        {t('textDiff.blankLines')}
       </label>
-      <label title="Ancho de tabulacion">
-        Tab
+      <label title={t('textDiff.tabTooltip')}>
+        {t('textDiff.tab')}
         <select
           value={options.tabSize}
           onChange={(event) => onOptionChange('tabSize', Number(event.target.value))}
@@ -81,15 +84,20 @@ export function DiffToolbar({
 
       <span className="spacer" />
 
-      <label title="Bloquea la edicion de los dos paneles">
+      <label title={t('textDiff.readOnlyTooltip')}>
         <input type="checkbox" checked={readOnly} onChange={onToggleReadOnly} />
-        Solo lectura
+        {t('textDiff.readOnly')}
       </label>
-      <button onClick={onReload} title="Volver a leer los dos archivos del disco">
-        Recargar
+      <button onClick={onReload} title={t('textDiff.reloadTooltip')}>
+        {t('textDiff.reload')}
       </button>
-      <button className="primary" onClick={onSave} disabled={!canSave} title="Guardar (Ctrl+S)">
-        Guardar
+      <button
+        className="primary"
+        onClick={onSave}
+        disabled={!canSave}
+        title={t('textDiff.saveTooltip')}
+      >
+        {t('textDiff.save')}
       </button>
     </div>
   )

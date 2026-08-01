@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DirNode } from '@shared/types'
-import { formatDate, formatSize, isDifference, STATUS_GLYPH, STATUS_LABEL } from './format'
+import { formatDate, formatSize, isDifference, STATUS_GLYPH, STATUS_LABEL_KEY } from './format'
 
 export const ROW_HEIGHT = 20
 
@@ -50,6 +51,7 @@ export function DirTable({
   onSelect,
   onOpen
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [height, setHeight] = useState(0)
@@ -98,7 +100,7 @@ export function DirTable({
         <div className="cell size">{node.left && !node.isDir ? formatSize(node.left.size) : ''}</div>
         <div className="cell date">{node.left && !node.isDir ? formatDate(node.left.mtimeMs) : ''}</div>
 
-        <div className="cell glyph" title={STATUS_LABEL[node.status]}>
+        <div className="cell glyph" title={t(STATUS_LABEL_KEY[node.status])}>
           {STATUS_GLYPH[node.status]}
         </div>
 
@@ -115,12 +117,12 @@ export function DirTable({
   return (
     <div className="dir-table">
       <div className="dir-header">
-        <div className="cell name">Nombre</div>
-        <div className="cell size">Tamaño</div>
-        <div className="cell date">Modificado</div>
+        <div className="cell name">{t('dirCompare.colName')}</div>
+        <div className="cell size">{t('dirCompare.colSize')}</div>
+        <div className="cell date">{t('dirCompare.colModified')}</div>
         <div className="cell glyph" />
-        <div className="cell size">Tamaño</div>
-        <div className="cell date">Modificado</div>
+        <div className="cell size">{t('dirCompare.colSize')}</div>
+        <div className="cell date">{t('dirCompare.colModified')}</div>
       </div>
       <div
         className="dir-scroller"

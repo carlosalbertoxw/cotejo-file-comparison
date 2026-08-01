@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { DiffBlock } from '@shared/types'
 import { LINE_HEIGHT } from './constants'
 
@@ -26,6 +27,7 @@ export function MergeGutter({
   onMerge,
   onSelectBlock
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const firstRow = Math.floor(scrollTop / LINE_HEIGHT) - 1
   const lastRow = Math.ceil((scrollTop + height) / LINE_HEIGHT) + 1
 
@@ -45,7 +47,7 @@ export function MergeGutter({
           >
             <button
               className="merge-arrow"
-              title="Copiar este bloque hacia la derecha"
+              title={t('textDiff.mergeRightTooltip')}
               disabled={readOnly}
               onClick={(event) => {
                 event.stopPropagation()
@@ -56,7 +58,7 @@ export function MergeGutter({
             </button>
             <button
               className="merge-arrow"
-              title="Copiar este bloque hacia la izquierda"
+              title={t('textDiff.mergeLeftTooltip')}
               disabled={readOnly}
               onClick={(event) => {
                 event.stopPropagation()

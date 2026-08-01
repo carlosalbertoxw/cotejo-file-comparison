@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface Props {
   kind: 'file' | 'directory'
   leftPath: string | null
@@ -6,11 +8,6 @@ interface Props {
   rightDirty?: boolean
   onPick: (side: 'left' | 'right') => void
   onSetPath: (side: 'left' | 'right', path: string) => void
-}
-
-const LABEL = {
-  file: 'Elegir archivo…',
-  directory: 'Elegir carpeta…'
 }
 
 export function PathBar({
@@ -22,18 +19,23 @@ export function PathBar({
   onPick,
   onSetPath
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
+
   const slot = (side: 'left' | 'right', path: string | null, dirty?: boolean): React.JSX.Element => (
     <div className="path-slot">
-      {dirty && <span className="dirty-dot" title="Hay cambios sin guardar">●</span>}
+      {dirty && <span className="dirty-dot" title={t('common.unsavedChanges')}>●</span>}
       <input
         type="text"
         value={path ?? ''}
-        placeholder={kind === 'file' ? 'Ruta del archivo' : 'Ruta de la carpeta'}
+        placeholder={t(kind === 'file' ? 'pathBar.filePlaceholder' : 'pathBar.dirPlaceholder')}
         spellCheck={false}
         onChange={(event) => onSetPath(side, event.target.value)}
         title={path ?? ''}
       />
-      <button onClick={() => onPick(side)} title={LABEL[kind]}>
+      <button
+        onClick={() => onPick(side)}
+        title={t(kind === 'file' ? 'pathBar.pickFile' : 'pathBar.pickDirectory')}
+      >
         …
       </button>
     </div>

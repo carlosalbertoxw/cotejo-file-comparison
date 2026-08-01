@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import { useSession } from '../../state/sessionStore'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function TabBar(): React.JSX.Element {
+  const { t } = useTranslation()
   const tabs = useSession((state) => state.tabs)
   const activeId = useSession((state) => state.activeId)
   const setActive = useSession((state) => state.setActive)
@@ -17,15 +20,18 @@ export function TabBar(): React.JSX.Element {
           title={[tab.leftPath, tab.rightPath].filter(Boolean).join('\n')}
         >
           <span aria-hidden="true">{tab.kind === 'text' ? '≡' : '🗀'}</span>
-          <span className="tab-title">{tab.title}</span>
+          <span className="tab-title">
+            {tab.title ||
+              t(tab.kind === 'text' ? 'tabs.defaultTitleText' : 'tabs.defaultTitleDir')}
+          </span>
           {tab.dirty && (
-            <span className="tab-dirty" title="Hay cambios sin guardar">
+            <span className="tab-dirty" title={t('common.unsavedChanges')}>
               ●
             </span>
           )}
           <button
             className="tab-close"
-            title="Cerrar (Ctrl+W)"
+            title={t('tabs.closeTooltip')}
             onClick={(event) => {
               event.stopPropagation()
               closeTab(tab.id)
@@ -35,12 +41,14 @@ export function TabBar(): React.JSX.Element {
           </button>
         </div>
       ))}
-      <button className="tab-new" title="Comparar texto (Ctrl+T)" onClick={() => openTab('text')}>
-        ＋ Texto
+      <button className="tab-new" title={t('tabs.newTextTooltip')} onClick={() => openTab('text')}>
+        {t('tabs.newText')}
       </button>
-      <button className="tab-new" title="Comparar carpetas" onClick={() => openTab('dir')}>
-        ＋ Carpetas
+      <button className="tab-new" title={t('tabs.newDirTooltip')} onClick={() => openTab('dir')}>
+        {t('tabs.newDir')}
       </button>
+      <span className="tab-bar-spacer" />
+      <LanguageSwitcher />
     </div>
   )
 }

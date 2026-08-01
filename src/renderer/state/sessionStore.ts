@@ -20,11 +20,15 @@ function baseName(path: string): string {
   return parts[parts.length - 1] || path
 }
 
-/** Un solo nombre cuando los dos lados coinciden, y los dos cuando difieren. */
-export function titleFor(kind: TabKind, left: string | null, right: string | null): string {
+/**
+ * Un solo nombre cuando los dos lados coinciden, y los dos cuando difieren.
+ * Sin rutas devuelve '': el titulo por defecto lo pone quien renderiza, en el
+ * idioma activo, para no persistir texto traducido en localStorage.
+ */
+export function titleFor(left: string | null, right: string | null): string {
   const leftName = left ? baseName(left) : null
   const rightName = right ? baseName(right) : null
-  if (!leftName && !rightName) return kind === 'text' ? 'Comparar texto' : 'Comparar carpetas'
+  if (!leftName && !rightName) return ''
   if (leftName && rightName) {
     return leftName === rightName ? leftName : `${leftName} ↔ ${rightName}`
   }
@@ -53,7 +57,7 @@ export const useSession = create<SessionState>()(
           kind,
           leftPath,
           rightPath,
-          title: titleFor(kind, leftPath, rightPath),
+          title: titleFor(leftPath, rightPath),
           dirty: false
         }
         set((state) => ({ tabs: [...state.tabs, tab], activeId: id }))
@@ -81,7 +85,7 @@ export const useSession = create<SessionState>()(
             // El titulo se deriva de las rutas salvo que lo fijen explicitamente.
             const pathChanged = patch.leftPath !== undefined || patch.rightPath !== undefined
             if (patch.title === undefined && pathChanged) {
-              merged.title = titleFor(merged.kind, merged.leftPath, merged.rightPath)
+              merged.title = titleFor(merged.leftPath, merged.rightPath)
             }
             return merged
           })
@@ -95,10 +99,13 @@ export const useSession = create<SessionState>()(
         activeId: state.activeId
       }),
       onRehydrateStorage: () => (state) => {
-        // Los ids nuevos tienen que seguir a los restaurados para no chocar.
         for (const tab of state?.tabs ?? []) {
+          // Los ids nuevos tienen que seguir a los restaurados para no chocar.
           const parsed = Number(tab.id.replace('tab-', ''))
           if (Number.isFinite(parsed)) counter = Math.max(counter, parsed)
+          // Sesiones anteriores a i18n guardaban el titulo por defecto en
+          // español; se vacia para que el renderizado lo traduzca.
+          if (tab.title === 'Comparar texto' || tab.title === 'Comparar carpetas') tab.title = ''
         }
       }
     }
