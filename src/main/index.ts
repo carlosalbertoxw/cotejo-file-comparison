@@ -51,6 +51,18 @@ app.on('open-file', (event, filePath) => {
   }, 50)
 })
 
+/**
+ * En desarrollo se ejecuta el binario de Electron tal cual, sin ningun
+ * empaquetado del que sacar el icono, asi que la ventana sale con el de
+ * Electron. En produccion no hace falta: lo lleva el .exe en Windows, el
+ * bundle .app en macOS y la entrada .desktop en Linux.
+ */
+function devIcon(): { icon: string } | undefined {
+  if (!is.dev) return undefined
+  const icon = join(__dirname, '../../build/icon.png')
+  return existsSync(icon) ? { icon } : undefined
+}
+
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1400,
@@ -61,6 +73,7 @@ function createWindow(): BrowserWindow {
     backgroundColor: '#f3f3f3',
     autoHideMenuBar: true,
     title: 'Cotejo',
+    ...devIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
