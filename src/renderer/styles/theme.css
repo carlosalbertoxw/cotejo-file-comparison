@@ -1,0 +1,519 @@
+/* Paleta y chrome de Cotejo.
+   Los colores de diff estan aqui y en ningun otro sitio: cambiar el tema no
+   deberia obligar a tocar ningun componente. */
+
+:root {
+  --line-height: 18px;
+  --mono: 'Cascadia Mono', 'Consolas', 'Courier New', monospace;
+  --ui-font: 'Segoe UI', system-ui, sans-serif;
+  --ui-size: 12px;
+  --code-size: 12.5px;
+
+  --bg: #ffffff;
+  --bg-chrome: #f1f3f4;
+  --bg-chrome-active: #ffffff;
+  --bg-hover: #e4e8ea;
+  --bg-selected: #cfe3ec;
+  --border: #ccd3d6;
+  --border-strong: #9aa6ab;
+  --text: #172226;
+  --text-dim: #5a696f;
+  --accent: #10708a;
+  --danger: #b3261e;
+
+  /* Ambar para lo que cambio, verde azulado para lo que solo esta en un lado.
+     Calido contra frio en vez de rojo contra verde: se distingue mejor con los
+     daltonismos mas comunes, y deja el rojo libre para significar "destructivo"
+     y nada mas. */
+  --diff-changed-bg: #fdf1d8;
+  --diff-changed-text: #6b4a05;
+  --diff-inline-bg: #f6cf76;
+  --diff-orphan-bg: #cbe7e2;
+  --diff-orphan-text: #0f4f49;
+  --diff-gap-bg: #f2f4f5;
+  --diff-ignored-text: #717b7e;
+  --diff-equal-bg: transparent;
+
+  --gutter-bg: #f4f6f7;
+  --gutter-text: #79868b;
+}
+
+:root[data-theme='dark'],
+:root:not([data-theme='light']) {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #161c1f;
+    --bg-chrome: #202a2e;
+    --bg-chrome-active: #161c1f;
+    --bg-hover: #2c3a3f;
+    --bg-selected: #1d4557;
+    --border: #32424a;
+    --border-strong: #55686f;
+    --text: #e2e8ea;
+    --text-dim: #93a3a9;
+    --accent: #3fa8c4;
+    --danger: #f2837c;
+
+    --diff-changed-bg: #3d3010;
+    --diff-changed-text: #f2d495;
+    --diff-inline-bg: #8a6a17;
+    --diff-orphan-bg: #103639;
+    --diff-orphan-text: #8fd7ce;
+    --diff-gap-bg: #1c2427;
+    --diff-ignored-text: #6d7c82;
+
+    --gutter-bg: #1b2326;
+    --gutter-text: #74848a;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #161c1f;
+  --bg-chrome: #202a2e;
+  --bg-chrome-active: #161c1f;
+  --bg-hover: #2c3a3f;
+  --bg-selected: #1d4557;
+  --border: #32424a;
+  --border-strong: #55686f;
+  --text: #e2e8ea;
+  --text-dim: #93a3a9;
+  --accent: #3fa8c4;
+  --danger: #f2837c;
+
+  --diff-changed-bg: #3d3010;
+  --diff-changed-text: #f2d495;
+  --diff-inline-bg: #6f530d;
+  --diff-orphan-bg: #0c3c40;
+  --diff-orphan-text: #8fd7ce;
+  --diff-gap-bg: #1c2427;
+  --diff-ignored-text: #6d7c82;
+
+  --gutter-bg: #1b2326;
+  --gutter-text: #74848a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--ui-font);
+  font-size: var(--ui-size);
+  color: var(--text);
+  background: var(--bg);
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+select,
+input[type='text'] {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+input[type='text'] {
+  user-select: text;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  min-height: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 12px;
+  border-right: 1px solid var(--border);
+  cursor: default;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.tab:hover {
+  background: var(--bg-hover);
+}
+
+.tab.active {
+  background: var(--bg-chrome-active);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-dirty {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.tab-close {
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.tab-close:hover {
+  opacity: 1;
+}
+
+.tab-new {
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+}
+
+.tab-panels {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+/* ----------------------------------------------------------------- toolbar */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.toolbar .sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 2px 4px;
+}
+
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------- path bar */
+
+.path-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-chrome);
+}
+
+.path-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+}
+
+.path-slot + .path-slot {
+  border-left: 1px solid var(--border);
+}
+
+.path-slot input {
+  flex: 1;
+  min-width: 0;
+}
+
+.path-slot .dirty-dot {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* ------------------------------------------------------------- status bar */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 8px;
+  background: var(--bg-chrome);
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  min-height: 22px;
+}
+
+.status-bar .grow {
+  flex: 1;
+}
+
+.status-bar .warn {
+  color: var(--diff-changed-text);
+}
+
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--border-strong);
+  vertical-align: -1px;
+  margin-right: 3px;
+}
+
+.swatch.changed {
+  background: var(--diff-changed-bg);
+}
+
+.swatch.orphan {
+  background: var(--diff-orphan-bg);
+}
+
+/* -------------------------------------------------------------- empty view */
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-dim);
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Marca: dos barras enfrentadas, una por cada lado de la comparacion. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 22px;
+}
+
+.brand-mark span {
+  display: block;
+  width: 7px;
+  border-radius: 2px;
+}
+
+.brand-mark span:first-child {
+  height: 22px;
+  background: var(--diff-changed-text);
+}
+
+.brand-mark span:last-child {
+  height: 15px;
+  background: var(--diff-orphan-text);
+}
+
+.empty-state .hint {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.empty-state .error-detail {
+  max-width: 520px;
+  text-align: center;
+  user-select: text;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 3px;
+  padding: 6px 10px;
+}
+
+.empty-state .choices {
+  display: flex;
+  gap: 8px;
+}
+
+.empty-state button {
+  border-color: var(--border);
+  padding: 6px 14px;
+}
+
+/* ------------------------------------------------------------------ dialog */
+
+.dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.dialog {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  min-width: 380px;
+  max-width: 560px;
+  max-height: 80%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog h3 {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-body {
+  padding: 12px 14px;
+  overflow: auto;
+  user-select: text;
+}
+
+.dialog-body ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+/* Rojo solo aqui: en Cotejo significa "esto destruye algo", nunca "esto cambio". */
+.dialog-body .danger {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.dialog-actions button {
+  border-color: var(--border);
+  min-width: 84px;
+  padding: 4px 12px;
+}
+
+/* ------------------------------------------------------------------ progress */
+
+.progress-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.progress-line .track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-line .fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 80ms linear;
+}
+
+.progress-line .path {
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+}

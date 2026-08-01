@@ -1,0 +1,203 @@
+/* Vista de comparacion de texto.
+   Todo lo que se ve aqui esta atado a --line-height: la rejilla alineada, la
+   numeracion, las flechas de merge y el mapa lateral miden en filas, no en px. */
+
+.diff-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.diff-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.diff-pane .cm-editor {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.diff-pane .cm-editor.cm-focused {
+  outline: none;
+}
+
+.diff-pane .cm-scroller {
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: var(--code-size);
+  line-height: var(--line-height);
+}
+
+.diff-pane .cm-content {
+  padding: 0;
+  /* Sin ajuste de linea: cada linea mide exactamente una fila, que es lo que
+     permite alinear los dos paneles solo con igualar scrollTop. */
+  white-space: pre;
+}
+
+.diff-pane .cm-line {
+  padding: 0 6px;
+}
+
+.diff-pane .cm-cursor {
+  border-left-color: var(--text);
+}
+
+.diff-pane .cm-selectionBackground,
+.diff-pane .cm-focused .cm-selectionBackground {
+  background: var(--bg-selected);
+}
+
+/* ------------------------------------------------------------ colores diff */
+
+.cm-diff-changed {
+  background: var(--diff-changed-bg);
+  color: var(--diff-changed-text);
+}
+
+.cm-diff-orphan {
+  background: var(--diff-orphan-bg);
+  color: var(--diff-orphan-text);
+}
+
+.cm-diff-ignored {
+  color: var(--diff-ignored-text);
+}
+
+.cm-diff-inline {
+  background: var(--diff-inline-bg);
+  border-radius: 2px;
+}
+
+.cm-diff-gap {
+  background: var(--diff-gap-bg);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(128, 128, 128, 0.12) 4px,
+    rgba(128, 128, 128, 0.12) 8px
+  );
+}
+
+/* --------------------------------------------------------- numeros de linea */
+
+.line-gutter {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  background: var(--gutter-bg);
+  border-right: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gutter-text);
+}
+
+.gutter-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--line-height);
+  line-height: var(--line-height);
+  padding-right: 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.gutter-row.gap {
+  background: var(--diff-gap-bg);
+}
+
+.gutter-row.status-changed {
+  background: var(--diff-changed-bg);
+  color: var(--diff-changed-text);
+}
+
+.gutter-row.status-leftOnly,
+.gutter-row.status-rightOnly {
+  background: var(--diff-orphan-bg);
+  color: var(--diff-orphan-text);
+}
+
+/* ------------------------------------------------------------ franja merge */
+
+.merge-gutter {
+  flex: none;
+  width: 36px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-chrome);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.merge-block {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.merge-block.active {
+  background: var(--bg-selected);
+}
+
+.merge-arrow {
+  padding: 0 2px;
+  font-size: 9px;
+  line-height: 12px;
+  border-radius: 2px;
+  opacity: 0.55;
+}
+
+.merge-block:hover .merge-arrow {
+  opacity: 1;
+}
+
+.merge-arrow:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------- mapa lateral */
+
+.overview-ruler {
+  flex: none;
+  width: 14px;
+  position: relative;
+  background: var(--gutter-bg);
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.overview-ruler canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------ varios */
+
+/* Un archivo que no se pudo abrir es un fallo, no una diferencia: va en rojo. */
+.load-error {
+  padding: 4px 8px;
+  color: var(--danger);
+  border-bottom: 1px solid var(--border);
+  user-select: text;
+}
+
+.toolbar .count {
+  color: var(--text-dim);
+  padding: 0 4px;
+  min-width: 62px;
+}

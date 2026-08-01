@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Marca de Cotejo: dos paneles enfrentados, uno por cada lado de la
+    comparacion, con una barra ambar (linea cambiada) y una verde azulada
+    (linea que solo esta en un lado) que no casan entre columnas.
+
+    Deliberadamente pobre en detalle: a 16 px, que es el tamano de la barra de
+    tareas, lo unico que sobrevive es la silueta de dos paneles claros sobre
+    fondo oscuro y el tinte de sus bordes. Todo lo que se anada por debajo de
+    ese umbral solo emborrona el icono.
+  -->
+  <rect width="512" height="512" rx="112" fill="#152025" />
+
+  <!-- Panel izquierdo, borde verde azulado -->
+  <rect x="56" y="112" width="168" height="288" rx="20" fill="#f1f4f5" stroke="#3f8f86"
+        stroke-width="14" />
+  <rect x="84" y="156" width="112" height="30" rx="10" fill="#9aa6ab" />
+  <rect x="84" y="241" width="112" height="30" rx="10" fill="#c9922a" />
+  <rect x="84" y="326" width="88" height="30" rx="10" fill="#3f8f86" />
+
+  <!-- Panel derecho, borde ambar: la barra cambiada tiene otra longitud y la
+       verde azulada no existe -->
+  <rect x="288" y="112" width="168" height="288" rx="20" fill="#f1f4f5" stroke="#c9922a"
+        stroke-width="14" />
+  <rect x="316" y="156" width="112" height="30" rx="10" fill="#9aa6ab" />
+  <rect x="316" y="241" width="76" height="30" rx="10" fill="#c9922a" />
+
+  <!-- Flecha central: copiar de un lado al otro -->
+  <path d="M232 256 h44 M262 240 l18 16 l-18 16" fill="none" stroke="#f6cf76" stroke-width="16"
+        stroke-linecap="round" stroke-linejoin="round" />
+</svg>

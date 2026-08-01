@@ -1,0 +1,17 @@
+appId: com.carlos.cotejo
+productName: Cotejo
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+win:
+  target:
+    - nsis
+  # electron-builder genera el .ico multi-resolucion a partir de este PNG.
+  icon: build/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Cotejo

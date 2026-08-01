@@ -1,0 +1,144 @@
+/* Vista de comparacion de directorios: tabla-arbol de dos lados. */
+
+.dir-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dir-header,
+.dir-row {
+  display: grid;
+  /* nombre | tamaño izq | fecha izq | simbolo | tamaño der | fecha der */
+  grid-template-columns: minmax(200px, 3fr) 80px 130px 28px 80px 130px;
+  align-items: center;
+}
+
+.dir-header {
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  height: 22px;
+  flex: none;
+}
+
+.dir-header .cell {
+  padding: 0 6px;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.dir-scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+.dir-canvas {
+  position: relative;
+}
+
+.dir-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20px;
+  line-height: 20px;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.dir-row:hover {
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.dir-row.selected {
+  background: var(--bg-selected) !important;
+}
+
+.dir-row .cell {
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dir-row .cell.name {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.dir-row .cell.name .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dir-row .cell.size,
+.dir-row .cell.date {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.dir-row .cell.glyph {
+  text-align: center;
+  font-weight: bold;
+  padding: 0;
+}
+
+.twisty {
+  width: 12px;
+  flex: none;
+  text-align: center;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.twisty.empty {
+  cursor: default;
+}
+
+.icon {
+  flex: none;
+  opacity: 0.8;
+}
+
+/* Las mismas variables que el diff de texto: una carpeta distinta y una linea
+   distinta se pintan igual, asi el color significa lo mismo en toda la app. */
+
+.dir-row.status-different,
+.dir-row.status-dirDiffers {
+  background: var(--diff-changed-bg);
+  color: var(--diff-changed-text);
+}
+
+.dir-row.status-leftOnly,
+.dir-row.status-rightOnly {
+  background: var(--diff-orphan-bg);
+  color: var(--diff-orphan-text);
+}
+
+.dir-row.status-typeConflict {
+  background: var(--diff-inline-bg);
+  color: var(--diff-changed-text);
+}
+
+.dir-row.status-different .cell.size,
+.dir-row.status-different .cell.date,
+.dir-row.status-leftOnly .cell.size,
+.dir-row.status-leftOnly .cell.date,
+.dir-row.status-rightOnly .cell.size,
+.dir-row.status-rightOnly .cell.date {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.toolbar.filters {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
