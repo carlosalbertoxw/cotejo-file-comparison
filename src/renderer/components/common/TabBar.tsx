@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useSession } from '../../state/sessionStore'
+import { MOD_LABEL } from '../../platform'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function TabBar(): React.JSX.Element {
@@ -31,7 +32,7 @@ export function TabBar(): React.JSX.Element {
           )}
           <button
             className="tab-close"
-            title={t('tabs.closeTooltip')}
+            title={t('tabs.closeTooltip', { mod: MOD_LABEL })}
             onClick={(event) => {
               event.stopPropagation()
               closeTab(tab.id)
@@ -41,7 +42,11 @@ export function TabBar(): React.JSX.Element {
           </button>
         </div>
       ))}
-      <button className="tab-new" title={t('tabs.newTextTooltip')} onClick={() => openTab('text')}>
+      <button
+        className="tab-new"
+        title={t('tabs.newTextTooltip', { mod: MOD_LABEL })}
+        onClick={() => openTab('text')}
+      >
         {t('tabs.newText')}
       </button>
       <button className="tab-new" title={t('tabs.newDirTooltip')} onClick={() => openTab('dir')}>

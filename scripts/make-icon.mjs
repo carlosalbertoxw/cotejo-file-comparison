@@ -14,7 +14,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const source = resolve(root, 'build/icon.svg')
 const target = resolve(root, 'build/icon.png')
 
-const SIZE = 512
+// 1024: es lo que pide el .icns de macOS para las pantallas Retina. Windows y
+// Linux salen de aqui reducidos, asi que el mayor manda.
+const SIZE = 1024
 
 const svg = await readFile(source)
 const png = await sharp(svg, { density: 384 }).resize(SIZE, SIZE).png().toBuffer()

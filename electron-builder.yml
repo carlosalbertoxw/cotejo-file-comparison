@@ -27,3 +27,39 @@ portable:
   # Sin "portable" en el nombre los dos .exe solo se distinguen por la palabra
   # "Setup", que es poco para elegir cual descargar.
   artifactName: ${productName} ${version} portable.${ext}
+
+mac:
+  # Las dos arquitecturas: el runner de CI es Apple Silicon, y sin declarar x64
+  # los Mac Intel se quedarian sin descarga.
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  icon: build/icon.png
+  category: public.app-category.developer-tools
+  # Sin cuenta de Apple Developer no hay firma ni notarizacion, y Gatekeeper
+  # obliga al usuario a abrir la primera vez con clic derecho -> Abrir. En
+  # cuanto haya un certificado en el llavero, electron-builder firma solo; para
+  # notarizar ademas hay que poner esto a true y dar las credenciales.
+  notarize: false
+dmg:
+  # El ${arch} es obligatorio aqui: con dos arquitecturas, sin el los dos .dmg
+  # se pisarian.
+  artifactName: ${productName} ${version} ${arch}.${ext}
+
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: build/icon.png
+  category: Development
+  synopsis: Compara archivos de texto y carpetas lado a lado
+  # deb y rpm lo exigen; sin esto el empaquetado falla.
+  maintainer: Carlos Alberto <carlosalbertoxw@gmail.com>
+  # Sin esto los escritorios no asocian la ventana abierta con su lanzador.
+  syncDesktopName: true
+appImage:
+  # El equivalente al portable de Windows: un unico ejecutable sin instalar.
+  artifactName: ${productName} ${version} portable.${ext}

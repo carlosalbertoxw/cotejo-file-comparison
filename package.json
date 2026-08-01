@@ -4,6 +4,8 @@
   "description": "Cotejo — compara archivos de texto y carpetas lado a lado",
   "main": "./out/main/index.js",
   "author": "Carlos Alberto",
+  "// desktopName": "Lo usan los escritorios de Linux como WM_CLASS para asociar la ventana con su lanzador",
+  "desktopName": "cotejo.desktop",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -16,7 +18,10 @@
     "test:watch": "vitest",
     "icon": "node scripts/make-icon.mjs",
     "notices": "node scripts/make-notices.mjs",
-    "package": "npm run build && npm run icon && npm run notices && electron-builder --win --config electron-builder.yml"
+    "dist:prepare": "npm run build && npm run icon && npm run notices",
+    "package": "npm run dist:prepare && electron-builder --win --config electron-builder.yml",
+    "package:linux": "npm run dist:prepare && electron-builder --linux --config electron-builder.yml",
+    "package:mac": "npm run dist:prepare && electron-builder --mac --config electron-builder.yml"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",

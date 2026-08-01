@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { DiffOptions } from '@shared/types'
+import { MOD_LABEL } from '../../platform'
 
 interface Props {
   options: DiffOptions
@@ -95,7 +96,7 @@ export function DiffToolbar({
         className="primary"
         onClick={onSave}
         disabled={!canSave}
-        title={t('textDiff.saveTooltip')}
+        title={t('textDiff.saveTooltip', { mod: MOD_LABEL })}
       >
         {t('textDiff.save')}
       </button>

@@ -11,10 +11,22 @@ propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada pa
 
 ## Instalación
 
-Para Windows hay dos ejecutables, con la misma aplicación dentro: **`Cotejo Setup <versión>.exe`**,
-que instala con acceso directo y desinstalador sin pedir permisos de administrador, y
-**`Cotejo <versión> portable.exe`**, que se abre tal cual sin instalar nada. Los genera
-`npm run package` en `release/`.
+Cada plataforma tiene una versión que instala y otra que se ejecuta sin instalar. Todas llevan la
+misma aplicación dentro.
+
+| Sistema | Instala | Sin instalar |
+| --- | --- | --- |
+| Windows | `Cotejo Setup <versión>.exe` | `Cotejo <versión> portable.exe` |
+| Linux | `.deb` (Debian, Ubuntu) o `.rpm` (Fedora, RHEL) | `Cotejo <versión> portable.AppImage` |
+| macOS | `Cotejo <versión> arm64.dmg` (Apple Silicon) o `x64.dmg` (Intel) | `.zip` con la app dentro |
+
+Al AppImage hay que darle permiso de ejecución la primera vez, con `chmod +x`, y ya se abre con
+doble clic.
+
+En macOS la aplicación **no está firmada**, porque firmarla exige una cuenta de pago de Apple.
+Gatekeeper la bloqueará la primera vez con un aviso que parece de archivo dañado; se abre con clic
+derecho sobre la app → Abrir, y a partir de ahí funciona con normalidad. Los atajos usan ⌘ en vez
+de Ctrl, como cualquier otra aplicación de macOS.
 
 ## Uso
 
@@ -70,7 +82,7 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   archivo entero y permite saltar con un clic.
 - Las flechas ◀ ▶ de la franja central copian un bloque al otro lado. Se aplican como una edición
   normal, así que `Ctrl+Z` las deshace.
-- `Ctrl+S` guarda **preservando los finales de línea y el BOM originales**.
+- `Ctrl+S` (`⌘S` en macOS) guarda **preservando los finales de línea y el BOM originales**.
 - Opciones: ignorar espacios, mayúsculas o líneas en blanco, y ancho de tabulación.
 
 ## Comparar carpetas
@@ -85,9 +97,9 @@ Tres modos, de más rápido a más fiable:
 
 Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de texto.
 
-**Los borrados van a la Papelera de reciclaje de Windows**, y toda operación destructiva o que
-sobrescriba pide confirmación mostrando antes el número exacto de archivos, los bytes y la lista
-de lo que se va a sobrescribir.
+**Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
+toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número
+exacto de archivos, los bytes y la lista de lo que se va a sobrescribir.
 
 ## Desarrollo
 
@@ -99,27 +111,69 @@ npm test
 npm run typecheck
 ```
 
+### Empaquetar
+
+Hay un script por plataforma, y los tres regeneran antes el icono y los avisos de terceros, así que
+no hay que acordarse de ejecutarlos a mano:
+
 ```bash
 npm run package
 ```
 
-`package` deja en `release/` dos ejecutables, y antes de empaquetar regenera el icono y los avisos
-de terceros, así que no hay que acordarse de ejecutarlos a mano.
+```bash
+npm run package:linux
+```
 
-| Archivo | Qué es |
-| --- | --- |
-| `Cotejo Setup <versión>.exe` | Instalador. Pregunta la carpeta de destino, crea el acceso directo y la entrada para desinstalar. Instala para el usuario actual, sin permisos de administrador. |
-| `Cotejo <versión> portable.exe` | Ejecutable suelto. Se abre sin instalar nada y no deja rastro en el menú de inicio. |
+```bash
+npm run package:mac
+```
 
-Los dos contienen exactamente la misma aplicación y pesan casi lo mismo. La carpeta
-`release/win-unpacked/` no es un entregable: es la aplicación montada que ambos empaquetan dentro.
+Todo aterriza en `release/`. Las carpetas `*-unpacked/` que aparecen ahí no son entregables: son la
+aplicación montada que los instaladores empaquetan dentro.
 
-El portable no guarda su configuración junto al ejecutable. El idioma, las pestañas y las
-preferencias van a `%APPDATA%\cotejo` del equipo donde se ejecute, igual que en la versión
-instalada, así que llevarse el `.exe` en un USB no se lleva los ajustes.
+**Cada script solo funciona en su propio sistema**, con una excepción y un rodeo. Windows genera
+sus dos `.exe` sin más. macOS **exige un Mac**: el `.dmg` usa herramientas del propio sistema y no
+hay forma de generarlo desde otro sitio, por eso existe el workflow de CI. Y Linux desde Windows
+falla al crear los symlinks del AppImage, así que se construye en el contenedor oficial:
 
-El icono se edita en `build/icon.svg`; `npm run icon` lo rasteriza a `build/icon.png` y
-electron-builder genera desde ahí el `.ico` multi-resolución que necesita Windows.
+```bash
+docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:latest bash -c "npm ci && npm run package:linux"
+```
+
+El volumen sobre `node_modules` no es un detalle menor: sin él, el `npm ci` de dentro reemplazaría
+en tu disco los binarios de Windows por los de Linux —`sharp` entre ellos— y `npm run dev` dejaría
+de arrancar. Montándolo aparte, las dependencias del contenedor viven en su propio volumen y las
+tuyas quedan intactas.
+
+### Publicar una release
+
+`.github/workflows/release.yml` construye las tres plataformas en paralelo al empujar un tag `v*`,
+y deja una release en borrador con todos los instalables adjuntos:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+Es la vía práctica para macOS, porque el runner `macos-latest` de GitHub Actions hace de Mac sin
+tener que comprar uno.
+
+### Firma
+
+Nada va firmado ahora mismo. En Windows eso significa un aviso de SmartScreen la primera vez; en
+macOS, que Gatekeeper bloquee la aplicación hasta que el usuario la abra con clic derecho → Abrir.
+
+Firmar en macOS necesita el Apple Developer Program, de pago anual. Cuando lo haya, la
+configuración ya está preparada: basta con un certificado en el llavero para que electron-builder
+firme solo, y poner `notarize: true` en la sección `mac` de
+[electron-builder.yml](electron-builder.yml) junto a las credenciales para que además notarice. El
+CI lo desactiva explícitamente con `CSC_IDENTITY_AUTO_DISCOVERY: false` para que la ausencia de
+certificado no rompa la compilación.
+
+### Icono y avisos de terceros
+
+El icono se edita en `build/icon.svg`; `npm run icon` lo rasteriza a `build/icon.png` a 1024 px, el
+tamaño que pide el `.icns` de macOS, y electron-builder deriva de ahí el `.ico` de Windows y los
+PNG de Linux.
 
 `npm run notices` regenera `THIRD-PARTY-NOTICES.txt`. El script no lleva una lista de librerías
 escrita a mano: lee los `import` de `src/`, añade las dependencias de producción —que van al

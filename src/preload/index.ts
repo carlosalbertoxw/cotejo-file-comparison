@@ -18,6 +18,9 @@ import type {
  * `ipcRenderer`: solo estas funciones.
  */
 const api = {
+  /** El renderer lo necesita para el modificador de los atajos: ⌘ o Ctrl. */
+  platform: process.platform,
+
   pickFile: (title: string): Promise<string | null> => ipcRenderer.invoke(IPC.pickFile, title),
   pickDirectory: (title: string): Promise<string | null> =>
     ipcRenderer.invoke(IPC.pickDirectory, title),

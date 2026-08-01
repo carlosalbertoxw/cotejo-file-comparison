@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { EditorView } from '@codemirror/view'
 import type { DiffBlock, Side, TextFilePayload } from '@shared/types'
 import { errorText } from '../../i18n/errorMessage'
+import { hasPrimaryModifier } from '../../platform'
 import { useSettings } from '../../state/settingsStore'
 import { useSession } from '../../state/sessionStore'
 import { useDiff } from './useDiff'
@@ -222,7 +223,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         if (event.shiftKey) goPrev()
         else goNext()
       }
-      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+      if (hasPrimaryModifier(event) && event.key.toLowerCase() === 's') {
         event.preventDefault()
         void save()
       }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { hasPrimaryModifier } from './platform'
 import { useSession } from './state/sessionStore'
 import { TabBar } from './components/common/TabBar'
 import { TextCompareView } from './components/text/TextCompareView'
@@ -41,7 +42,7 @@ export function App(): React.JSX.Element {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (!event.ctrlKey) return
+      if (!hasPrimaryModifier(event)) return
       if (event.key === 't') {
         event.preventDefault()
         openTab('text')

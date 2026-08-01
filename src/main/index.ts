@@ -22,6 +22,35 @@ function pathsFromArgv(argv: string[]): string[] {
     .slice(0, 2)
 }
 
+/**
+ * macOS no pasa las rutas por argv: entrega un `open-file` por cada archivo,
+ * incluso antes de que la aplicacion este lista. Se acumulan y se entregan
+ * juntas, porque abrir dos archivos son dos eventos seguidos y cada uno por
+ * separado abriria una pestana a medias.
+ */
+let mainWindow: BrowserWindow | null = null
+const pendingPaths: string[] = []
+let flushTimer: NodeJS.Timeout | null = null
+
+function deliverPaths(paths: string[]): void {
+  if (paths.length === 0) return
+  if (mainWindow && !mainWindow.webContents.isLoading()) {
+    mainWindow.webContents.send(IPC.openPathsFromArgv, paths.slice(0, 2))
+  } else {
+    pendingPaths.push(...paths)
+  }
+}
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault()
+  pendingPaths.push(filePath)
+  if (flushTimer) clearTimeout(flushTimer)
+  flushTimer = setTimeout(() => {
+    flushTimer = null
+    deliverPaths(pendingPaths.splice(0, pendingPaths.length))
+  }, 50)
+})
+
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1400,
@@ -42,8 +71,13 @@ function createWindow(): BrowserWindow {
 
   window.on('ready-to-show', () => {
     window.show()
-    const paths = pathsFromArgv(process.argv)
-    if (paths.length > 0) window.webContents.send(IPC.openPathsFromArgv, paths)
+    // argv en Windows y Linux; lo que haya llegado por `open-file` en macOS.
+    const paths = [...pathsFromArgv(process.argv), ...pendingPaths.splice(0, pendingPaths.length)]
+    if (paths.length > 0) window.webContents.send(IPC.openPathsFromArgv, paths.slice(0, 2))
+  })
+
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null
   })
 
   // Nada de navegacion externa dentro de la ventana: los enlaces van al navegador.
@@ -58,6 +92,7 @@ function createWindow(): BrowserWindow {
     void window.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+  mainWindow = window
   return window
 }
 
