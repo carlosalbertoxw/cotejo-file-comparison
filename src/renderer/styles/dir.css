@@ -10,9 +10,21 @@
 .dir-header,
 .dir-row {
   display: grid;
-  /* nombre | tamaño izq | fecha izq | simbolo | tamaño der | fecha der */
-  grid-template-columns: minmax(200px, 3fr) 80px 130px 28px 80px 130px;
+  /* Los dos arboles enfrentados, con el simbolo de estado en medio:
+     nombre izq | tamaño | fecha || simbolo || nombre der | tamaño | fecha */
+  grid-template-columns:
+    minmax(160px, 3fr) 80px 130px
+    28px
+    minmax(160px, 3fr) 80px 130px;
   align-items: center;
+}
+
+/* Separacion visual entre los dos lados, para que se lean como dos arboles y
+   no como una tabla de siete columnas. */
+.dir-header .cell:nth-child(4),
+.dir-row .cell:nth-child(4) {
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
 
 .dir-header {
@@ -89,6 +101,23 @@
   text-align: center;
   font-weight: bold;
   padding: 0;
+}
+
+/* El lado que no tiene la entrada: el mismo hueco rayado que deja una linea
+   huerfana en el comparador de texto.
+
+   `align-self` es imprescindible: la fila centra sus celdas, y una celda vacia
+   se quedaria con 0 px de alto y no pintaria nada. */
+.dir-row .cell.gap {
+  align-self: stretch;
+  background: var(--diff-gap-bg);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(128, 128, 128, 0.12) 4px,
+    rgba(128, 128, 128, 0.12) 8px
+  );
 }
 
 .twisty {

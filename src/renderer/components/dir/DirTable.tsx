@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DirNode } from '@shared/types'
+import type { DirNode, Side } from '@shared/types'
 import { formatDate, formatSize, isDifference, STATUS_GLYPH, STATUS_LABEL_KEY } from './format'
 
 export const ROW_HEIGHT = 20
@@ -75,6 +75,47 @@ export function DirTable({
     const { node, depth } = row
     const canExpand = node.isDir && (node.children?.length ?? 0) > 0
 
+    /**
+     * Un lado de la fila. Si la entrada no existe en ese lado se pinta el hueco
+     * rayado del comparador de texto: el arbol de enfrente sigue avanzando y
+     * aqui no hay nada que enseñar.
+     */
+    const side = (which: Side): React.JSX.Element => {
+      const entry = which === 'left' ? node.left : node.right
+      if (!entry) {
+        return (
+          <>
+            <div className="cell name gap" />
+            <div className="cell size gap" />
+            <div className="cell date gap" />
+          </>
+        )
+      }
+
+      return (
+        <>
+          <div className="cell name" style={{ paddingLeft: 4 + depth * 14 }}>
+            <span
+              className={`twisty${canExpand ? '' : ' empty'}`}
+              onMouseDown={(event) => {
+                event.stopPropagation()
+                if (canExpand) onToggleExpand(node.relPath)
+              }}
+            >
+              {canExpand ? (expanded.has(node.relPath) ? '▾' : '▸') : ''}
+            </span>
+            {/* El icono sale del lado, no del nodo: en un typeConflict uno es
+                carpeta y el otro archivo. */}
+            <span className="icon">{entry.isDir ? '🗀' : '🗎'}</span>
+            <span className="label">{node.name}</span>
+          </div>
+
+          <div className="cell size">{entry.isDir ? '' : formatSize(entry.size)}</div>
+          <div className="cell date">{entry.isDir ? '' : formatDate(entry.mtimeMs)}</div>
+        </>
+      )
+    }
+
     visible.push(
       <div
         key={node.relPath}
@@ -83,33 +124,13 @@ export function DirTable({
         onMouseDown={(event) => onSelect(node.relPath, event.ctrlKey || event.metaKey)}
         onDoubleClick={() => (canExpand ? onToggleExpand(node.relPath) : onOpen(node))}
       >
-        <div className="cell name" style={{ paddingLeft: 4 + depth * 14 }}>
-          <span
-            className={`twisty${canExpand ? '' : ' empty'}`}
-            onMouseDown={(event) => {
-              event.stopPropagation()
-              if (canExpand) onToggleExpand(node.relPath)
-            }}
-          >
-            {canExpand ? (expanded.has(node.relPath) ? '▾' : '▸') : ''}
-          </span>
-          <span className="icon">{node.isDir ? '🗀' : '🗎'}</span>
-          <span className="label">{node.name}</span>
-        </div>
-
-        <div className="cell size">{node.left && !node.isDir ? formatSize(node.left.size) : ''}</div>
-        <div className="cell date">{node.left && !node.isDir ? formatDate(node.left.mtimeMs) : ''}</div>
+        {side('left')}
 
         <div className="cell glyph" title={t(STATUS_LABEL_KEY[node.status])}>
           {STATUS_GLYPH[node.status]}
         </div>
 
-        <div className="cell size">
-          {node.right && !node.isDir ? formatSize(node.right.size) : ''}
-        </div>
-        <div className="cell date">
-          {node.right && !node.isDir ? formatDate(node.right.mtimeMs) : ''}
-        </div>
+        {side('right')}
       </div>
     )
   }
@@ -121,6 +142,7 @@ export function DirTable({
         <div className="cell size">{t('dirCompare.colSize')}</div>
         <div className="cell date">{t('dirCompare.colModified')}</div>
         <div className="cell glyph" />
+        <div className="cell name">{t('dirCompare.colName')}</div>
         <div className="cell size">{t('dirCompare.colSize')}</div>
         <div className="cell date">{t('dirCompare.colModified')}</div>
       </div>

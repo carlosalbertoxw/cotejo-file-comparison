@@ -95,6 +95,11 @@ Tres modos, de más rápido a más fiable:
 | Solo tamaño | Solo el tamaño | Barridos muy grandes |
 | Contenido | Hash sha256 en streaming | Cuando no te puedes fiar de la fecha |
 
+Los dos árboles se muestran enfrentados, cada uno con sus nombres, tamaños y fechas, y alineados
+fila a fila. Donde una entrada existe solo en un lado, el otro deja el mismo hueco rayado que una
+línea huérfana en el comparador de texto, así que la estructura de ambas carpetas se lee de un
+vistazo sin perder la correspondencia.
+
 Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de texto.
 
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
