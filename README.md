@@ -206,7 +206,7 @@ src/
   preload/     contextBridge -> window.api (contextIsolation activado)
   renderer/
     i18n/      Catálogos de traducción, detección de idioma y traducción de errores IPC
-    diff/      Motor de comparación (normalize -> lineDiff -> pairing -> inlineDiff -> align)
+    diff/      Motor de comparación (normalize -> lineDiff -> pairing -> similarity -> inlineDiff -> align)
     components/
       text/    Vista de texto: paneles, alineación, gutters, merge, mapa lateral
       dir/     Vista de carpetas: tabla-árbol virtualizada y operaciones de archivo

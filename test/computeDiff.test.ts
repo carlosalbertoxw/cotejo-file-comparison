@@ -82,6 +82,51 @@ describe('computeDiff', () => {
     expect(result.rows[0]?.leftInline).toBeUndefined()
   })
 
+  describe('alineacion de bloques reescritos', () => {
+    it('mantiene las lineas enfrentadas aunque cambie la indentacion', () => {
+      // Pasar a namespace con punto y coma reindenta el archivo entero y elimina
+      // una llave. Sin emparejado por parecido, todo lo de debajo baja una fila.
+      const left = ['namespace A', '{', '    class B', '    {', '    }', '}'].join('\n')
+      const right = ['namespace A;', '', 'class B', '{', '}'].join('\n')
+
+      expect(grid(left, right)).toEqual([
+        'namespace A | namespace A; | changed',
+        '{ |  | changed',
+        '    class B | class B | changed',
+        '    { | { | changed',
+        '    } | ~ | leftOnly',
+        '} | } | equal'
+      ])
+    })
+
+    it('empareja por parecido y no por posicion', () => {
+      expect(grid('total = uno + dos', 'const cabecera = 1\ntotal = uno + dos + tres')).toEqual([
+        '~ | const cabecera = 1 | rightOnly',
+        'total = uno + dos | total = uno + dos + tres | changed'
+      ])
+    })
+
+    it('no parte un bloque por una llave que coincide en medio', () => {
+      const result = diff('a1\n}\nb1', 'a2\n}\nb2')
+      expect(result.blocks).toHaveLength(1)
+      // La llave sigue siendo igual: entra en el bloque, pero no se pinta.
+      expect(result.rows.map((row) => row.status)).toEqual(['changed', 'equal', 'changed'])
+    })
+
+    it('respeta las igualdades con contenido: siguen separando bloques', () => {
+      expect(diff('a1\nsame\nb1', 'a2\nsame\nb2').blocks).toHaveLength(2)
+    })
+
+    it('deja huerfanas las lineas que no se parecen a nada', () => {
+      expect(grid('uno\ndos\ntres', 'uno\nX\nY\ntres')).toEqual([
+        'uno | uno | equal',
+        'dos | X | changed',
+        '~ | Y | rightOnly',
+        'tres | tres | equal'
+      ])
+    })
+  })
+
   describe('opciones de comparacion', () => {
     it('ignoreWhitespace convierte la diferencia en `ignored`, no en `equal`', () => {
       const strict = diff('a  =  1', 'a = 1')

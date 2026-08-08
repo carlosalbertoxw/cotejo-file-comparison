@@ -1,5 +1,6 @@
 import type { DiffOp } from './lineDiff'
 import type { PreparedDoc } from './normalize'
+import { MAX_ALIGNABLE_CELLS } from './similarity'
 
 export type SegmentType = 'equal' | 'changed' | 'leftOnly' | 'rightOnly'
 
@@ -89,4 +90,91 @@ export function pairSegments(
   }
 
   return segments
+}
+
+/** Tramos iguales mas largos que esto ya son contexto de verdad, no ruido. */
+const MAX_NOISE_RUN = 3
+
+/**
+ * Una linea que no dice nada sobre donde esta el lector: vacia, o un par de
+ * signos como `{`, `}`, `});` o `,`. Coinciden en todas partes, asi que
+ * encontrarla igual a los dos lados no es informacion.
+ */
+function isNoiseLine(line: string): boolean {
+  const trimmed = line.trim()
+  if (trimmed === '') return true
+  return trimmed.length <= 3 && !/[\p{L}\p{N}]/u.test(trimmed)
+}
+
+function isNoiseSegment(segment: Segment, leftLines: string[], rightLines: string[]): boolean {
+  if (segment.leftEnd - segment.leftStart > MAX_NOISE_RUN) return false
+  if (segment.rightEnd - segment.rightStart > MAX_NOISE_RUN) return false
+  for (let i = segment.leftStart; i < segment.leftEnd; i++) {
+    if (!isNoiseLine(leftLines[i] as string)) return false
+  }
+  for (let i = segment.rightStart; i < segment.rightEnd; i++) {
+    if (!isNoiseLine(rightLines[i] as string)) return false
+  }
+  return true
+}
+
+/**
+ * Absorbe los tramos iguales de puro ruido que quedan atrapados entre cambios.
+ *
+ * Cuando se reescribe un bloque entero, el diff por lineas casi siempre
+ * encuentra alguna llave o linea en blanco identica en medio y la declara
+ * igual. El resultado es que la reescritura se parte en trozos anclados a esas
+ * llaves, y el texto de alrededor aparece desplazado una o dos lineas: es
+ * exactamente lo que hace ilegible la comparacion. Uniendolos en un solo tramo
+ * modificado, el emparejado por parecido puede alinear el bloque completo.
+ *
+ * El tope de tamano no es cosmetico: mas alla de el la alineacion fina se
+ * desactiva, asi que fundir tramos solo empeoraria el resultado.
+ */
+export function absorbNoiseEqualities(
+  segments: Segment[],
+  leftLines: string[],
+  rightLines: string[]
+): Segment[] {
+  const merged: Segment[] = []
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i] as Segment
+
+    if (segment.type === 'equal') {
+      merged.push(segment)
+      continue
+    }
+
+    let last = segment
+    // Se avanza de dos en dos: un tramo igual de ruido y el cambio que lo sigue.
+    while (i + 2 < segments.length) {
+      const between = segments[i + 1] as Segment
+      const next = segments[i + 2] as Segment
+      if (between.type !== 'equal' || next.type === 'equal') break
+      if (!isNoiseSegment(between, leftLines, rightLines)) break
+
+      const leftCount = next.leftEnd - segment.leftStart
+      const rightCount = next.rightEnd - segment.rightStart
+      if (leftCount * rightCount > MAX_ALIGNABLE_CELLS) break
+
+      last = next
+      i += 2
+    }
+
+    if (last === segment) {
+      merged.push(segment)
+      continue
+    }
+
+    merged.push({
+      type: 'changed',
+      leftStart: segment.leftStart,
+      leftEnd: last.leftEnd,
+      rightStart: segment.rightStart,
+      rightEnd: last.rightEnd
+    })
+  }
+
+  return merged
 }
