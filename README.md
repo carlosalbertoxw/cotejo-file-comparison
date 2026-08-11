@@ -106,6 +106,23 @@ Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de 
 toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número
 exacto de archivos, los bytes y la lista de lo que se va a sobrescribir.
 
+## Acerca de y actualizaciones
+
+El botón **Acerca de**, en la barra de pestañas y en la pantalla de bienvenida, abre una ficha con
+la versión instalada, la licencia, las versiones de Electron, Chromium y Node, y enlaces al código
+fuente, a las descargas y a los problemas. Los enlaces abren el navegador del sistema, nunca dentro
+de la ventana.
+
+Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
+que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la
+[página de descargas](https://github.com/carlosalbertoxw/cotejo-file-comparison/releases). El aviso
+se puede cerrar y no vuelve para esa misma versión, pero sí para la siguiente. Desde «Acerca de»
+también se puede comprobar a mano en cualquier momento.
+
+Cotejo **no se actualiza solo**: descargar y sustituir el ejecutable por su cuenta exige una
+aplicación firmada, y sin certificado eso no se sostiene. Solo avisa y te lleva a la descarga. Si
+no hay red, el aviso se calla y lo reintenta al siguiente arranque.
+
 ## Desarrollo
 
 ```bash

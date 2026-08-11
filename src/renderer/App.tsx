@@ -1,11 +1,14 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { hasPrimaryModifier } from './platform'
 import { useSession } from './state/sessionStore'
+import { useUpdates } from './state/updateStore'
 import { TabBar } from './components/common/TabBar'
 import { TextCompareView } from './components/text/TextCompareView'
 import { DirCompareView } from './components/dir/DirCompareView'
 import { WelcomeView } from './components/common/WelcomeView'
+import { AboutDialog } from './components/common/AboutDialog'
+import { UpdateBanner } from './components/common/UpdateBanner'
 
 export function App(): React.JSX.Element {
   const { t } = useTranslation()
@@ -13,6 +16,7 @@ export function App(): React.JSX.Element {
   const activeId = useSession((state) => state.activeId)
   const openTab = useSession((state) => state.openTab)
   const closeTab = useSession((state) => state.closeTab)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
   /**
    * Abre una o dos rutas en la pestana que corresponda. Dos carpetas abren una
@@ -39,6 +43,12 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     return window.api.onOpenPaths((paths) => void openPaths(paths))
   }, [openPaths])
+
+  // El propio store decide si toca preguntar o si la ultima consulta es
+  // reciente, asi que arrancar la comprobacion en cada montaje no cuesta nada.
+  useEffect(() => {
+    void useUpdates.getState().check()
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -94,9 +104,10 @@ export function App(): React.JSX.Element {
       }}
       onDrop={onDrop}
     >
-      <TabBar />
+      <UpdateBanner />
+      <TabBar onShowAbout={() => setAboutOpen(true)} />
       <div className="tab-panels">
-        {tabs.length === 0 && <WelcomeView />}
+        {tabs.length === 0 && <WelcomeView onShowAbout={() => setAboutOpen(true)} />}
         {/* Las pestanas inactivas se ocultan en vez de desmontarse: asi conservan
             su scroll, su seleccion y sus cambios sin guardar. */}
         {tabs.map((tab) => (
@@ -109,6 +120,7 @@ export function App(): React.JSX.Element {
           </div>
         ))}
       </div>
+      {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
     </div>
   )
 }

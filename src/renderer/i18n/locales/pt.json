@@ -22,6 +22,27 @@
     "compareDirs": "Comparar pastas",
     "hint": "Você também pode arrastar dois arquivos ou duas pastas para esta janela."
   },
+  "about": {
+    "title": "Sobre o Cotejo",
+    "open": "Sobre",
+    "author": "Autor",
+    "license": "Licença",
+    "system": "Sistema",
+    "repository": "Código-fonte",
+    "releases": "Downloads",
+    "issues": "Relatar um problema",
+    "close": "Fechar"
+  },
+  "update": {
+    "available": "Há uma nova versão do Cotejo: {{version}}.",
+    "availableShort": "Nova versão disponível: {{version}}",
+    "download": "Baixar",
+    "dismiss": "Ocultar este aviso",
+    "check": "Buscar atualizações",
+    "checking": "Buscando…",
+    "upToDate": "Você já está na versão mais recente.",
+    "error": "Não foi possível verificar se há atualizações."
+  },
   "pathBar": {
     "pickFile": "Escolher arquivo…",
     "pickDirectory": "Escolher pasta…",

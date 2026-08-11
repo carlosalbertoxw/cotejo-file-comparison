@@ -2,7 +2,11 @@ import { useTranslation } from 'react-i18next'
 import { useSession } from '../../state/sessionStore'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
-export function WelcomeView(): React.JSX.Element {
+interface Props {
+  onShowAbout: () => void
+}
+
+export function WelcomeView({ onShowAbout }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const openTab = useSession((state) => state.openTab)
 
@@ -23,6 +27,9 @@ export function WelcomeView(): React.JSX.Element {
         </div>
         <p className="hint">{t('welcome.hint')}</p>
         <LanguageSwitcher />
+        <button className="link-button" onClick={onShowAbout}>
+          {t('about.open')}
+        </button>
       </div>
     </div>
   )

@@ -22,6 +22,27 @@
     "compareDirs": "Comparer des dossiers",
     "hint": "Vous pouvez aussi glisser deux fichiers ou deux dossiers sur cette fenêtre."
   },
+  "about": {
+    "title": "À propos de Cotejo",
+    "open": "À propos",
+    "author": "Auteur",
+    "license": "Licence",
+    "system": "Système",
+    "repository": "Code source",
+    "releases": "Téléchargements",
+    "issues": "Signaler un problème",
+    "close": "Fermer"
+  },
+  "update": {
+    "available": "Une nouvelle version de Cotejo est disponible : {{version}}.",
+    "availableShort": "Nouvelle version disponible : {{version}}",
+    "download": "Télécharger",
+    "dismiss": "Masquer cet avis",
+    "check": "Rechercher des mises à jour",
+    "checking": "Recherche…",
+    "upToDate": "Vous avez déjà la dernière version.",
+    "error": "Impossible de vérifier les mises à jour."
+  },
   "pathBar": {
     "pickFile": "Choisir un fichier…",
     "pickDirectory": "Choisir un dossier…",

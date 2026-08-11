@@ -219,3 +219,26 @@ export interface FileOpResult {
   failed: { relPath: string; message: string }[]
   cancelled: boolean
 }
+
+// ---------------------------------------------------------------------------
+// Aplicacion
+// ---------------------------------------------------------------------------
+
+/** Lo que la pagina «Acerca de» muestra sobre esta copia de Cotejo. */
+export interface AppInfo {
+  version: string
+  electron: string
+  chromium: string
+  node: string
+  platform: string
+  arch: string
+}
+
+export interface UpdateCheck {
+  current: string
+  /** Etiqueta de la ultima release, o null si el repositorio no tiene ninguna. */
+  latest: string | null
+  available: boolean
+  /** Momento de la consulta, para no repetirla en cada arranque. */
+  checkedAt: number
+}

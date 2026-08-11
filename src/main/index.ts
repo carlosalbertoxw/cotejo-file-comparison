@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -6,6 +6,7 @@ import { IPC } from '@shared/ipc-channels'
 import { registerFsHandlers } from './ipc/fs'
 import { registerDirCompareHandlers } from './ipc/dirCompare'
 import { registerFileOpsHandlers } from './ipc/fileOps'
+import { registerAppHandlers } from './ipc/app'
 
 /**
  * Argumentos que son rutas de verdad. En desarrollo argv incluye el ejecutable
@@ -93,9 +94,10 @@ function createWindow(): BrowserWindow {
     if (mainWindow === window) mainWindow = null
   })
 
-  // Nada de navegacion externa dentro de la ventana: los enlaces van al navegador.
+  // Nada de navegacion externa dentro de la ventana: los enlaces van al
+  // navegador, y solo si son https. Cualquier otro esquema se queda sin abrir.
   window.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    if (url.startsWith('https://')) void shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -119,10 +121,7 @@ void app.whenReady().then(() => {
   registerFsHandlers()
   registerDirCompareHandlers()
   registerFileOpsHandlers()
-
-  ipcMain.handle(IPC.showItemInFolder, (_e, fullPath: string) => {
-    shell.showItemInFolder(fullPath)
-  })
+  registerAppHandlers()
 
   createWindow()
 

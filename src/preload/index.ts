@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC } from '@shared/ipc-channels'
 import type {
+  AppInfo,
   CompareProgress,
   CompareRequest,
   CompareResponse,
@@ -10,7 +11,8 @@ import type {
   FileOpProgress,
   FileOpRequest,
   FileOpResult,
-  TextFilePayload
+  TextFilePayload,
+  UpdateCheck
 } from '@shared/types'
 
 /**
@@ -60,6 +62,12 @@ const api = {
 
   showItemInFolder: (fullPath: string): Promise<void> =>
     ipcRenderer.invoke(IPC.showItemInFolder, fullPath),
+
+  /** Abre un enlace en el navegador del sistema. Solo https. */
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IPC.openExternal, url),
+
+  appInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC.appInfo),
+  checkForUpdates: (): Promise<UpdateCheck> => ipcRenderer.invoke(IPC.checkForUpdates),
 
   /** Ruta real de un File soltado en la ventana. `File.path` ya no existe. */
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),

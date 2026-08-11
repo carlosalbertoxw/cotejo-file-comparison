@@ -23,7 +23,12 @@ export const IPC = {
 
   // Sistema
   showItemInFolder: 'shell:showItemInFolder',
-  openPathsFromArgv: 'app:openPathsFromArgv'
+  openExternal: 'shell:openExternal',
+  openPathsFromArgv: 'app:openPathsFromArgv',
+
+  // Aplicacion
+  appInfo: 'app:info',
+  checkForUpdates: 'app:checkForUpdates'
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

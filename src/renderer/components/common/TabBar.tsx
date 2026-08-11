@@ -3,7 +3,11 @@ import { useSession } from '../../state/sessionStore'
 import { MOD_LABEL } from '../../platform'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
-export function TabBar(): React.JSX.Element {
+interface Props {
+  onShowAbout: () => void
+}
+
+export function TabBar({ onShowAbout }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const tabs = useSession((state) => state.tabs)
   const activeId = useSession((state) => state.activeId)
@@ -53,6 +57,9 @@ export function TabBar(): React.JSX.Element {
         {t('tabs.newDir')}
       </button>
       <span className="tab-bar-spacer" />
+      <button className="tab-about" title={t('about.title')} onClick={onShowAbout}>
+        {t('about.open')}
+      </button>
       <LanguageSwitcher />
     </div>
   )
