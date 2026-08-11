@@ -15,7 +15,33 @@ permissions:
   contents: write
 
 jobs:
+  # Antes de construir nada: las notas de la version son obligatorias y el tag
+  # tiene que cuadrar con package.json. Enterarse aqui cuesta diez segundos;
+  # enterarse despues, tres empaquetados completos.
+  notas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # workflow_dispatch corre sin tag, y ahi no hay nada que comprobar.
+      - name: Comprobar las notas y la version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          notas="changelog/${GITHUB_REF_NAME}.md"
+          if [ ! -f "$notas" ]; then
+            echo "Falta $notas. La release se publica con lo que haya en ese archivo:" >&2
+            echo "renombra changelog/proxima.md antes de empujar el tag." >&2
+            exit 1
+          fi
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "El tag $GITHUB_REF_NAME no coincide con la version v$version de package.json." >&2
+            echo "Con eso, el aviso de actualizacion de la aplicacion daria una version equivocada." >&2
+            exit 1
+          fi
+
   build:
+    needs: notas
     strategy:
       fail-fast: false
       matrix:
@@ -68,13 +94,19 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
+      # El checkout es solo para leer las notas de la version.
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
 
+      # El cuerpo de la release sale de changelog/, escrito a mano. Debajo,
+      # GitHub anade sola la lista de commits y de contribuyentes.
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           draft: true
+          body_path: changelog/${{ github.ref_name }}.md
           generate_release_notes: true

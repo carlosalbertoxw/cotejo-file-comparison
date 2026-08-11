@@ -169,15 +169,30 @@ tuyas quedan intactas.
 
 ### Publicar una release
 
-`.github/workflows/release.yml` construye las tres plataformas en paralelo al empujar un tag `v*`,
-y deja una release en borrador con todos los instalables adjuntos:
+Las notas de cada versión viven en [`changelog/`](changelog/), un archivo por versión con el mismo
+nombre que su tag. Son el cuerpo de la release en GitHub, así que se escriben a mano: lo que la
+lista de commits no cuenta es justo lo que le interesa a quien va a descargarla.
+
+Mientras se trabaja, lo nuevo se va anotando en `changelog/proxima.md`. Publicar es subir la
+versión, renombrar ese archivo y empujar el tag:
 
 ```bash
-git tag v0.1.0 && git push origin v0.1.0
+git mv changelog/proxima.md changelog/v0.2.0.md
 ```
 
-Es la vía práctica para macOS, porque el runner `macos-latest` de GitHub Actions hace de Mac sin
-tener que comprar uno.
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` construye entonces las tres plataformas en paralelo y deja una
+release en borrador con todos los instalables adjuntos. Es la vía práctica para macOS, porque el
+runner `macos-latest` de GitHub Actions hace de Mac sin tener que comprar uno.
+
+Antes de empaquetar nada, el workflow comprueba dos cosas y aborta si falla alguna: que existe el
+archivo de notas del tag, y que **el tag y la `version` de `package.json` coinciden**. Lo segundo
+importa porque el aviso de nueva versión compara la etiqueta de la última release con la versión que
+lleva dentro el ejecutable; publicar `v0.2.0` sin subir antes `package.json` dejaría a todas las
+copias recién instaladas creyéndose desactualizadas.
 
 ### Firma
 
@@ -216,6 +231,7 @@ funciona en español y se rompe en cuanto cambia el orden de las palabras en otr
 
 ```
 build/         Icono (SVG como fuente de verdad)
+changelog/     Notas de cada versión, una por tag; son el cuerpo de la release
 scripts/       Utilidades de build: icono y avisos de terceros
 src/
   shared/      Tipos, canales IPC y códigos de error compartidos por los tres procesos
