@@ -22,6 +22,11 @@
     "compareDirs": "Compare folders",
     "hint": "You can also drag two files or two folders onto this window."
   },
+  "history": {
+    "title": "Recent comparisons",
+    "clear": "Clear history",
+    "remove": "Remove from history"
+  },
   "about": {
     "title": "About Cotejo",
     "open": "About",
@@ -47,7 +52,10 @@
     "pickFile": "Choose file…",
     "pickDirectory": "Choose folder…",
     "filePlaceholder": "File path",
-    "dirPlaceholder": "Folder path"
+    "dirPlaceholder": "Folder path",
+    "save": "Save",
+    "saveLeft": "Save the left file only ({{mod}}+S saves both)",
+    "saveRight": "Save the right file only ({{mod}}+S saves both)"
   },
   "errorBoundary": {
     "title": "Cotejo could not start",
@@ -73,8 +81,6 @@
     "readOnlyTooltip": "Lock editing on both panes",
     "reload": "Reload",
     "reloadTooltip": "Re-read both files from disk",
-    "save": "Save",
-    "saveTooltip": "Save ({{mod}}+S)",
     "pickLeftTitle": "Left file",
     "pickRightTitle": "Right file",
     "pickBoth": "Choose the two files you want to compare.",
@@ -88,7 +94,15 @@
     "inlineSkipped": "Intra-line highlighting disabled (file too large)",
     "comparing": "Comparing…",
     "mergeRightTooltip": "Copy this block to the right",
-    "mergeLeftTooltip": "Copy this block to the left"
+    "mergeLeftTooltip": "Copy this block to the left",
+    "transferRight": "Selection ▶",
+    "transferRightTooltip": "Copy the lines selected on the left to the right",
+    "transferLeft": "◀ Selection",
+    "transferLeftTooltip": "Copy the lines selected on the right to the left",
+    "selectedLinesLeft_one": "{{count}} line selected on the left",
+    "selectedLinesLeft_other": "{{count}} lines selected on the left",
+    "selectedLinesRight_one": "{{count}} line selected on the right",
+    "selectedLinesRight_other": "{{count}} lines selected on the right"
   },
   "dirCompare": {
     "compare": "Compare",

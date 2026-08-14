@@ -11,6 +11,7 @@ import type {
 } from '@shared/types'
 import { useSession } from '../../state/sessionStore'
 import { useSettings } from '../../state/settingsStore'
+import { useHistory } from '../../state/historyStore'
 import { errorText } from '../../i18n/errorMessage'
 import { PathBar } from '../common/PathBar'
 import { ConfirmDialog } from '../common/ConfirmDialog'
@@ -78,6 +79,8 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       if (requestIdRef.current !== requestId) return
       setResponse(result)
       setSelected(new Set())
+      // Solo entra en el historial lo que llego a compararse de verdad.
+      useHistory.getState().record('dir', tab.leftPath, tab.rightPath)
       // Abrir de entrada las carpetas que contienen algo distinto.
       const toExpand = new Set<string>()
       const walk = (node: DirNode): void => {

@@ -22,6 +22,11 @@
     "compareDirs": "Comparer des dossiers",
     "hint": "Vous pouvez aussi glisser deux fichiers ou deux dossiers sur cette fenêtre."
   },
+  "history": {
+    "title": "Comparaisons récentes",
+    "clear": "Effacer l'historique",
+    "remove": "Retirer de l'historique"
+  },
   "about": {
     "title": "À propos de Cotejo",
     "open": "À propos",
@@ -47,7 +52,10 @@
     "pickFile": "Choisir un fichier…",
     "pickDirectory": "Choisir un dossier…",
     "filePlaceholder": "Chemin du fichier",
-    "dirPlaceholder": "Chemin du dossier"
+    "dirPlaceholder": "Chemin du dossier",
+    "save": "Enregistrer",
+    "saveLeft": "Enregistrer uniquement le fichier de gauche ({{mod}}+S enregistre les deux)",
+    "saveRight": "Enregistrer uniquement le fichier de droite ({{mod}}+S enregistre les deux)"
   },
   "errorBoundary": {
     "title": "Cotejo n'a pas pu démarrer",
@@ -73,8 +81,6 @@
     "readOnlyTooltip": "Verrouiller l'édition des deux panneaux",
     "reload": "Recharger",
     "reloadTooltip": "Relire les deux fichiers depuis le disque",
-    "save": "Enregistrer",
-    "saveTooltip": "Enregistrer ({{mod}}+S)",
     "pickLeftTitle": "Fichier de gauche",
     "pickRightTitle": "Fichier de droite",
     "pickBoth": "Choisissez les deux fichiers à comparer.",
@@ -88,7 +94,15 @@
     "inlineSkipped": "Surlignage intra-ligne désactivé (fichier trop volumineux)",
     "comparing": "Comparaison…",
     "mergeRightTooltip": "Copier ce bloc vers la droite",
-    "mergeLeftTooltip": "Copier ce bloc vers la gauche"
+    "mergeLeftTooltip": "Copier ce bloc vers la gauche",
+    "transferRight": "Sélection ▶",
+    "transferRightTooltip": "Copier vers la droite les lignes sélectionnées à gauche",
+    "transferLeft": "◀ Sélection",
+    "transferLeftTooltip": "Copier vers la gauche les lignes sélectionnées à droite",
+    "selectedLinesLeft_one": "{{count}} ligne sélectionnée à gauche",
+    "selectedLinesLeft_other": "{{count}} lignes sélectionnées à gauche",
+    "selectedLinesRight_one": "{{count}} ligne sélectionnée à droite",
+    "selectedLinesRight_other": "{{count}} lignes sélectionnées à droite"
   },
   "dirCompare": {
     "compare": "Comparer",

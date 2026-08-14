@@ -49,6 +49,11 @@ npm run dev -- ruta/izquierda ruta/derecha
 Dos carpetas abren una comparación de carpetas; cualquier otra combinación, una de texto. Arrastrar
 uno o dos archivos o carpetas sobre la ventana hace lo mismo.
 
+La pantalla de bienvenida recuerda las **últimas comparaciones** que se llegaron a abrir, con sus
+rutas, para repetirlas de un clic. Se guardan solo las rutas, así que al abrir una se relee del
+disco. Cada entrada se puede quitar por separado, o borrar la lista entera. Repetir una comparación
+que ya está abierta salta a su pestaña en vez de duplicarla.
+
 ## Idiomas
 
 La interfaz está en **español, inglés, francés y portugués de Brasil**. Al primer arranque Cotejo
@@ -82,7 +87,13 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   archivo entero y permite saltar con un clic.
 - Las flechas ◀ ▶ de la franja central copian un bloque al otro lado. Se aplican como una edición
   normal, así que `Ctrl+Z` las deshace.
-- `Ctrl+S` (`⌘S` en macOS) guarda **preservando los finales de línea y el BOM originales**.
+- Para transferir menos que un bloque, selecciona el texto y usa **Selección ▶** / **◀ Selección**:
+  van las líneas que toque la selección, sobre las que tienen enfrente en el otro lado. Mientras hay
+  selección manda su color por encima del color de la diferencia, así que lo resaltado es
+  exactamente lo que se va a transferir.
+- Cada ruta tiene su propio botón **Guardar**, activo solo si ese lado tiene cambios, para guardar
+  uno sin tocar el otro. `Ctrl+S` (`⌘S` en macOS) guarda los dos de una vez. Se guarda siempre
+  **preservando los finales de línea y el BOM originales**.
 - Opciones: ignorar espacios, mayúsculas o líneas en blanco, y ancho de tabulación.
 
 ## Comparar carpetas
@@ -100,7 +111,8 @@ fila a fila. Donde una entrada existe solo en un lado, el otro deja el mismo hue
 línea huérfana en el comparador de texto, así que la estructura de ambas carpetas se lee de un
 vistazo sin perder la correspondencia.
 
-Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de texto.
+Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de texto. Si esa
+comparación ya está abierta, salta a su pestaña en vez de abrir otra igual.
 
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
 toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número

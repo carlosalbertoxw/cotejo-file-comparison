@@ -55,21 +55,56 @@
 
 /* ------------------------------------------------------------ colores diff */
 
+/* Los fondos del diff van en una capa propia por debajo de la seleccion.
+   CodeMirror pinta la seleccion en .cm-selectionLayer (z-index -1, y hacia
+   abajo si hubiera mas capas) y las lineas por encima, asi que un `background`
+   normal en la linea taparia lo seleccionado. Con un pseudo-elemento en el
+   fondo del contexto de apilamiento (.cm-scroller) el orden queda: color del
+   diff, seleccion, texto. Al seleccionar manda el color de la seleccion, que es
+   lo que dice que se va a transferir.
+   .cm-content no lleva z-index propio; se deja explicito para que nadie lo
+   convierta en contexto de apilamiento sin darse cuenta de que rompe esto. */
+.diff-pane .cm-content {
+  z-index: auto;
+}
+
+.cm-diff-changed,
+.cm-diff-orphan,
+.cm-diff-inline {
+  position: relative;
+  background: transparent;
+}
+
+.cm-diff-changed::before,
+.cm-diff-orphan::before,
+.cm-diff-inline::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -20;
+}
+
 .cm-diff-changed {
-  background: var(--diff-changed-bg);
   color: var(--diff-changed-text);
 }
 
+.cm-diff-changed::before {
+  background: var(--diff-changed-bg);
+}
+
 .cm-diff-orphan {
-  background: var(--diff-orphan-bg);
   color: var(--diff-orphan-text);
+}
+
+.cm-diff-orphan::before {
+  background: var(--diff-orphan-bg);
 }
 
 .cm-diff-ignored {
   color: var(--diff-ignored-text);
 }
 
-.cm-diff-inline {
+.cm-diff-inline::before {
   background: var(--diff-inline-bg);
   border-radius: 2px;
 }

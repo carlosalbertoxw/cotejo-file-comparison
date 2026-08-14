@@ -22,6 +22,11 @@
     "compareDirs": "Comparar pastas",
     "hint": "Você também pode arrastar dois arquivos ou duas pastas para esta janela."
   },
+  "history": {
+    "title": "Comparações recentes",
+    "clear": "Limpar o histórico",
+    "remove": "Remover do histórico"
+  },
   "about": {
     "title": "Sobre o Cotejo",
     "open": "Sobre",
@@ -47,7 +52,10 @@
     "pickFile": "Escolher arquivo…",
     "pickDirectory": "Escolher pasta…",
     "filePlaceholder": "Caminho do arquivo",
-    "dirPlaceholder": "Caminho da pasta"
+    "dirPlaceholder": "Caminho da pasta",
+    "save": "Salvar",
+    "saveLeft": "Salvar somente o arquivo da esquerda ({{mod}}+S salva os dois)",
+    "saveRight": "Salvar somente o arquivo da direita ({{mod}}+S salva os dois)"
   },
   "errorBoundary": {
     "title": "O Cotejo não conseguiu iniciar",
@@ -73,8 +81,6 @@
     "readOnlyTooltip": "Bloqueia a edição dos dois painéis",
     "reload": "Recarregar",
     "reloadTooltip": "Ler novamente os dois arquivos do disco",
-    "save": "Salvar",
-    "saveTooltip": "Salvar ({{mod}}+S)",
     "pickLeftTitle": "Arquivo da esquerda",
     "pickRightTitle": "Arquivo da direita",
     "pickBoth": "Escolha os dois arquivos que você quer comparar.",
@@ -88,7 +94,15 @@
     "inlineSkipped": "Realce intralinha desativado (arquivo muito grande)",
     "comparing": "Comparando…",
     "mergeRightTooltip": "Copiar este bloco para a direita",
-    "mergeLeftTooltip": "Copiar este bloco para a esquerda"
+    "mergeLeftTooltip": "Copiar este bloco para a esquerda",
+    "transferRight": "Seleção ▶",
+    "transferRightTooltip": "Copiar para a direita as linhas selecionadas na esquerda",
+    "transferLeft": "◀ Seleção",
+    "transferLeftTooltip": "Copiar para a esquerda as linhas selecionadas na direita",
+    "selectedLinesLeft_one": "{{count}} linha selecionada na esquerda",
+    "selectedLinesLeft_other": "{{count}} linhas selecionadas na esquerda",
+    "selectedLinesRight_one": "{{count}} linha selecionada na direita",
+    "selectedLinesRight_other": "{{count}} linhas selecionadas na direita"
   },
   "dirCompare": {
     "compare": "Comparar",

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useSession } from '../../state/sessionStore'
+import { HistoryList } from './HistoryList'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface Props {
@@ -26,6 +27,7 @@ export function WelcomeView({ onShowAbout }: Props): React.JSX.Element {
           <button onClick={() => openTab('dir')}>{t('welcome.compareDirs')}</button>
         </div>
         <p className="hint">{t('welcome.hint')}</p>
+        <HistoryList />
         <LanguageSwitcher />
         <button className="link-button" onClick={onShowAbout}>
           {t('about.open')}

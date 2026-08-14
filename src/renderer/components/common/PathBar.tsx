@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { MOD_LABEL } from '../../platform'
 
 interface Props {
   kind: 'file' | 'directory'
@@ -8,6 +9,8 @@ interface Props {
   rightDirty?: boolean
   onPick: (side: 'left' | 'right') => void
   onSetPath: (side: 'left' | 'right', path: string) => void
+  /** Si se pasa, cada lado gana su propio boton de guardado. */
+  onSave?: (side: 'left' | 'right') => void
 }
 
 export function PathBar({
@@ -17,7 +20,8 @@ export function PathBar({
   leftDirty,
   rightDirty,
   onPick,
-  onSetPath
+  onSetPath,
+  onSave
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
 
@@ -38,6 +42,17 @@ export function PathBar({
       >
         …
       </button>
+      {onSave && (
+        <button
+          onClick={() => onSave(side)}
+          disabled={!dirty}
+          title={t(side === 'left' ? 'pathBar.saveLeft' : 'pathBar.saveRight', {
+            mod: MOD_LABEL
+          })}
+        >
+          {t('pathBar.save')}
+        </button>
+      )}
     </div>
   )
 

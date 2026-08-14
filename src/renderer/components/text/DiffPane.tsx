@@ -3,6 +3,7 @@ import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { alignmentField, setAlignment, type SideAlignment } from './alignment'
+import type { LineRange } from './merge'
 
 export interface DiffPaneHandle {
   readonly view: EditorView | null
@@ -17,6 +18,24 @@ interface Props {
   tabSize: number
   onChange: (value: string) => void
   onScroll: (scrollTop: number, scrollLeft: number) => void
+  onSelectionChange: (selection: LineRange | null) => void
+}
+
+/**
+ * Lineas [start, end) que toca la seleccion, o null si no hay seleccion.
+ *
+ * La transferencia trabaja con lineas enteras, asi que una seleccion parcial
+ * arrastra la linea entera. La que termina justo al empezar una linea no la
+ * incluye: es lo que se ve subrayado y lo que espera quien selecciona de arriba
+ * abajo con el raton.
+ */
+function lineSelectionOf(state: EditorState): LineRange | null {
+  const range = state.selection.main
+  if (range.empty) return null
+  const start = state.doc.lineAt(range.from).number - 1
+  const last = state.doc.lineAt(range.to)
+  const end = range.to === last.from && last.number - 1 > start ? last.number - 1 : last.number
+  return { start, end }
 }
 
 /**
@@ -33,7 +52,8 @@ export function DiffPane({
   readOnly,
   tabSize,
   onChange,
-  onScroll
+  onScroll,
+  onSelectionChange
 }: Props): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -42,8 +62,10 @@ export function DiffPane({
   // Los callbacks se leen por referencia para no recrear el editor en cada render.
   const onChangeRef = useRef(onChange)
   const onScrollRef = useRef(onScroll)
+  const onSelectionRef = useRef(onSelectionChange)
   onChangeRef.current = onChange
   onScrollRef.current = onScroll
+  onSelectionRef.current = onSelectionChange
 
   useImperativeHandle(ref, () => ({
     get view() {
@@ -66,6 +88,9 @@ export function DiffPane({
       optionsRef.current.of([]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) onChangeRef.current(update.state.doc.toString())
+        if (update.docChanged || update.selectionSet) {
+          onSelectionRef.current(lineSelectionOf(update.state))
+        }
       }),
       EditorView.domEventHandlers({
         scroll: (_event, view) => {

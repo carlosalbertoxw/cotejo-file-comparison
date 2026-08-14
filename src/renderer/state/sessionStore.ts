@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { PATHS_IGNORE_CASE } from '../platform'
 
 export type TabKind = 'text' | 'dir'
 
@@ -18,6 +19,27 @@ const nextId = (): string => `tab-${++counter}`
 function baseName(path: string): string {
   const parts = path.split(/[\\/]/)
   return parts[parts.length - 1] || path
+}
+
+/**
+ * Si dos rutas apuntan al mismo sitio.
+ *
+ * La misma ruta llega escrita de formas distintas segun de donde venga: con
+ * barras al derecho desde la linea de comandos, invertidas desde el explorador
+ * o desde la vista de carpetas. Comparar las cadenas tal cual abriria dos
+ * pestañas del mismo archivo.
+ */
+export function samePath(
+  a: string | null,
+  b: string | null,
+  ignoreCase = PATHS_IGNORE_CASE
+): boolean {
+  if (a === null || b === null) return a === b
+  const normalize = (path: string): string => {
+    const unified = path.replace(/\\/g, '/').replace(/\/+$/, '')
+    return ignoreCase ? unified.toLowerCase() : unified
+  }
+  return normalize(a) === normalize(b)
 }
 
 /**
@@ -51,6 +73,22 @@ export const useSession = create<SessionState>()(
       activeId: null,
 
       openTab: (kind, leftPath = null, rightPath = null) => {
+        // Una comparacion ya abierta no se duplica: se trae al frente la
+        // pestana que la tiene. Las pestanas sin rutas no cuentan, ahi cada una
+        // es un trabajo nuevo aunque esten igual de vacias.
+        if (leftPath !== null || rightPath !== null) {
+          const existing = get().tabs.find(
+            (tab) =>
+              tab.kind === kind &&
+              samePath(tab.leftPath, leftPath) &&
+              samePath(tab.rightPath, rightPath)
+          )
+          if (existing) {
+            set({ activeId: existing.id })
+            return existing.id
+          }
+        }
+
         const id = nextId()
         const tab: Tab = {
           id,
