@@ -58,10 +58,13 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   const syncing = useRef(false)
   const bodyRef = useRef<HTMLDivElement>(null)
 
-  const hasBoth = left.payload !== null && right.payload !== null
+  // Se compara lo que hay en los dos paneles, venga de un archivo o lo acabe de
+  // escribir o pegar quien compara. Mientras los dos esten vacios no hay nada
+  // que comparar y el diff se queda quieto.
+  const hasContent = left.content !== '' || right.content !== ''
   const { result, pending, error } = useDiff(
-    hasBoth ? left.content : null,
-    hasBoth ? right.content : null,
+    hasContent ? left.content : null,
+    hasContent ? right.content : null,
     diffOptions
   )
 
@@ -383,8 +386,8 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
       </div>
 
       <div className="status-bar">
-        {!hasBoth && <span>{t('textDiff.pickBoth')}</span>}
-        {hasBoth && result && (
+        {!hasContent && <span>{t('textDiff.pickBoth')}</span>}
+        {result && (
           <>
             <span>
               <span className="swatch changed" />

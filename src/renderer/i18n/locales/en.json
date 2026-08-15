@@ -83,7 +83,7 @@
     "reloadTooltip": "Re-read both files from disk",
     "pickLeftTitle": "Left file",
     "pickRightTitle": "Right file",
-    "pickBoth": "Choose the two files you want to compare.",
+    "pickBoth": "Choose the two files you want to compare, or type or paste text into both panes.",
     "changed_one": "{{count}} changed",
     "changed_other": "{{count}} changed",
     "onlySides": "{{left}} left only · {{right}} right only",

@@ -83,7 +83,7 @@
     "reloadTooltip": "Ler novamente os dois arquivos do disco",
     "pickLeftTitle": "Arquivo da esquerda",
     "pickRightTitle": "Arquivo da direita",
-    "pickBoth": "Escolha os dois arquivos que você quer comparar.",
+    "pickBoth": "Escolha os dois arquivos que você quer comparar, ou digite ou cole o texto nos dois painéis.",
     "changed_one": "{{count}} alterada",
     "changed_other": "{{count}} alteradas",
     "onlySides": "{{left}} só à esquerda · {{right}} só à direita",
