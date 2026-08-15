@@ -81,6 +81,9 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
 
 ## Comparar texto
 
+- No hacen falta archivos: se compara lo que haya en los dos paneles, así que puedes escribir o
+  pegar dos frases y ver en qué se diferencian. También vale mezclar, con un archivo a un lado y
+  texto pegado al otro.
 - Las líneas emparejadas quedan enfrentadas, con huecos donde un lado no tiene contenido. Los dos
   paneles miden exactamente lo mismo, así que nunca se desincronizan al hacer scroll.
 - `F7` / `Shift+F7` saltan a la diferencia siguiente / anterior. El mapa de la derecha resume el
