@@ -1,0 +1,124 @@
+---
+/**
+ * Representación de la vista de comparación de texto, dibujada en HTML con la
+ * misma paleta que la aplicación (src/renderer/styles/theme.css).
+ *
+ * Es una ilustración, no una captura: se mantiene sola cuando cambia el tema,
+ * se traduce con el resto del sitio y pesa unos pocos kB. Si algún día hay
+ * capturas reales de la aplicación, este bloque es lo que hay que sustituir.
+ */
+import { getCatalog, type Lang } from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = getCatalog(lang);
+const doc = t.preview.doc;
+
+type Kind = "equal" | "changed" | "orphan" | "gap";
+
+interface Cell {
+  /** Número de línea real, o null cuando la fila es un hueco. */
+  n: number | null;
+  kind: Kind;
+  pre?: string;
+  /** Tramo resaltado dentro de la línea. */
+  mark?: string;
+  post?: string;
+}
+
+interface Row {
+  left: Cell;
+  right: Cell;
+  /** Flecha de transferencia que la franja central muestra en esta fila. */
+  arrow?: "left" | "right";
+}
+
+const rows: Row[] = [
+  {
+    left: { n: 1, kind: "equal", pre: doc.title },
+    right: { n: 1, kind: "equal", pre: doc.title },
+  },
+  { left: { n: 2, kind: "equal" }, right: { n: 2, kind: "equal" } },
+  {
+    left: { n: 3, kind: "changed", pre: doc.salesPre, mark: doc.salesOld, post: doc.salesPost },
+    right: { n: 3, kind: "changed", pre: doc.salesPre, mark: doc.salesNew, post: doc.salesPost },
+    arrow: "right",
+  },
+  {
+    left: { n: 4, kind: "equal", pre: doc.returns },
+    right: { n: 4, kind: "equal", pre: doc.returns },
+  },
+  {
+    left: { n: 5, kind: "orphan", pre: doc.region },
+    right: { n: null, kind: "gap" },
+    arrow: "right",
+  },
+  {
+    left: { n: 6, kind: "equal", pre: doc.owner },
+    right: { n: 5, kind: "equal", pre: doc.owner },
+  },
+  {
+    left: { n: 7, kind: "equal", pre: doc.closing },
+    right: { n: 6, kind: "equal", pre: doc.closing },
+  },
+  {
+    left: { n: null, kind: "gap" },
+    right: { n: 7, kind: "orphan", pre: doc.reviewer },
+    arrow: "left",
+  },
+];
+
+const ARROWS = { left: "◀", right: "▶" } as const;
+---
+
+<figure class="preview">
+  <div class="preview-chrome">
+    <span class="preview-tab">{t.preview.tab}</span>
+    <span>{t.preview.versions}</span>
+  </div>
+
+  <div class="diff-mock" role="img" aria-label={t.preview.alt}>
+    <div class="pane" aria-hidden="true">
+      {
+        rows.map((row) => (
+          <div class={`row ${row.left.kind}`}>
+            <span class="ln">{row.left.n ?? ""}</span>
+            <span class="code">
+              {row.left.pre}
+              {row.left.mark && <mark>{row.left.mark}</mark>}
+              {row.left.post}
+            </span>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="merge" aria-hidden="true">
+      {
+        rows.map((row) => (
+          <span class={row.arrow ? "active" : ""}>{row.arrow ? ARROWS[row.arrow] : ""}</span>
+        ))
+      }
+    </div>
+
+    <div class="pane" aria-hidden="true">
+      {
+        rows.map((row) => (
+          <div class={`row ${row.right.kind}`}>
+            <span class="ln">{row.right.n ?? ""}</span>
+            <span class="code">
+              {row.right.pre}
+              {row.right.mark && <mark>{row.right.mark}</mark>}
+              {row.right.post}
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <figcaption class="preview-caption">{t.preview.caption}</figcaption>
+</figure>

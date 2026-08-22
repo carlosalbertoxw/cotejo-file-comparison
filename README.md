@@ -248,6 +248,7 @@ funciona en español y se rompe en cuanto cambia el orden de las palabras en otr
 build/         Icono (SVG como fuente de verdad)
 changelog/     Notas de cada versión, una por tag; son el cuerpo de la release
 scripts/       Utilidades de build: icono y avisos de terceros
+sitio/         Página pública (Astro), publicada en GitHub Pages; proyecto npm aparte
 src/
   shared/      Tipos, canales IPC y códigos de error compartidos por los tres procesos
   main/        Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera

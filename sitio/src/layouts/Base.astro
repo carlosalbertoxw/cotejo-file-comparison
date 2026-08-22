@@ -1,0 +1,127 @@
+---
+import "../styles/site.css";
+import {
+  DEFAULT_LANG,
+  ENDONYM,
+  HTML_LANG,
+  LANGS,
+  OG_LOCALE,
+  SECTIONS,
+  SHORT_NAME,
+  assetPath,
+  getCatalog,
+  localePath,
+  type Lang,
+} from "../i18n";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = getCatalog(lang);
+
+const canonical = new URL(localePath(lang), Astro.site).href;
+const social = new URL(assetPath("icon.svg"), Astro.site).href;
+const year = new Date().getFullYear();
+
+const REPO = "https://github.com/carlosalbertoxw/cotejo-file-comparison";
+---
+
+<!doctype html>
+<html lang={HTML_LANG[lang]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.meta.title}</title>
+    <meta name="description" content={t.meta.description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={assetPath("icon.svg")} />
+    <meta name="color-scheme" content="light dark" />
+
+    {/* Cada idioma se anuncia como alternativa de los demás; el español es el
+        destino por defecto para quien no encaje en ninguno. */}
+    {
+      LANGS.map((other) => (
+        <link
+          rel="alternate"
+          hreflang={HTML_LANG[other]}
+          href={new URL(localePath(other), Astro.site).href}
+        />
+      ))
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(localePath(DEFAULT_LANG), Astro.site).href}
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:description" content={t.meta.description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={social} />
+    <meta property="og:locale" content={OG_LOCALE[lang]} />
+    {
+      LANGS.filter((other) => other !== lang).map((other) => (
+        <meta property="og:locale:alternate" content={OG_LOCALE[other]} />
+      ))
+    }
+    <meta name="twitter:card" content="summary" />
+  </head>
+
+  <body>
+    <a class="visually-hidden" href="#contenido">{t.nav.skip}</a>
+
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href={localePath(lang)}>
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span></span>
+          Cotejo
+        </a>
+
+        <nav class="site-nav" aria-label={t.nav.main}>
+          <a href={`#${SECTIONS.text}`}>{t.nav.text}</a>
+          <a href={`#${SECTIONS.folders}`}>{t.nav.folders}</a>
+          <a class="optional" href={`#${SECTIONS.colors}`}>{t.nav.colors}</a>
+          <a href={`#${SECTIONS.downloads}`}>{t.nav.downloads}</a>
+          <a class="optional" href={REPO}>{t.nav.github}</a>
+        </nav>
+
+        {/* Enlaces y no un desplegable: sin JavaScript, y cada idioma es una
+            URL que un buscador puede seguir. */}
+        <nav class="lang-switch" aria-label={t.nav.language}>
+          <span aria-hidden="true">🌐</span>
+          {
+            LANGS.map((other) => (
+              <a
+                href={localePath(other)}
+                lang={HTML_LANG[other]}
+                hreflang={HTML_LANG[other]}
+                title={ENDONYM[other]}
+                aria-current={other === lang ? "true" : undefined}
+              >
+                {SHORT_NAME[other]}
+                <span class="visually-hidden"> — {ENDONYM[other]}</span>
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main id="contenido">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <span>Cotejo · {t.footer.license.replace("{year}", String(year))}</span>
+        <span class="spacer"></span>
+        <a href={REPO}>{t.footer.source}</a>
+        <a href={`${REPO}/releases`}>{t.footer.allVersions}</a>
+        <a href={`${REPO}/issues`}>{t.footer.report}</a>
+      </div>
+    </footer>
+  </body>
+</html>

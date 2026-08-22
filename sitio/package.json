@@ -1,0 +1,19 @@
+{
+  "name": "cotejo-sitio",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Sitio publico de Cotejo, generado estaticamente y publicado en GitHub Pages",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@types/node": "^22.20.1",
+    "astro": "^5.0.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,74 @@
+# Publica el sitio de sitio/ en GitHub Pages.
+#
+# Es un proyecto aparte del de la raiz: tiene su propio package.json y su
+# propio lockfile, asi que Astro y sus dependencias no entran ni en el arbol
+# de la aplicacion Electron ni en THIRD-PARTY-NOTICES.txt.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    # Sin este filtro, cada commit en src/ reconstruiria el sitio para nada.
+    paths:
+      - 'sitio/**'
+      - '.github/workflows/pages.yml'
+  # Una release nueva cambia los enlaces de descarga, que se resuelven al
+  # compilar: hay que regenerar la pagina para que apunten a la ultima.
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue a la vez; si llegan dos seguidos, gana el ultimo.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sitio
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sitio/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          # Evita el limite de peticiones anonimas a la API de GitHub, que se
+          # comparte por IP entre todos los runners.
+          GITHUB_TOKEN: ${{ github.token }}
+          # Astro manda estadisticas de uso anonimas al construir. Mal encaja
+          # con una pagina que promete que la aplicacion no manda nada.
+          ASTRO_TELEMETRY_DISABLED: '1'
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # Relativo a la raiz del repositorio: `working-directory` solo afecta
+          # a los pasos `run`.
+          path: sitio/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

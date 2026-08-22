@@ -1,0 +1,264 @@
+---
+/**
+ * La portada entera. Vive en un componente y no en la página para que las
+ * cuatro rutas de idioma sean tres líneas cada una y no haya forma de que se
+ * desincronicen.
+ */
+import Base from "../layouts/Base.astro";
+import DiffPreview from "./DiffPreview.astro";
+import Downloads from "./Downloads.astro";
+import { getCatalog, LOCALE_TAG, SECTIONS, type Lang } from "../i18n";
+import { getLatestRelease } from "../lib/release";
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = getCatalog(lang);
+
+// Se resuelve al compilar y se reutiliza entre idiomas: una sola llamada a la
+// API por compilación, no una por página.
+const release = await getLatestRelease();
+
+const publishedAt =
+  release?.publishedAt &&
+  new Intl.DateTimeFormat(LOCALE_TAG[lang], { dateStyle: "long" }).format(
+    new Date(release.publishedAt),
+  );
+
+const REPO = "https://github.com/carlosalbertoxw/cotejo-file-comparison";
+
+// La misma frase que la pantalla de bienvenida de la aplicación, en cada idioma.
+const TAGLINE: Record<Lang, string> = {
+  es: "Pon dos cosas una al lado de la otra y mira en qué se diferencian.",
+  en: "Put two things side by side and see how they differ.",
+  fr: "Mettez deux choses côte à côte et voyez en quoi elles diffèrent.",
+  pt: "Coloque duas coisas lado a lado e veja em que elas diferem.",
+};
+---
+
+<Base lang={lang}>
+  <section class="hero">
+    <div class="container">
+      <h1>{TAGLINE[lang]}</h1>
+
+      <p class="lede" set:html={t.hero.lede} />
+
+      <div class="hero-actions">
+        <a class="button primary" href={`#${SECTIONS.downloads}`}>{t.hero.download}</a>
+        <a class="button" href={REPO}>{t.hero.source}</a>
+      </div>
+
+      <p class="hero-meta">
+        {release ? `${t.hero.latestVersion} ${release.version}` : t.hero.freeSoftware}
+        <span class="dot">·</span>{t.hero.license}
+        <span class="dot">·</span>{t.hero.privacy}
+        {publishedAt && <><span class="dot">·</span>{publishedAt}</>}
+      </p>
+
+      <DiffPreview lang={lang} />
+    </div>
+  </section>
+
+  <section id={SECTIONS.text}>
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">{t.text.eyebrow}</span>
+        <h2>{t.text.h2}</h2>
+        <p>{t.text.lede}</p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <h3>{t.text.aligned.h3}</h3>
+          <p>{t.text.aligned.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.text.inline.h3}</h3>
+          <p>{t.text.inline.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.text.transfer.h3}</h3>
+          <p>{t.text.transfer.p}</p>
+          <div class="kbd-row">
+            <kbd>F7</kbd><kbd>Shift+F7</kbd><kbd>Ctrl+Z</kbd><kbd>Ctrl+S</kbd>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>{t.text.noFiles.h3}</h3>
+          <p>{t.text.noFiles.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.text.save.h3}</h3>
+          <p>{t.text.save.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.text.ignore.h3}</h3>
+          <p>{t.text.ignore.p}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id={SECTIONS.folders}>
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">{t.folders.eyebrow}</span>
+        <h2>{t.folders.h2}</h2>
+        <p>{t.folders.lede}</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <caption class="visually-hidden">{t.folders.tableCaption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t.folders.colMode}</th>
+              <th scope="col">{t.folders.colWhat}</th>
+              <th scope="col">{t.folders.colWhen}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              [t.folders.quick, t.folders.size, t.folders.content].map((mode) => (
+                <tr>
+                  <td>{mode.name}</td>
+                  <td>{mode.what}</td>
+                  <td>{mode.when}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-spaced">
+        <article class="card">
+          <h3>{t.folders.ops.h3}</h3>
+          <p>{t.folders.ops.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.folders.trash.h3}</h3>
+          <p>{t.folders.trash.p}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.folders.filters.h3}</h3>
+          <p>{t.folders.filters.pBefore}<code>node_modules</code>{t.folders.filters.pAfter}</p>
+        </article>
+
+        <article class="card">
+          <h3>{t.folders.open.h3}</h3>
+          <p>{t.folders.open.p}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id={SECTIONS.colors}>
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">{t.colors.eyebrow}</span>
+        <h2>{t.colors.h2}</h2>
+        <p>{t.colors.lede}</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <caption class="visually-hidden">{t.colors.tableCaption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t.colors.colColor}</th>
+              <th scope="col">{t.colors.colMeaning}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              (
+                [
+                  ["changed", t.colors.amber],
+                  ["orphan", t.colors.teal],
+                  ["ignored", t.colors.gray],
+                  ["danger", t.colors.red],
+                ] as const
+              ).map(([swatch, entry]) => (
+                <tr>
+                  <td>
+                    <span class={`swatch ${swatch}`} />
+                    {entry.name}
+                  </td>
+                  <td>{entry.meaning}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id={SECTIONS.downloads}>
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">{t.downloads.eyebrow}</span>
+        <h2>{release ? `Cotejo ${release.version}` : t.downloads.h2}</h2>
+        <p>{t.downloads.lede}</p>
+      </div>
+
+      <Downloads lang={lang} release={release} />
+
+      <p class="hero-meta">
+        {release && <a href={release.url}>{t.downloads.releaseNotes}</a>}
+        {release && <span class="dot">·</span>}
+        <a href={`${REPO}/releases`}>{t.downloads.olderVersions}</a>
+      </p>
+    </div>
+  </section>
+
+  <section id={SECTIONS.faq}>
+    <div class="container">
+      <div class="section-head">
+        <h2>{t.faq.h2}</h2>
+      </div>
+
+      <div class="faq">
+        <article>
+          <h3>{t.faq.price.q}</h3>
+          <p>{t.faq.price.a}</p>
+        </article>
+
+        <article>
+          <h3>{t.faq.privacy.q}</h3>
+          <p>{t.faq.privacy.a}</p>
+        </article>
+
+        <article>
+          <h3>{t.faq.updates.q}</h3>
+          <p>{t.faq.updates.a}</p>
+        </article>
+
+        <article>
+          <h3>{t.faq.languages.q}</h3>
+          <p>{t.faq.languages.a}</p>
+        </article>
+
+        <article>
+          <h3>{t.faq.large.q}</h3>
+          <p>{t.faq.large.a}</p>
+        </article>
+
+        <article>
+          <h3>{t.faq.bugs.q}</h3>
+          <p set:html={t.faq.bugs.a} />
+        </article>
+      </div>
+    </div>
+  </section>
+</Base>

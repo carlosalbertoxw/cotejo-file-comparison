@@ -1,0 +1,7 @@
+# Cache de tipos que Astro regenera en cada build.
+.astro/
+
+# dist/ y node_modules/ ya los ignora el .gitignore de la raiz; se repiten
+# aqui para que esta carpeta siga siendo correcta por si se extrae del repo.
+dist/
+node_modules/

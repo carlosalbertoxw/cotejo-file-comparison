@@ -1,0 +1,71 @@
+---
+import { getCatalog, LOCALE_TAG, type Lang } from "../i18n";
+import { formatSize, type Release } from "../lib/release";
+
+interface Props {
+  lang: Lang;
+  release: Release | null;
+}
+
+const { lang, release } = Astro.props;
+const t = getCatalog(lang);
+const localeTag = LOCALE_TAG[lang];
+---
+
+<div class="downloads">
+  {
+    release?.platforms.map((platform) => (
+      <article class="platform" id={`plat-${platform.id}`}>
+        <div class="platform-head">
+          <h3>{platform.name}</h3>
+          <span class="tag">{t.downloads.yourSystem}</span>
+        </div>
+
+        <ul>
+          {platform.downloads.map((download) => (
+            <li>
+              <a class="download" href={download.url}>
+                <span>
+                  <span class="label">
+                    {t.downloads.items[download.key].label}
+                    {download.primary && <span class="badge">{t.downloads.recommended}</span>}
+                  </span>
+                  <span class="detail">{t.downloads.items[download.key].detail}</span>
+                </span>
+                <span class="size">{formatSize(download.size, localeTag)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <p class="platform-note">{t.downloads.notes[platform.id]}</p>
+      </article>
+    ))
+  }
+</div>
+
+{
+  (!release || release.platforms.length === 0) && (
+    <p class="fallback" set:html={t.downloads.fallback} />
+  )
+}
+
+<script is:inline>
+  // Resalta la tarjeta del sistema desde el que se visita. Es solo una ayuda
+  // visual: las tres siguen visibles y con sus enlaces, así que si la
+  // detección falla o no hay JavaScript no se pierde nada.
+  (function () {
+    var ua = navigator.userAgent || "";
+    if (/Android|iPhone|iPad|iPod/i.test(ua)) return;
+
+    var hint = (navigator.userAgentData && navigator.userAgentData.platform) || ua;
+    var id = null;
+    if (/Windows|Win32|Win64/i.test(hint)) id = "windows";
+    else if (/macOS|Mac OS X|Macintosh/i.test(hint)) id = "macos";
+    else if (/Linux|X11|CrOS/i.test(hint)) id = "linux";
+    if (!id) return;
+
+    var card = document.getElementById("plat-" + id);
+    if (card) card.classList.add("suggested");
+  })();
+</script>

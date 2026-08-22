@@ -1,0 +1,13 @@
+---
+// Los demás idiomas, uno por prefijo: /en/, /fr/, /pt/.
+import Landing from '../../components/Landing.astro'
+import { DEFAULT_LANG, LANGS, type Lang } from '../../i18n'
+
+export function getStaticPaths() {
+  return LANGS.filter((lang) => lang !== DEFAULT_LANG).map((lang) => ({ params: { lang } }))
+}
+
+const lang = Astro.params.lang as Lang
+---
+
+<Landing lang={lang} />
