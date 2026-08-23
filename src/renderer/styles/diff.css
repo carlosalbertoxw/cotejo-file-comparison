@@ -231,6 +231,14 @@
   user-select: text;
 }
 
+/* Un archivo que no es UTF-8 se puede comparar; solo no se puede guardar. Eso
+   es una advertencia, no un fallo, y el rojo aqui esta reservado a lo que
+   destruye algo. */
+.load-error.warn-strip {
+  color: var(--diff-changed-text);
+  background: var(--diff-changed-bg);
+}
+
 .toolbar .count {
   color: var(--text-dim);
   padding: 0 4px;

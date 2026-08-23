@@ -29,13 +29,19 @@ const api = {
 
   readTextFile: (path: string): Promise<TextFilePayload> =>
     ipcRenderer.invoke(IPC.readTextFile, path),
+  /**
+   * `expected` es lo que el renderer sabia del archivo al leerlo. Si el disco
+   * ya no cuadra con eso, la escritura se rechaza en vez de pisar cambios
+   * ajenos; omitirlo fuerza el guardado.
+   */
   writeTextFile: (
     path: string,
     content: string,
     eol: Eol,
-    encoding: 'utf8' | 'utf8-bom'
+    encoding: 'utf8' | 'utf8-bom',
+    expected?: { mtimeMs: number; size: number }
   ): Promise<{ mtimeMs: number; size: number }> =>
-    ipcRenderer.invoke(IPC.writeTextFile, path, content, eol, encoding),
+    ipcRenderer.invoke(IPC.writeTextFile, path, content, eol, encoding, expected),
   statPath: (path: string): Promise<EntryStat> => ipcRenderer.invoke(IPC.statPath, path),
 
   compareDirectories: (requestId: string, request: CompareRequest): Promise<CompareResponse> =>

@@ -11,6 +11,11 @@ propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada pa
 
 ## Instalación
 
+Las descargas están en
+**[carlosalbertoxw.com/cotejo-file-comparison](https://carlosalbertoxw.com/cotejo-file-comparison/#downloads)**,
+que señala el archivo que le toca a cada sistema y está en los cuatro idiomas de la aplicación. Los
+archivos se sirven desde las releases de este repositorio; la página es por dónde se llega a ellos.
+
 Cada plataforma tiene una versión que instala y otra que se ejecuta sin instalar. Todas llevan la
 misma aplicación dentro.
 
@@ -47,7 +52,11 @@ npm run dev -- ruta/izquierda ruta/derecha
 ```
 
 Dos carpetas abren una comparación de carpetas; cualquier otra combinación, una de texto. Arrastrar
-uno o dos archivos o carpetas sobre la ventana hace lo mismo.
+uno o dos archivos o carpetas sobre la ventana hace lo mismo, igual que abrirlos con Cotejo desde el
+explorador de archivos.
+
+**Solo hay una instancia.** Abrir algo con Cotejo ya en marcha añade una pestaña a la ventana que
+ya existe y la trae al frente, en vez de levantar otra aplicación con su propia sesión.
 
 La pantalla de bienvenida recuerda las **últimas comparaciones** que se llegaron a abrir, con sus
 rutas, para repetirlas de un clic. Se guardan solo las rutas, así que al abrir una se relee del
@@ -99,6 +108,21 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   **preservando los finales de línea y el BOM originales**.
 - Opciones: ignorar espacios, mayúsculas o líneas en blanco, y ancho de tabulación.
 
+### Al guardar
+
+- **Si el archivo cambió en el disco** desde que se abrió, no se escribe nada: Cotejo lo dice y
+  ofrece guardar de todas formas o recargar. Guardar a ciegas borraría el trabajo de quien lo
+  tocara mientras tanto.
+- La escritura pasa por un archivo temporal y un cambio de nombre encima, así que **un corte a
+  mitad no deja el archivo a medias**: o está el contenido viejo, o está el nuevo. Los enlaces
+  simbólicos se escriben en su sitio, para no sustituirlos por un archivo normal.
+- **Un archivo que no sea UTF-8 válido se abre en solo lectura.** Se puede comparar, pero no
+  editar: al decodificarlo se pierden los bytes que no encajan, y guardarlo escribiría rombos de
+  sustitución donde había eñes. Es el caso de los `.txt` heredados en Windows-1252.
+- Por encima de **12 MB** un archivo no se abre. El texto se duplica varias veces por el camino
+  —buffer, cadena, copia sin CRLF, paso al worker de comparación—, así que el límite viejo de 64 MB
+  prometía algo que la aplicación no aguantaba.
+
 ## Comparar carpetas
 
 Tres modos, de más rápido a más fiable:
@@ -117,6 +141,10 @@ vistazo sin perder la correspondencia.
 Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de texto. Si esa
 comparación ya está abierta, salta a su pestaña en vez de abrir otra igual.
 
+La tabla se maneja **también con el teclado**: flechas arriba y abajo para moverse, derecha e
+izquierda para abrir y cerrar carpetas, `Inicio` y `Fin` para los extremos, `Espacio` para añadir o
+quitar de la selección y `Entrar` para abrir la comparación de esa fila.
+
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
 toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número
 exacto de archivos, los bytes y la lista de lo que se va a sobrescribir.
@@ -124,15 +152,17 @@ exacto de archivos, los bytes y la lista de lo que se va a sobrescribir.
 ## Acerca de y actualizaciones
 
 El botón **Acerca de**, en la barra de pestañas y en la pantalla de bienvenida, abre una ficha con
-la versión instalada, la licencia, las versiones de Electron, Chromium y Node, y enlaces al código
-fuente, a las descargas y a los problemas. Los enlaces abren el navegador del sistema, nunca dentro
-de la ventana.
+la versión instalada, la licencia, las versiones de Electron, Chromium y Node, y enlaces al
+[sitio del proyecto](https://carlosalbertoxw.com/cotejo-file-comparison/), al código fuente y a los
+problemas. Los enlaces abren el navegador del sistema, nunca dentro de la ventana, y el del sitio
+va al idioma que tenga puesto la aplicación.
 
 Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
 que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la
-[página de descargas](https://github.com/carlosalbertoxw/cotejo-file-comparison/releases). El aviso
-se puede cerrar y no vuelve para esa misma versión, pero sí para la siguiente. Desde «Acerca de»
-también se puede comprobar a mano en cualquier momento.
+[página de descargas](https://carlosalbertoxw.com/cotejo-file-comparison/#downloads), que explica
+qué archivo le toca a cada sistema. El aviso se puede cerrar y no vuelve para esa misma versión,
+pero sí para la siguiente. Desde «Acerca de» también se puede comprobar a mano en cualquier
+momento.
 
 Cotejo **no se actualiza solo**: descargar y sustituir el ejecutable por su cuenta exige una
 aplicación firmada, y sin certificado eso no se sostiene. Solo avisa y te lleva a la descarga. Si
@@ -141,12 +171,20 @@ no hay red, el aviso se calla y lo reintenta al siguiente arranque.
 ## Desarrollo
 
 ```bash
-npm test
+npm run lint
 ```
 
 ```bash
 npm run typecheck
 ```
+
+```bash
+npm test
+```
+
+Las tres cosas, más el empaquetado de los bundles, corren en cada commit y en cada pull request
+—en Linux y en Windows— desde `.github/workflows/ci.yml`. El workflow de release solo se dispara
+con un tag, así que sin esto un fallo de tipos no aparecía hasta el momento de publicar.
 
 ### Empaquetar
 
@@ -250,20 +288,29 @@ changelog/     Notas de cada versión, una por tag; son el cuerpo de la release
 scripts/       Utilidades de build: icono y avisos de terceros
 sitio/         Página pública (Astro), publicada en GitHub Pages; proyecto npm aparte
 src/
-  shared/      Tipos, canales IPC y códigos de error compartidos por los tres procesos
-  main/        Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera
-  preload/     contextBridge -> window.api (contextIsolation activado)
+  shared/      Tipos, canales IPC, códigos de error, enlaces y rutas: lo que comparten los tres procesos
+  main/
+    ipc/       Adaptadores finos sobre los servicios, con la validación de lo que cruza el puente
+    services/  Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera
+  preload/     contextBridge -> window.api (contextIsolation y sandbox activados)
   renderer/
     i18n/      Catálogos de traducción, detección de idioma y traducción de errores IPC
     diff/      Motor de comparación (normalize -> lineDiff -> pairing -> similarity -> inlineDiff -> align)
+    state/     Stores de zustand: sesión, ajustes, historial y aviso de versión
     components/
-      text/    Vista de texto: paneles, alineación, gutters, merge, mapa lateral
+      text/    Vista de texto: paneles, alineación, gutters, merge, mapa lateral y sus hooks
       dir/     Vista de carpetas: tabla-árbol virtualizada y operaciones de archivo
+test/          Pruebas de la lógica pura y de los servicios que tocan disco
 ```
 
 El motor de comparación (`src/renderer/diff/`) es TypeScript puro sin dependencias de UI, y corre
-en un Web Worker para que un archivo grande no congele la interfaz. La suite de tests lo verifica
-contra una implementación de LCS por programación dinámica sobre cientos de casos aleatorios.
+en un Web Worker —uno solo, compartido por todas las pestañas— para que un archivo grande no
+congele la interfaz. La suite de tests lo verifica contra una implementación de LCS por
+programación dinámica sobre cientos de casos aleatorios.
+
+El proceso principal no confía en lo que le llega por IPC aunque hoy el único que llama sea un
+renderer propio: `src/main/ipc/validate.ts` comprueba la forma de cada mensaje antes de tocar el
+disco, y `safeJoin` impide que una ruta relativa se salga de la carpeta que se está comparando.
 
 ## Licencia
 

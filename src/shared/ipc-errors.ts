@@ -14,6 +14,10 @@ export type IpcErrorCode =
   | 'binaryFile'
   | 'absolutePathRejected'
   | 'pathOutsideRoot'
+  /** El archivo cambio en el disco entre que se leyo y se fue a guardar. */
+  | 'fileChangedOnDisk'
+  /** Lo que llego por el puente no tiene la forma que declara el contrato. */
+  | 'badRequest'
 
 export interface IpcErrorPayload {
   code: IpcErrorCode

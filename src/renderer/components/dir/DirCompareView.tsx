@@ -9,15 +9,18 @@ import type {
   FileOpPlan,
   Side
 } from '@shared/types'
+import { joinPath } from '@shared/paths'
 import { useSession } from '../../state/sessionStore'
 import { useSettings } from '../../state/settingsStore'
 import { useHistory } from '../../state/historyStore'
 import { errorText } from '../../i18n/errorMessage'
+import { PATH_SEPARATOR } from '../../platform'
 import { PathBar } from '../common/PathBar'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { DirTable, flattenTree, type FlatRow } from './DirTable'
 import { DirToolbar } from './DirToolbar'
 import { formatSize } from './format'
+import { walkTree } from './tree'
 
 interface Props {
   tabId: string
@@ -65,6 +68,13 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 
   const runCompare = useCallback(async (): Promise<void> => {
     if (!tab?.leftPath || !tab?.rightPath) return
+
+    // La comparacion anterior se descarta al llegar, pero si no se cancela
+    // sigue leyendo disco y hasheando hasta el final, compitiendo por la E/S
+    // con la que si importa.
+    const previous = requestIdRef.current
+    if (previous) void window.api.cancelCompare(previous)
+
     const requestId = crypto.randomUUID()
     requestIdRef.current = requestId
     setRunning(true)
@@ -83,16 +93,9 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       useHistory.getState().record('dir', tab.leftPath, tab.rightPath)
       // Abrir de entrada las carpetas que contienen algo distinto.
       const toExpand = new Set<string>()
-      const walk = (node: DirNode): void => {
-        for (const child of node.children ?? []) {
-          if (!child.isDir) continue
-          if (child.status === 'dirDiffers') {
-            toExpand.add(child.relPath)
-            walk(child)
-          }
-        }
+      for (const node of walkTree(result.root, (child) => child.status === 'dirDiffers')) {
+        if (node.isDir && node.status === 'dirDiffers') toExpand.add(node.relPath)
       }
-      walk(result.root)
       setExpanded(toExpand)
     } catch (error) {
       setMessage(errorText(error))
@@ -135,13 +138,9 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 
   const nodeByPath = useMemo(() => {
     const map = new Map<string, DirNode>()
-    const walk = (node: DirNode): void => {
-      for (const child of node.children ?? []) {
-        map.set(child.relPath, child)
-        if (child.isDir) walk(child)
-      }
+    if (response) {
+      for (const node of walkTree(response.root)) map.set(node.relPath, node)
     }
-    if (response) walk(response.root)
     return map
   }, [response])
 
@@ -168,9 +167,11 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     (node: DirNode): void => {
       if (node.isDir || !tab?.leftPath || !tab?.rightPath) return
       if (!node.left || !node.right) return
-      const separator = tab.leftPath.includes('\\') ? '\\' : '/'
-      const relative = node.relPath.split('/').join(separator)
-      openTab('text', `${tab.leftPath}${separator}${relative}`, `${tab.rightPath}${separator}${relative}`)
+      openTab(
+        'text',
+        joinPath(tab.leftPath, node.relPath, PATH_SEPARATOR),
+        joinPath(tab.rightPath, node.relPath, PATH_SEPARATOR)
+      )
     },
     [tab?.leftPath, tab?.rightPath, openTab]
   )
@@ -194,14 +195,21 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         return
       }
 
-      const plan = await window.api.planFileOp({
-        operationId: 'plan',
-        kind,
-        leftRoot: tab.leftPath,
-        rightRoot: tab.rightPath,
-        items
-      })
-      setPendingOp({ kind, from, items, plan })
+      // Planificar toca el disco y puede fallar: una ruta que ya no existe, un
+      // permiso, una relativa que se escapa de su raiz. Sin este catch la
+      // promesa se rechazaba sin que nadie se enterase y el dialogo no salia.
+      try {
+        const plan = await window.api.planFileOp({
+          operationId: 'plan',
+          kind,
+          leftRoot: tab.leftPath,
+          rightRoot: tab.rightPath,
+          items
+        })
+        setPendingOp({ kind, from, items, plan })
+      } catch (error) {
+        setMessage(errorText(error))
+      }
     },
     [tab?.leftPath, tab?.rightPath, selected, nodeByPath, t]
   )
@@ -248,19 +256,17 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
   const syncToRight = useCallback((): void => {
     if (!response) return
     const items: FileOpItem[] = []
-    const walk = (node: DirNode): void => {
-      for (const child of node.children ?? []) {
-        if (child.isDir) {
-          if (child.status === 'leftOnly') items.push({ relPath: child.relPath, isDir: true, from: 'left' })
-          else walk(child)
-          continue
-        }
-        if (child.status === 'leftOnly' || child.status === 'different') {
-          items.push({ relPath: child.relPath, isDir: false, from: 'left' })
-        }
+    // Una carpeta que solo esta a la izquierda viaja entera, asi que no hay
+    // que bajar a mirar su contenido: por eso el recorrido se poda ahi.
+    for (const node of walkTree(response.root, (child) => child.status !== 'leftOnly')) {
+      if (node.isDir) {
+        if (node.status === 'leftOnly') items.push({ relPath: node.relPath, isDir: true, from: 'left' })
+        continue
+      }
+      if (node.status === 'leftOnly' || node.status === 'different') {
+        items.push({ relPath: node.relPath, isDir: false, from: 'left' })
       }
     }
-    walk(response.root)
     void requestOp('copy', 'left', items)
   }, [response, requestOp])
 

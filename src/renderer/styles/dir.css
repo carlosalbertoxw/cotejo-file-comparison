@@ -72,6 +72,20 @@
   background: var(--bg-selected) !important;
 }
 
+/* Fila con el foco del teclado. Se distingue de la seleccion a proposito: con
+   Espacio se puede seleccionar sin mover el foco, y al reves. */
+.dir-row.focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* El anillo va en la fila, no en el contenedor: marcar el borde de toda la
+   tabla no dice donde esta el cursor. */
+.dir-scroller:focus,
+.dir-scroller:focus-visible {
+  outline: none;
+}
+
 .dir-row .cell {
   padding: 0 6px;
   overflow: hidden;

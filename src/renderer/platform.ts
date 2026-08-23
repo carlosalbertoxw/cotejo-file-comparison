@@ -27,6 +27,9 @@ export const MOD_LABEL = IS_MAC ? '⌘' : 'Ctrl'
  */
 export const PATHS_IGNORE_CASE = IS_MAC || PLATFORM === 'win32'
 
+/** Separador de rutas del sistema, para componer rutas absolutas. */
+export const PATH_SEPARATOR = PLATFORM === 'win32' ? '\\' : '/'
+
 export function hasPrimaryModifier(event: KeyboardEvent): boolean {
   return IS_MAC ? event.metaKey : event.ctrlKey
 }

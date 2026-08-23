@@ -22,6 +22,17 @@ export default defineConfig({
       alias: {
         '@shared': resolve('src/shared')
       }
+    },
+    build: {
+      rollupOptions: {
+        // Un preload con sandbox tiene que ser CommonJS: ahi no hay cargador de
+        // modulos ESM. Por defecto electron-vite emitiria .mjs porque el
+        // package.json declara `type: module`.
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js'
+        }
+      }
     }
   },
   renderer: {

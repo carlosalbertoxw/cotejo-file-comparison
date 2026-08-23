@@ -33,8 +33,8 @@
     "author": "Autor",
     "license": "Licencia",
     "system": "Sistema",
+    "website": "Sitio web",
     "repository": "Código fuente",
-    "releases": "Descargas",
     "issues": "Informar de un problema",
     "close": "Cerrar"
   },
@@ -91,6 +91,10 @@
     "equal_other": "{{count}} iguales",
     "ignored_one": "{{count}} ignorada",
     "ignored_other": "{{count}} ignoradas",
+    "lossyEncoding": "Uno de los archivos no está en UTF-8 y al leerlo se perdieron caracteres. Se puede comparar, pero ese lado no se edita ni se guarda.",
+    "conflictTitle": "El archivo cambió en el disco",
+    "conflictMessage": "Algo modificó este archivo desde que se abrió. Guardar encima descartaría esos cambios. Recarga para ver lo que hay ahora.",
+    "conflictOverwrite": "Guardar de todas formas",
     "inlineSkipped": "Resaltado intra-línea desactivado (archivo muy grande)",
     "comparing": "Comparando…",
     "mergeRightTooltip": "Copiar este bloque hacia la derecha",
@@ -161,6 +165,7 @@
     "unreadable_other": "{{count}} rutas ilegibles",
     "selectedCount_one": "{{count}} seleccionado",
     "selectedCount_other": "{{count}} seleccionados",
+    "tableLabel": "Comparación de carpetas",
     "colName": "Nombre",
     "colSize": "Tamaño",
     "colModified": "Modificado"
@@ -194,6 +199,8 @@
     "notAFile": "«{{path}}» es una carpeta, no un archivo.",
     "fileTooLarge": "El archivo mide {{size}} MB y supera el límite de {{limit}} MB.",
     "binaryFile": "«{{path}}» parece un archivo binario y no se puede comparar como texto.",
+    "fileChangedOnDisk": "«{{path}}» cambió en el disco desde que se abrió.",
+    "badRequest": "Petición mal formada: {{field}}.",
     "absolutePathRejected": "Se esperaba una ruta relativa, no «{{path}}».",
     "pathOutsideRoot": "Ruta fuera de la carpeta comparada: «{{path}}»."
   }

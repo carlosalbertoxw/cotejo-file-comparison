@@ -13,6 +13,30 @@ extraResources:
     to: LICENSE.txt
   - from: THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
+# Sin declarar los tipos de documento, Cotejo no aparece en «Abrir con» y macOS
+# no entrega nunca el evento `open-file` que el proceso principal ya sabe
+# atender. Es un rol de editor secundario: no se reclama ninguna extension.
+fileAssociations:
+  - ext:
+      - txt
+      - md
+      - markdown
+      - csv
+      - tsv
+      - log
+      - json
+      - yml
+      - yaml
+      - xml
+      - ini
+      - cfg
+      - conf
+      - diff
+      - patch
+    name: Archivo de texto
+    description: Comparar con Cotejo
+    role: Editor
+    rank: Alternate
 win:
   target:
     - nsis

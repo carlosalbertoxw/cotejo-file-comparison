@@ -5,8 +5,12 @@ import type { UpdateCheck } from '@shared/types'
 
 /**
  * Cotejo no se actualiza solo: mira si hay una version mas nueva publicada y
- * manda al usuario a la pagina de releases. Descargar y sustituir el ejecutable
- * exigiria firmar la aplicacion, y sin certificado eso no se sostiene.
+ * manda al usuario a la pagina de descargas del sitio. Descargar y sustituir el
+ * ejecutable exigiria firmar la aplicacion, y sin certificado eso no se
+ * sostiene.
+ *
+ * La version se sigue consultando aqui, contra la API de releases: es de donde
+ * cuelgan los instalables que el sitio enlaza.
  *
  * La consulta va por `net.fetch` y no por `fetch` a secas para que herede el
  * proxy y los certificados que ya tenga configurados el sistema; en una red

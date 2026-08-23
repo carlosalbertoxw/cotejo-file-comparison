@@ -1,0 +1,44 @@
+## Novedades
+
+- **Una sola instancia.** Abrir un archivo o una carpeta con Cotejo ya en marcha añade una pestaña
+  a la ventana que ya existe y la trae al frente, en vez de levantar otra aplicación con su propia
+  sesión. Antes cada apertura era un programa nuevo, y dos ventanas abiertas se pisaban las
+  pestañas guardadas al cerrarse.
+- **Cotejo aparece en «Abrir con»** de tu explorador de archivos, para los tipos de texto más
+  habituales. En macOS es además lo que hacía falta para que arrastrar archivos sobre el icono del
+  Dock los abriera comparados: el programa ya sabía atenderlo, pero el sistema nunca se lo decía.
+- **La tabla de carpetas se maneja con el teclado.** Flechas arriba y abajo para moverse, derecha e
+  izquierda para abrir y cerrar carpetas, `Inicio` y `Fin` para los extremos, `AvPág` y `RePág`
+  para saltar de pantalla, `Espacio` para añadir o quitar de la selección y `Entrar` para abrir la
+  comparación de esa fila. Hasta ahora esa mitad de la aplicación solo se podía usar con ratón.
+
+## Cambios
+
+- **Guardar ya no pisa el trabajo de nadie.** Si el archivo cambió en el disco desde que lo
+  abriste, Cotejo no escribe: te lo dice y te deja elegir entre recargar o guardar de todas formas.
+- **La escritura es atómica.** Pasa por un archivo temporal y un cambio de nombre encima, así que
+  un corte de luz a mitad de guardado ya no puede dejarte el archivo a medias: o está el contenido
+  viejo, o está el nuevo. Los enlaces simbólicos se siguen escribiendo en su sitio, sin convertirse
+  en archivos normales.
+- **Los archivos que no son UTF-8 se abren en solo lectura.** Se pueden comparar con normalidad,
+  pero no editar. Un `.txt` heredado en Windows-1252 pierde sus eñes y sus acentos al leerlo, y
+  guardarlo encima escribía esa pérdida en el disco de verdad. Ahora una franja lo avisa y el panel
+  no se deja tocar.
+- **El límite de tamaño baja de 64 MB a 12 MB.** El de antes prometía algo que la aplicación no
+  aguantaba: el texto se duplica varias veces por el camino y un archivo de 64 MB se comía más de
+  un giga de memoria antes de empezar a comparar. Ahora el límite se corresponde con lo que de
+  verdad funciona.
+- **La ventana ya no da un fogonazo blanco al abrirse** en tema oscuro.
+- **`Escape` cierra el diálogo de confirmación**, como ya hacía el de «Acerca de».
+- Comparar carpetas muy grandes deja de congelar la ventana: la interfaz sigue respondiendo
+  mientras se construye el árbol, y el botón de cancelar se puede pulsar de verdad. Cambiar de modo
+  a media comparación cancela la anterior en vez de dejarla leyendo disco de fondo.
+
+## Arreglos
+
+- **Un fallo al guardar ya no pasa desapercibido.** Si el archivo era de solo lectura, no había
+  permisos o el disco estaba lleno, la aplicación no decía absolutamente nada y te quedabas
+  creyendo que habías guardado. Lo mismo al preparar una copia o un borrado en la vista de
+  carpetas.
+- Abrir un archivo desde la vista de carpetas construye la ruta respetando cómo esté escrita la
+  raíz, sin mezclar barras normales e invertidas.

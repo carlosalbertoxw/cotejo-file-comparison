@@ -10,6 +10,21 @@ import { hashFile, mapWithConcurrency } from './hasher'
  */
 const MTIME_TOLERANCE_MS = 2000
 
+/**
+ * Cada cuantas entradas se le devuelve el turno al bucle de eventos.
+ *
+ * Construir el arbol es trabajo sincrono en el proceso principal, que es el
+ * mismo que atiende la ventana: con cientos de miles de entradas la aplicacion
+ * se quedaba congelada —incluido el boton de cancelar— justo cuando mas ganas
+ * hay de pararla. Parando a respirar cada tanto, la interfaz sigue viva y la
+ * cancelacion se atiende. El coste es despreciable frente al escaneo.
+ */
+const YIELD_EVERY = 5_000
+
+function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve))
+}
+
 export interface CompareTreeCallbacks {
   onHashProgress?: (done: number, total: number, relPath: string) => void
   isCancelled?: () => boolean
@@ -73,12 +88,29 @@ export async function compareTrees(
 
   const allPaths = new Set<string>([...leftIndex.keys(), ...rightIndex.keys()])
   // Ordenar por profundidad garantiza que el padre existe antes que el hijo.
+  // La profundidad se calcula una vez por ruta y no dentro del comparador, que
+  // se llama O(n log n) veces y partia la cadena en cada llamada.
+  const depthOf = new Map<string, number>()
+  for (const relPath of allPaths) {
+    let depth = 0
+    for (let i = 0; i < relPath.length; i++) {
+      if (relPath.charCodeAt(i) === 47) depth++
+    }
+    depthOf.set(relPath, depth)
+  }
   const sorted = [...allPaths].sort((a, b) => {
-    const depth = a.split('/').length - b.split('/').length
+    const depth = (depthOf.get(a) as number) - (depthOf.get(b) as number)
     return depth !== 0 ? depth : a.localeCompare(b)
   })
 
+  let sinceYield = 0
   for (const relPath of sorted) {
+    if (++sinceYield >= YIELD_EVERY) {
+      sinceYield = 0
+      await yieldToEventLoop()
+      if (callbacks.isCancelled?.()) break
+    }
+
     const left = leftIndex.get(relPath) ?? null
     const right = rightIndex.get(relPath) ?? null
     const isDir = (left ?? right)?.isDir === true
@@ -161,7 +193,12 @@ export async function compareTrees(
 
   resolveDir(root)
 
+  sinceYield = 0
   for (const node of nodes.values()) {
+    if (++sinceYield >= YIELD_EVERY) {
+      sinceYield = 0
+      await yieldToEventLoop()
+    }
     if (node.isDir || node.relPath === '') continue
     if (node.status === 'same') stats.same++
     else if (node.status === 'leftOnly') stats.leftOnly++

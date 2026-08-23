@@ -1,6 +1,7 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, nativeTheme, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { IPC } from '@shared/ipc-channels'
 import { registerFsHandlers } from './ipc/fs'
@@ -42,16 +43,6 @@ function deliverPaths(paths: string[]): void {
   }
 }
 
-app.on('open-file', (event, filePath) => {
-  event.preventDefault()
-  pendingPaths.push(filePath)
-  if (flushTimer) clearTimeout(flushTimer)
-  flushTimer = setTimeout(() => {
-    flushTimer = null
-    deliverPaths(pendingPaths.splice(0, pendingPaths.length))
-  }, 50)
-})
-
 /**
  * En desarrollo se ejecuta el binario de Electron tal cual, sin ningun
  * empaquetado del que sacar el icono, asi que la ventana sale con el de
@@ -64,20 +55,34 @@ function devIcon(): { icon: string } | undefined {
   return existsSync(icon) ? { icon } : undefined
 }
 
+/** La unica pagina que la ventana tiene permitido cargar. */
+function rendererUrl(): string {
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    return process.env['ELECTRON_RENDERER_URL']
+  }
+  return pathToFileURL(join(__dirname, '../renderer/index.html')).href
+}
+
 function createWindow(): BrowserWindow {
+  const url = rendererUrl()
+
   const window = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
     minHeight: 500,
     show: false,
-    backgroundColor: '#f3f3f3',
+    // El fondo se pinta antes de que exista la hoja de estilos; en tema oscuro
+    // un blanco fijo aqui es un fogonazo cada vez que se abre la aplicacion.
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#161c1f' : '#f3f3f3',
     autoHideMenuBar: true,
     title: 'Cotejo',
     ...devIcon(),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false,
+      preload: join(__dirname, '../preload/index.js'),
+      // Con sandbox el preload corre sin Node: solo le quedan contextBridge,
+      // ipcRenderer y webUtils, que es exactamente lo que usa.
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -96,40 +101,79 @@ function createWindow(): BrowserWindow {
 
   // Nada de navegacion externa dentro de la ventana: los enlaces van al
   // navegador, y solo si son https. Cualquier otro esquema se queda sin abrir.
-  window.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) void shell.openExternal(url)
+  window.webContents.setWindowOpenHandler(({ url: target }) => {
+    if (target.startsWith('https://')) void shell.openExternal(target)
     return { action: 'deny' }
   })
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    void window.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    void window.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+  /**
+   * La ventana no navega a ningun sitio, nunca.
+   *
+   * `setWindowOpenHandler` solo cubre las ventanas nuevas; esto cubre al propio
+   * documento. Sin ello, soltar un .html sobre una zona sin gestor de `drop`
+   * —el fallback del ErrorBoundary, por ejemplo— cargaria ese archivo en la
+   * ventana con el preload puesto, y `window.api` quedaria en manos de un
+   * documento ajeno.
+   */
+  window.webContents.on('will-navigate', (event, target) => {
+    if (target !== url) event.preventDefault()
+  })
+
+  void window.loadURL(url)
 
   mainWindow = window
   return window
 }
 
-void app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.carlos.cotejo')
-
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+/**
+ * Una sola instancia.
+ *
+ * Cotejo se abre con rutas: desde la terminal, arrastrando al ejecutable o con
+ * «Abrir con». Sin este cerrojo, cada apertura levanta una aplicacion nueva en
+ * vez de anadir una pestana, y dos instancias se pisan el `localStorage` de la
+ * sesion al cerrarse.
+ */
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+    deliverPaths(pathsFromArgv(argv))
   })
 
-  registerFsHandlers()
-  registerDirCompareHandlers()
-  registerFileOpsHandlers()
-  registerAppHandlers()
-
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault()
+    pendingPaths.push(filePath)
+    if (flushTimer) clearTimeout(flushTimer)
+    flushTimer = setTimeout(() => {
+      flushTimer = null
+      deliverPaths(pendingPaths.splice(0, pendingPaths.length))
+    }, 50)
   })
-})
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+  void app.whenReady().then(() => {
+    electronApp.setAppUserModelId('com.carlos.cotejo')
+
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+
+    registerFsHandlers()
+    registerDirCompareHandlers()
+    registerFileOpsHandlers()
+    registerAppHandlers()
+
+    createWindow()
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+}

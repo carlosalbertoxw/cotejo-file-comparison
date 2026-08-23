@@ -3,7 +3,11 @@ import { defineConfig } from 'astro/config'
 
 /**
  * Sitio estatico servido desde GitHub Pages en
- * https://carlosalbertoxw.github.io/cotejo-file-comparison/
+ * https://carlosalbertoxw.com/cotejo-file-comparison/
+ *
+ * El dominio propio se sirve desde las páginas de usuario, así que los
+ * repositorios de proyecto siguen colgando de su subcarpeta y `base` no
+ * cambia. La dirección de github.io redirige aquí con un 301 permanente.
  *
  * El `base` es obligatorio: Pages sirve los repositorios de proyecto bajo una
  * subcarpeta con el nombre del repo, no en la raiz del dominio. Sin el, todas
@@ -11,7 +15,7 @@ import { defineConfig } from 'astro/config'
  * ni una hoja de estilos.
  */
 export default defineConfig({
-  site: 'https://carlosalbertoxw.github.io',
+  site: 'https://carlosalbertoxw.com',
   base: '/cotejo-file-comparison',
   trailingSlash: 'always',
   build: { format: 'directory' },

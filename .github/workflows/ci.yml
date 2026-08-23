@@ -1,0 +1,61 @@
+# Comprobaciones de cada commit y de cada pull request.
+#
+# El workflow de release solo se dispara con un tag, asi que hasta ahora un
+# fallo de tipos o un test roto no aparecia hasta el momento de publicar, que
+# es el peor momento posible. Esto lo adelanta a cuando se escribio.
+#
+# En Windows ademas de en Linux porque Cotejo compara archivos: las rutas, las
+# mayusculas del sistema de archivos y los finales de linea se comportan
+# distinto, y es justo lo que el proyecto manipula.
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'sitio/**'
+      - 'changelog/**'
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - 'sitio/**'
+      - 'changelog/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  comprobar:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # Empaquetar entero es cosa del workflow de release; aqui basta con
+      # comprobar que los tres bundles se generan, que es donde salen los
+      # errores de configuracion que el typecheck no ve.
+      - run: npm run build

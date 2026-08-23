@@ -1,7 +1,12 @@
 # Sitio de Cotejo
 
 La página pública de Cotejo: qué es, cómo se lee una comparación y dónde descargarla. Se publica
-en GitHub Pages, en <https://carlosalbertoxw.github.io/cotejo-file-comparison/>.
+en GitHub Pages, en <https://carlosalbertoxw.com/cotejo-file-comparison/>. La dirección de
+`github.io` redirige ahí con un 301 permanente.
+
+La aplicación enlaza a esta página desde «Acerca de» y desde el aviso de versión nueva, en el
+idioma que tenga activo (`src/shared/links.ts`). Si el sitio cambia de dirección o de estructura
+de rutas, hay que tocar ese archivo además de `astro.config.mjs`.
 
 Es un proyecto **aparte del de la raíz**, con su propio `package.json` y su propio lockfile. Esa
 separación no es estética: `scripts/make-notices.mjs` recorre los `import` de `src/` para generar

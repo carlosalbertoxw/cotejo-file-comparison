@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ISSUES_URL, RELEASES_URL, REPO_URL } from '@shared/links'
+import { ISSUES_URL, REPO_URL, siteDownloadsUrl, siteUrl } from '@shared/links'
 import { formatVersion } from '@shared/version'
 import type { AppInfo } from '@shared/types'
 import { useUpdates } from '../../state/updateStore'
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function AboutDialog({ onClose }: Props): React.JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [info, setInfo] = useState<AppInfo | null>(null)
   const status = useUpdates((state) => state.status)
   const latest = useUpdates((state) => state.latest)
@@ -102,8 +102,12 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
           </dl>
 
           <div className="about-links">
+            {/* El sitio, en el idioma de la aplicacion; las de GitHub son las
+                mismas para todos. Aqui no hay enlace a las releases: descargar
+                se hace por la pagina, que es la unica que explica que archivo
+                le toca a cada sistema. */}
+            <ExternalLink href={siteUrl(i18n.language)}>{t('about.website')}</ExternalLink>
             <ExternalLink href={REPO_URL}>{t('about.repository')}</ExternalLink>
-            <ExternalLink href={RELEASES_URL}>{t('about.releases')}</ExternalLink>
             <ExternalLink href={ISSUES_URL}>{t('about.issues')}</ExternalLink>
           </div>
 
@@ -113,7 +117,9 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
             </button>
             {updateMessage && <span className="about-update-status">{updateMessage}</span>}
             {status === 'available' && (
-              <ExternalLink href={RELEASES_URL}>{t('update.download')}</ExternalLink>
+              <ExternalLink href={siteDownloadsUrl(i18n.language)}>
+                {t('update.download')}
+              </ExternalLink>
             )}
           </div>
         </div>

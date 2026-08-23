@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -7,6 +7,7 @@ import {
   decodeText,
   detectEol,
   encodeText,
+  isValidUtf8,
   looksBinary,
   readTextFile,
   writeTextFile
@@ -125,5 +126,121 @@ describe('lectura y escritura sobre disco', () => {
     expect(payload.size).toBe(4)
     expect(payload.mtimeMs).toBeGreaterThan(0)
     expect(payload.path).toBe(path)
+  })
+})
+
+describe('isValidUtf8', () => {
+  it('acepta UTF-8 con acentos, eñes y emojis', () => {
+    expect(isValidUtf8(Buffer.from('añoración 🌐', 'utf8'))).toBe(true)
+  })
+
+  it('rechaza bytes que no forman UTF-8', () => {
+    // 0xF1 es «ñ» en Windows-1252; en UTF-8 anuncia una secuencia que no llega.
+    expect(isValidUtf8(Buffer.from([0x61, 0xf1, 0x6f]))).toBe(false)
+  })
+
+  it('acepta un archivo vacio', () => {
+    expect(isValidUtf8(Buffer.alloc(0))).toBe(true)
+  })
+})
+
+describe('decodeText: codificacion con perdida', () => {
+  it('marca como lossy lo que no era UTF-8', () => {
+    const latin1 = Buffer.from([0x61, 0xf1, 0x6f]) // «año» en Windows-1252
+    expect(decodeText(latin1).lossy).toBe(true)
+  })
+
+  it('no marca lo que si era UTF-8', () => {
+    expect(decodeText(Buffer.from('año', 'utf8')).lossy).toBe(false)
+  })
+})
+
+describe('readTextFile: codificacion', () => {
+  it('un archivo en Windows-1252 se lee, pero avisando de la perdida', async () => {
+    const path = join(dir, 'latin1.txt')
+    await writeFile(path, Buffer.from([0x61, 0xf1, 0x6f, 0x0a]))
+
+    const payload = await readTextFile(path)
+
+    // Se puede comparar: el contenido llega, con los rombos de sustitucion.
+    expect(payload.content).toContain('\uFFFD')
+    // Y queda dicho que guardarlo escribiria esos rombos en el disco.
+    expect(payload.lossy).toBe(true)
+  })
+})
+
+describe('writeTextFile: cambios ajenos en el disco', () => {
+  it('se niega a escribir si el archivo cambio desde que se leyo', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'original\n', 'utf8')
+    const payload = await readTextFile(path)
+
+    // Otro programa lo modifica mientras estaba abierto.
+    await writeFile(path, 'lo que escribio otro\n', 'utf8')
+
+    const error = await writeTextFile(path, 'lo mio\n', payload.eol, payload.encoding, {
+      mtimeMs: payload.mtimeMs,
+      size: payload.size
+    }).catch((e: Error) => e)
+
+    expect(parseIpcError((error as Error).message)?.code).toBe('fileChangedOnDisk')
+    // Y sobre todo: no se escribio nada.
+    expect(await readFile(path, 'utf8')).toBe('lo que escribio otro\n')
+  })
+
+  it('escribe cuando el archivo sigue como estaba', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'original\n', 'utf8')
+    const payload = await readTextFile(path)
+
+    await writeTextFile(path, 'editado\n', payload.eol, payload.encoding, {
+      mtimeMs: payload.mtimeMs,
+      size: payload.size
+    })
+
+    expect(await readFile(path, 'utf8')).toBe('editado\n')
+  })
+
+  it('sin estado esperado escribe igualmente: es el «guardar de todas formas»', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'original\n', 'utf8')
+    const payload = await readTextFile(path)
+    await writeFile(path, 'de otro\n', 'utf8')
+
+    await writeTextFile(path, 'a la fuerza\n', payload.eol, payload.encoding)
+
+    expect(await readFile(path, 'utf8')).toBe('a la fuerza\n')
+  })
+
+  it('devuelve el tamaño y la fecha nuevos', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'x\n', 'utf8')
+
+    const info = await writeTextFile(path, 'mucho mas largo\n', 'lf', 'utf8')
+
+    expect(info.size).toBe(Buffer.byteLength('mucho mas largo\n'))
+    expect(info.mtimeMs).toBeGreaterThan(0)
+  })
+})
+
+describe('writeTextFile: escritura atomica', () => {
+  it('no deja archivos temporales por el camino', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'original\n', 'utf8')
+
+    await writeTextFile(path, 'editado\n', 'lf', 'utf8')
+
+    expect(await readdir(dir)).toEqual(['a.txt'])
+  })
+
+  it('el archivo nunca queda a medias: o lo viejo o lo nuevo', async () => {
+    const path = join(dir, 'a.txt')
+    await writeFile(path, 'viejo\n', 'utf8')
+
+    await writeTextFile(path, 'nuevo del todo\n', 'lf', 'utf8')
+
+    const final = await readFile(path, 'utf8')
+    expect(['viejo\n', 'nuevo del todo\n']).toContain(final)
+    expect(final).toBe('nuevo del todo\n')
   })
 })

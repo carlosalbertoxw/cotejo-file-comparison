@@ -55,6 +55,8 @@ export function DirTable({
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [height, setHeight] = useState(0)
+  /** Fila que tiene el foco del teclado. -1 mientras no se ha usado. */
+  const [focused, setFocused] = useState(-1)
 
   useEffect(() => {
     const element = scrollerRef.current
@@ -64,6 +66,84 @@ export function DirTable({
     setHeight(element.clientHeight)
     return () => observer.disconnect()
   }, [])
+
+  // Una comparacion nueva, o un filtro, cambian las filas bajo los pies.
+  useEffect(() => {
+    setFocused((current) => (current >= rows.length ? rows.length - 1 : current))
+  }, [rows.length])
+
+  /** Mueve el foco y arrastra el scroll lo justo para que la fila se vea. */
+  const focusRow = (index: number): void => {
+    const clamped = Math.max(0, Math.min(rows.length - 1, index))
+    setFocused(clamped)
+    const element = scrollerRef.current
+    if (!element) return
+    const top = clamped * ROW_HEIGHT
+    if (top < element.scrollTop) element.scrollTop = top
+    else if (top + ROW_HEIGHT > element.scrollTop + element.clientHeight) {
+      element.scrollTop = top + ROW_HEIGHT - element.clientHeight
+    }
+  }
+
+  /**
+   * Teclado sobre la tabla. Sin esto la mitad de la aplicacion solo se puede
+   * usar con raton: las filas son divs y no habia forma de llegar a ellas.
+   */
+  const onKeyDown = (event: React.KeyboardEvent): void => {
+    if (rows.length === 0) return
+    const current = focused < 0 ? 0 : focused
+    const row = rows[current]
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault()
+        focusRow(focused < 0 ? 0 : focused + 1)
+        return
+      case 'ArrowUp':
+        event.preventDefault()
+        focusRow(focused < 0 ? 0 : focused - 1)
+        return
+      case 'Home':
+        event.preventDefault()
+        focusRow(0)
+        return
+      case 'End':
+        event.preventDefault()
+        focusRow(rows.length - 1)
+        return
+      case 'PageDown':
+        event.preventDefault()
+        focusRow(current + Math.max(1, Math.floor(height / ROW_HEIGHT) - 1))
+        return
+      case 'PageUp':
+        event.preventDefault()
+        focusRow(current - Math.max(1, Math.floor(height / ROW_HEIGHT) - 1))
+        return
+      case 'ArrowRight':
+        if (!row?.node.isDir) return
+        event.preventDefault()
+        if (!expanded.has(row.node.relPath)) onToggleExpand(row.node.relPath)
+        else focusRow(current + 1)
+        return
+      case 'ArrowLeft':
+        if (!row?.node.isDir) return
+        event.preventDefault()
+        if (expanded.has(row.node.relPath)) onToggleExpand(row.node.relPath)
+        return
+      case ' ':
+        if (!row) return
+        event.preventDefault()
+        onSelect(row.node.relPath, true)
+        return
+      case 'Enter':
+        if (!row) return
+        event.preventDefault()
+        if (row.node.isDir) onToggleExpand(row.node.relPath)
+        else onOpen(row.node)
+        return
+      default:
+    }
+  }
 
   const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 3)
   const last = Math.min(rows.length, Math.ceil((scrollTop + height) / ROW_HEIGHT) + 3)
@@ -116,12 +196,24 @@ export function DirTable({
       )
     }
 
+    const isSelected = selected.has(node.relPath)
+
     visible.push(
       <div
         key={node.relPath}
-        className={`dir-row status-${node.status}${selected.has(node.relPath) ? ' selected' : ''}`}
+        id={`dir-row-${index}`}
+        role="row"
+        aria-selected={isSelected}
+        aria-expanded={canExpand ? expanded.has(node.relPath) : undefined}
+        aria-level={depth + 1}
+        className={`dir-row status-${node.status}${isSelected ? ' selected' : ''}${
+          index === focused ? ' focused' : ''
+        }`}
         style={{ top: index * ROW_HEIGHT }}
-        onMouseDown={(event) => onSelect(node.relPath, event.ctrlKey || event.metaKey)}
+        onMouseDown={(event) => {
+          setFocused(index)
+          onSelect(node.relPath, event.ctrlKey || event.metaKey)
+        }}
         onDoubleClick={() => (canExpand ? onToggleExpand(node.relPath) : onOpen(node))}
       >
         {side('left')}
@@ -149,6 +241,13 @@ export function DirTable({
       <div
         className="dir-scroller"
         ref={scrollerRef}
+        role="grid"
+        aria-label={t('dirCompare.tableLabel')}
+        aria-rowcount={rows.length}
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        onFocus={() => setFocused((current) => (current < 0 && rows.length > 0 ? 0 : current))}
+        aria-activedescendant={focused >= 0 ? `dir-row-${focused}` : undefined}
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
       >
         <div className="dir-canvas" style={{ height: rows.length * ROW_HEIGHT }}>

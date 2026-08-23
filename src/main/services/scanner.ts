@@ -46,11 +46,14 @@ export async function scanDirectory(
   const errors: { relPath: string; message: string }[] = []
 
   // Iterativo en vez de recursivo: un arbol muy profundo no debe reventar la pila.
+  // La cola avanza con un cursor y no con `shift()`, que recoloca el array
+  // entero en cada paso y convierte el recorrido en cuadratico.
   const queue: string[] = ['']
+  let cursor = 0
 
-  while (queue.length > 0) {
+  while (cursor < queue.length) {
     if (callbacks.isCancelled?.()) break
-    const currentRel = queue.shift() as string
+    const currentRel = queue[cursor++] as string
     const currentAbs = currentRel === '' ? root : join(root, currentRel)
 
     let dir: Awaited<ReturnType<typeof opendir>>

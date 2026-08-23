@@ -33,8 +33,8 @@
     "author": "Author",
     "license": "License",
     "system": "System",
+    "website": "Website",
     "repository": "Source code",
-    "releases": "Downloads",
     "issues": "Report an issue",
     "close": "Close"
   },
@@ -91,6 +91,10 @@
     "equal_other": "{{count}} equal",
     "ignored_one": "{{count}} ignored",
     "ignored_other": "{{count}} ignored",
+    "lossyEncoding": "One of the files is not UTF-8 and characters were lost while reading it. You can still compare, but that side cannot be edited or saved.",
+    "conflictTitle": "The file changed on disk",
+    "conflictMessage": "Something modified this file after it was opened. Saving over it would discard those changes. Reload to see what is there now.",
+    "conflictOverwrite": "Save anyway",
     "inlineSkipped": "Intra-line highlighting disabled (file too large)",
     "comparing": "Comparing…",
     "mergeRightTooltip": "Copy this block to the right",
@@ -161,6 +165,7 @@
     "unreadable_other": "{{count}} unreadable paths",
     "selectedCount_one": "{{count}} selected",
     "selectedCount_other": "{{count}} selected",
+    "tableLabel": "Folder comparison",
     "colName": "Name",
     "colSize": "Size",
     "colModified": "Modified"
@@ -194,6 +199,8 @@
     "notAFile": "\"{{path}}\" is a folder, not a file.",
     "fileTooLarge": "The file is {{size}} MB and exceeds the {{limit}} MB limit.",
     "binaryFile": "\"{{path}}\" looks like a binary file and cannot be compared as text.",
+    "fileChangedOnDisk": "«{{path}}» changed on disk after it was opened.",
+    "badRequest": "Malformed request: {{field}}.",
     "absolutePathRejected": "Expected a relative path, not \"{{path}}\".",
     "pathOutsideRoot": "Path outside the compared folder: \"{{path}}\"."
   }

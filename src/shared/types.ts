@@ -91,6 +91,13 @@ export interface TextFilePayload {
   encoding: 'utf8' | 'utf8-bom'
   size: number
   mtimeMs: number
+  /**
+   * El archivo no era UTF-8 valido y al decodificarlo se perdieron bytes.
+   * Se puede leer y comparar, pero guardarlo escribiria los rombos de
+   * sustitucion encima del contenido original, asi que ese lado va en solo
+   * lectura.
+   */
+  lossy: boolean
 }
 
 // ---------------------------------------------------------------------------

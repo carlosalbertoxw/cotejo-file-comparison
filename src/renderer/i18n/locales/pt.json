@@ -33,8 +33,8 @@
     "author": "Autor",
     "license": "Licença",
     "system": "Sistema",
+    "website": "Site",
     "repository": "Código-fonte",
-    "releases": "Downloads",
     "issues": "Relatar um problema",
     "close": "Fechar"
   },
@@ -91,6 +91,10 @@
     "equal_other": "{{count}} iguais",
     "ignored_one": "{{count}} ignorada",
     "ignored_other": "{{count}} ignoradas",
+    "lossyEncoding": "Um dos arquivos não está em UTF-8 e caracteres se perderam na leitura. Dá para comparar, mas esse lado não pode ser editado nem salvo.",
+    "conflictTitle": "O arquivo mudou no disco",
+    "conflictMessage": "Algo modificou este arquivo depois que ele foi aberto. Salvar por cima descartaria essas mudanças. Recarregue para ver o que está lá agora.",
+    "conflictOverwrite": "Salvar mesmo assim",
     "inlineSkipped": "Realce intralinha desativado (arquivo muito grande)",
     "comparing": "Comparando…",
     "mergeRightTooltip": "Copiar este bloco para a direita",
@@ -161,6 +165,7 @@
     "unreadable_other": "{{count}} caminhos ilegíveis",
     "selectedCount_one": "{{count}} selecionado",
     "selectedCount_other": "{{count}} selecionados",
+    "tableLabel": "Comparação de pastas",
     "colName": "Nome",
     "colSize": "Tamanho",
     "colModified": "Modificado"
@@ -194,6 +199,8 @@
     "notAFile": "\"{{path}}\" é uma pasta, não um arquivo.",
     "fileTooLarge": "O arquivo tem {{size}} MB e ultrapassa o limite de {{limit}} MB.",
     "binaryFile": "\"{{path}}\" parece ser um arquivo binário e não pode ser comparado como texto.",
+    "fileChangedOnDisk": "«{{path}}» mudou no disco depois de ser aberto.",
+    "badRequest": "Requisição malformada: {{field}}.",
     "absolutePathRejected": "Era esperado um caminho relativo, não \"{{path}}\".",
     "pathOutsideRoot": "Caminho fora da pasta comparada: \"{{path}}\"."
   }

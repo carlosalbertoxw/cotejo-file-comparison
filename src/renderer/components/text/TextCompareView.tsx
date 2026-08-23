@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EditorView } from '@codemirror/view'
-import type { DiffBlock, Side, TextFilePayload } from '@shared/types'
-import { errorText } from '../../i18n/errorMessage'
+import type { DiffBlock, Side } from '@shared/types'
 import { hasPrimaryModifier } from '../../platform'
 import { useSettings } from '../../state/settingsStore'
 import { useSession } from '../../state/sessionStore'
 import { useHistory } from '../../state/historyStore'
 import { useDiff } from './useDiff'
+import { useSideFile } from './useSideFile'
+import { useScrollSync } from './useScrollSync'
+import { useBlockNavigation } from './useBlockNavigation'
 import { deriveAlignment } from './alignment'
 import { DiffPane, type DiffPaneHandle } from './DiffPane'
 import { DiffToolbar } from './DiffToolbar'
@@ -15,6 +17,7 @@ import { LineGutter } from './LineGutter'
 import { MergeGutter } from './MergeGutter'
 import { OverviewRuler } from './OverviewRuler'
 import { PathBar } from '../common/PathBar'
+import { ConfirmDialog } from '../common/ConfirmDialog'
 import { LINE_HEIGHT } from './constants'
 import { replaceLines, type LineRange } from './merge'
 import { mapLineRange } from './selectionMerge'
@@ -24,19 +27,11 @@ interface Props {
   active: boolean
 }
 
-interface SideState {
-  payload: TextFilePayload | null
-  content: string
-  error: string | null
-}
-
 /** Que hay seleccionado y en que panel; el lado decide hacia donde se transfiere. */
 interface Selection {
   side: Side
   range: LineRange
 }
-
-const EMPTY_SIDE: SideState = { payload: null, content: '', error: null }
 
 export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   const { t } = useTranslation()
@@ -45,18 +40,17 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   const diffOptions = useSettings((state) => state.diffOptions)
   const setDiffOption = useSettings((state) => state.setDiffOption)
 
-  const [left, setLeft] = useState<SideState>(EMPTY_SIDE)
-  const [right, setRight] = useState<SideState>(EMPTY_SIDE)
+  const left = useSideFile()
+  const right = useSideFile()
+
   const [readOnly, setReadOnly] = useState(false)
-  const [activeBlock, setActiveBlock] = useState(-1)
   const [selection, setSelection] = useState<Selection | null>(null)
-  const [scroll, setScroll] = useState({ top: 0, left: 0 })
-  const [viewport, setViewport] = useState({ height: 0 })
+  /** Lado cuyo guardado choco con un cambio ajeno en el disco. */
+  const [conflict, setConflict] = useState<Side | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const leftPane = useRef<DiffPaneHandle>(null)
   const rightPane = useRef<DiffPaneHandle>(null)
-  const syncing = useRef(false)
-  const bodyRef = useRef<HTMLDivElement>(null)
 
   // Se compara lo que hay en los dos paneles, venga de un archivo o lo acabe de
   // escribir o pegar quien compara. Mientras los dos esten vacios no hay nada
@@ -80,27 +74,11 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
     [result]
   )
 
-  const leftDirty = left.payload !== null && left.content !== left.payload.content
-  const rightDirty = right.payload !== null && right.content !== right.payload.content
-
   useEffect(() => {
-    updateTab(tabId, { dirty: leftDirty || rightDirty })
-  }, [tabId, leftDirty, rightDirty, updateTab])
+    updateTab(tabId, { dirty: left.dirty || right.dirty })
+  }, [tabId, left.dirty, right.dirty, updateTab])
 
   // ----------------------------------------------------------------- cargar
-
-  const loadSide = useCallback(
-    async (side: Side, path: string): Promise<void> => {
-      const setter = side === 'left' ? setLeft : setRight
-      try {
-        const payload = await window.api.readTextFile(path)
-        setter({ payload, content: payload.content, error: null })
-      } catch (loadError) {
-        setter({ payload: null, content: '', error: errorText(loadError) })
-      }
-    },
-    []
-  )
 
   const pickSide = useCallback(
     async (side: Side): Promise<void> => {
@@ -109,43 +87,62 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
       )
       if (!path) return
       updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
-      await loadSide(side, path)
     },
-    [tabId, updateTab, loadSide, t]
+    [tabId, updateTab, t]
   )
 
-  // Las rutas viven en la pestana; este efecto es quien las convierte en contenido.
-  useEffect(() => {
-    if (tab?.leftPath && tab.leftPath !== left.payload?.path) void loadSide('left', tab.leftPath)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab?.leftPath])
+  // Las rutas viven en la pestana; estos efectos son quien las convierte en
+  // contenido. Dependen solo de la ruta a proposito: recargar en cada cambio
+  // del contenido seria un bucle.
+  const leftPath = tab?.leftPath ?? null
+  const rightPath = tab?.rightPath ?? null
+  const leftLoaded = left.payload?.path
+  const rightLoaded = right.payload?.path
+  const loadLeft = left.load
+  const loadRight = right.load
 
   useEffect(() => {
-    if (tab?.rightPath && tab.rightPath !== right.payload?.path) void loadSide('right', tab.rightPath)
+    if (leftPath && leftPath !== leftLoaded) void loadLeft(leftPath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab?.rightPath])
+  }, [leftPath])
+
+  useEffect(() => {
+    if (rightPath && rightPath !== rightLoaded) void loadRight(rightPath)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rightPath])
 
   const reload = useCallback(async (): Promise<void> => {
-    if (tab?.leftPath) await loadSide('left', tab.leftPath)
-    if (tab?.rightPath) await loadSide('right', tab.rightPath)
-  }, [tab?.leftPath, tab?.rightPath, loadSide])
+    setSaveError(null)
+    if (leftPath) await loadLeft(leftPath)
+    if (rightPath) await loadRight(rightPath)
+  }, [leftPath, rightPath, loadLeft, loadRight])
 
+  // ---------------------------------------------------------------- guardar
+
+  const sideOf = useCallback((side: Side) => (side === 'left' ? left : right), [left, right])
+
+  /**
+   * Guarda un lado y cuenta lo que paso.
+   *
+   * Antes esto era un `void saveSide(side)` sin captura: si el archivo era de
+   * solo lectura o no habia permisos, la promesa se rechazaba y la interfaz no
+   * decia absolutamente nada, con lo que el usuario se quedaba creyendo que
+   * habia guardado.
+   */
   const saveSide = useCallback(
-    async (side: Side): Promise<void> => {
-      const state = side === 'left' ? left : right
-      const { payload } = state
-      if (!payload || state.content === payload.content) return
-      const info = await window.api.writeTextFile(
-        payload.path,
-        state.content,
-        payload.eol,
-        payload.encoding
-      )
-      const updated: TextFilePayload = { ...payload, content: state.content, ...info }
-      const setter = side === 'left' ? setLeft : setRight
-      setter((prev) => ({ ...prev, payload: updated }))
+    async (side: Side, force = false): Promise<void> => {
+      const outcome = await sideOf(side).save(force)
+      if (outcome.status === 'conflict') {
+        setConflict(side)
+        return
+      }
+      if (outcome.status === 'error') {
+        setSaveError(outcome.message)
+        return
+      }
+      if (outcome.status === 'saved') setSaveError(null)
     },
-    [left, right]
+    [sideOf]
   )
 
   const save = useCallback(async (): Promise<void> => {
@@ -156,87 +153,33 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   // El historial recuerda comparaciones que de verdad se abrieron, no rutas a
   // medio escribir: solo entra lo que se leyo del disco sin error.
   useEffect(() => {
-    const leftPath = left.payload?.path
-    const rightPath = right.payload?.path
-    if (leftPath && rightPath) useHistory.getState().record('text', leftPath, rightPath)
-  }, [left.payload?.path, right.payload?.path])
+    if (leftLoaded && rightLoaded) useHistory.getState().record('text', leftLoaded, rightLoaded)
+  }, [leftLoaded, rightLoaded])
 
   // ---------------------------------------------------------------- scroll
 
-  const handleScroll = useCallback((top: number, leftOffset: number): void => {
-    if (syncing.current) return
-    syncing.current = true
-    // Los dos paneles tienen exactamente el mismo alto total (lineas + huecos),
-    // asi que igualar scrollTop basta para que las filas queden enfrentadas.
-    for (const pane of [leftPane.current, rightPane.current]) {
-      const dom = pane?.scrollDOM
-      if (!dom) continue
-      if (dom.scrollTop !== top) dom.scrollTop = top
-      if (dom.scrollLeft !== leftOffset) dom.scrollLeft = leftOffset
-    }
-    setScroll({ top, left: leftOffset })
-    syncing.current = false
-  }, [])
-
-  const scrollToRow = useCallback((row: number): void => {
-    const dom = leftPane.current?.scrollDOM
-    if (!dom) return
-    // Un tercio de pantalla por encima: se ve el bloque y algo de contexto.
-    const target = Math.max(0, row * LINE_HEIGHT - dom.clientHeight / 3)
-    handleScroll(target, dom.scrollLeft)
-  }, [handleScroll])
-
-  useEffect(() => {
-    const element = bodyRef.current
-    if (!element) return
-    const observer = new ResizeObserver(() => setViewport({ height: element.clientHeight }))
-    observer.observe(element)
-    setViewport({ height: element.clientHeight })
-    return () => observer.disconnect()
-  }, [])
+  const getScrollers = useCallback(
+    () => [leftPane.current?.scrollDOM, rightPane.current?.scrollDOM],
+    []
+  )
+  const { scroll, viewport, bodyRef, handleScroll, scrollToRow, remeasure } =
+    useScrollSync(getScrollers)
 
   // Al volver a una pestana oculta, CodeMirror midio 0 px y hay que remedirlo.
   useEffect(() => {
     if (!active) return
     leftPane.current?.view?.requestMeasure()
     rightPane.current?.view?.requestMeasure()
-    setViewport({ height: bodyRef.current?.clientHeight ?? 0 })
-  }, [active])
+    remeasure()
+  }, [active, remeasure])
 
   // ------------------------------------------------------------ navegacion
 
-  const goToBlock = useCallback(
-    (index: number): void => {
-      const block = blocks[index]
-      if (!block) return
-      setActiveBlock(index)
-      scrollToRow(block.startRow)
-    },
-    [blocks, scrollToRow]
+  const { activeBlock, setActiveBlock, goNext, goPrev } = useBlockNavigation(
+    blocks,
+    scroll.top,
+    scrollToRow
   )
-
-  const goNext = useCallback((): void => {
-    if (blocks.length === 0) return
-    // Sin bloque activo, saltar al primero que quede por debajo de la vista.
-    if (activeBlock < 0) {
-      const firstRow = Math.floor(scroll.top / LINE_HEIGHT)
-      const next = blocks.findIndex((block) => block.startRow >= firstRow)
-      goToBlock(next === -1 ? 0 : next)
-      return
-    }
-    goToBlock(Math.min(activeBlock + 1, blocks.length - 1))
-  }, [blocks, activeBlock, scroll.top, goToBlock])
-
-  const goPrev = useCallback((): void => {
-    if (blocks.length === 0) return
-    if (activeBlock < 0) {
-      const firstRow = Math.floor(scroll.top / LINE_HEIGHT)
-      const candidates = blocks.filter((block) => block.startRow < firstRow)
-      goToBlock(candidates.length > 0 ? (candidates[candidates.length - 1] as DiffBlock).index : 0)
-      return
-    }
-    goToBlock(Math.max(activeBlock - 1, 0))
-  }, [blocks, activeBlock, scroll.top, goToBlock])
 
   useEffect(() => {
     if (!active) return
@@ -257,26 +200,39 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
   // ---------------------------------------------------------------- merge
 
+  /**
+   * Un lado en solo lectura no se toca ni siquiera desde una transaccion
+   * nuestra: `EditorState.readOnly` frena lo que teclea el usuario, pero no un
+   * `dispatch`, y el resultado seria un panel modificado que luego no se deja
+   * guardar. Mejor no dejar que la edicion llegue a ocurrir.
+   */
+  const canEdit = useCallback(
+    (side: Side): boolean => !readOnly && !(side === 'left' ? left.lossy : right.lossy),
+    [readOnly, left.lossy, right.lossy]
+  )
+
   const merge = useCallback(
     (block: DiffBlock, direction: 'toRight' | 'toLeft'): void => {
-      const sourceView: EditorView | null | undefined =
-        direction === 'toRight' ? leftPane.current?.view : rightPane.current?.view
-      const targetView: EditorView | null | undefined =
-        direction === 'toRight' ? rightPane.current?.view : leftPane.current?.view
-      if (!sourceView || !targetView) return
+    if (!canEdit(direction === 'toRight' ? 'right' : 'left')) return
 
-      const sourceRange =
-        direction === 'toRight'
-          ? { start: block.leftStart, end: block.leftEnd }
-          : { start: block.rightStart, end: block.rightEnd }
-      const targetRange =
-        direction === 'toRight'
-          ? { start: block.rightStart, end: block.rightEnd }
-          : { start: block.leftStart, end: block.leftEnd }
+    const sourceView: EditorView | null | undefined =
+      direction === 'toRight' ? leftPane.current?.view : rightPane.current?.view
+    const targetView: EditorView | null | undefined =
+      direction === 'toRight' ? rightPane.current?.view : leftPane.current?.view
+    if (!sourceView || !targetView) return
+
+    const sourceRange =
+      direction === 'toRight'
+        ? { start: block.leftStart, end: block.leftEnd }
+        : { start: block.rightStart, end: block.rightEnd }
+    const targetRange =
+      direction === 'toRight'
+        ? { start: block.rightStart, end: block.rightEnd }
+        : { start: block.leftStart, end: block.leftEnd }
 
       replaceLines(sourceView, targetView, sourceRange, targetRange)
     },
-    []
+    [canEdit]
   )
 
   /**
@@ -295,6 +251,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   /** Transfiere lo seleccionado al otro lado, sobre las lineas enfrentadas. */
   const transferSelection = useCallback((): void => {
     if (!selection || !result) return
+    if (!canEdit(selection.side === 'left' ? 'right' : 'left')) return
     const fromLeft = selection.side === 'left'
     const sourceView = fromLeft ? leftPane.current?.view : rightPane.current?.view
     const targetView = fromLeft ? rightPane.current?.view : leftPane.current?.view
@@ -302,21 +259,25 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
     const targetRange = mapLineRange(result.rows, selection.side, selection.range)
     replaceLines(sourceView, targetView, selection.range, targetRange)
-  }, [selection, result])
+  }, [selection, result, canEdit])
 
   // ---------------------------------------------------------------- render
 
   const contentHeight = rows.length * LINE_HEIGHT
   const loadError = left.error ?? right.error
+  // Un archivo que no se pudo decodificar sin perdida no se deja editar: lo que
+  // se guardase encima serian los rombos de sustitucion, no su contenido.
+  const leftReadOnly = readOnly || left.lossy
+  const rightReadOnly = readOnly || right.lossy
 
   return (
     <>
       <PathBar
         kind="file"
-        leftPath={tab?.leftPath ?? null}
-        rightPath={tab?.rightPath ?? null}
-        leftDirty={leftDirty}
-        rightDirty={rightDirty}
+        leftPath={leftPath}
+        rightPath={rightPath}
+        leftDirty={left.dirty}
+        rightDirty={right.dirty}
         onPick={(side) => void pickSide(side)}
         onSetPath={(side, path) =>
           updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
@@ -339,6 +300,10 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
       />
 
       {loadError && <div className="load-error">{loadError}</div>}
+      {saveError && <div className="load-error">{saveError}</div>}
+      {(left.lossy || right.lossy) && (
+        <div className="load-error warn-strip">{t('textDiff.lossyEncoding')}</div>
+      )}
 
       <div className="diff-body" ref={bodyRef}>
         <LineGutter rows={rows} side="left" scrollTop={scroll.top} height={viewport.height} />
@@ -346,9 +311,9 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
           ref={leftPane}
           value={left.content}
           alignment={leftAlignment}
-          readOnly={readOnly}
+          readOnly={leftReadOnly}
           tabSize={diffOptions.tabSize}
-          onChange={(value) => setLeft((prev) => ({ ...prev, content: value }))}
+          onChange={left.setContent}
           onScroll={handleScroll}
           onSelectionChange={(range) => handleSelection('left', range)}
         />
@@ -368,9 +333,9 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
           ref={rightPane}
           value={right.content}
           alignment={rightAlignment}
-          readOnly={readOnly}
+          readOnly={rightReadOnly}
           tabSize={diffOptions.tabSize}
-          onChange={(value) => setRight((prev) => ({ ...prev, content: value }))}
+          onChange={right.setContent}
           onScroll={handleScroll}
           onSelectionChange={(range) => handleSelection('right', range)}
         />
@@ -421,6 +386,21 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         {error && <span className="warn">{error}</span>}
         {pending && <span>{t('textDiff.comparing')}</span>}
       </div>
+
+      {conflict && (
+        <ConfirmDialog
+          title={t('textDiff.conflictTitle')}
+          danger
+          confirmLabel={t('textDiff.conflictOverwrite')}
+          message={<p>{t('textDiff.conflictMessage')}</p>}
+          onCancel={() => setConflict(null)}
+          onConfirm={() => {
+            const side = conflict
+            setConflict(null)
+            void saveSide(side, true)
+          }}
+        />
+      )}
     </>
   )
 }

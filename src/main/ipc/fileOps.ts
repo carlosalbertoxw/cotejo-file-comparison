@@ -1,17 +1,23 @@
 import { ipcMain } from 'electron'
 import { IPC } from '@shared/ipc-channels'
-import type { FileOpPlan, FileOpRequest, FileOpResult, FileOpProgress } from '@shared/types'
+import type { FileOpPlan, FileOpResult, FileOpProgress } from '@shared/types'
 import { planFileOp, runFileOp } from '../services/fileOpsService'
+import { asFileOpRequest, asString } from './validate'
 
 const cancelled = new Set<string>()
 
+/** Operaciones en curso, para no acumular identificadores cancelados tarde. */
+const running = new Set<string>()
+
 export function registerFileOpsHandlers(): void {
-  ipcMain.handle(IPC.planFileOp, (_e, request: FileOpRequest): Promise<FileOpPlan> => {
-    return planFileOp(request)
+  ipcMain.handle(IPC.planFileOp, (_e, raw: unknown): Promise<FileOpPlan> => {
+    return planFileOp(asFileOpRequest(raw))
   })
 
-  ipcMain.handle(IPC.runFileOp, async (event, request: FileOpRequest): Promise<FileOpResult> => {
+  ipcMain.handle(IPC.runFileOp, async (event, raw: unknown): Promise<FileOpResult> => {
+    const request = asFileOpRequest(raw)
     cancelled.delete(request.operationId)
+    running.add(request.operationId)
     try {
       const result = await runFileOp(request, {
         isCancelled: () => cancelled.has(request.operationId),
@@ -27,11 +33,13 @@ export function registerFileOpsHandlers(): void {
       })
       return { operationId: request.operationId, ...result }
     } finally {
+      running.delete(request.operationId)
       cancelled.delete(request.operationId)
     }
   })
 
-  ipcMain.handle(IPC.cancelFileOp, (_e, operationId: string) => {
-    cancelled.add(operationId)
+  ipcMain.handle(IPC.cancelFileOp, (_e, operationId: unknown) => {
+    const id = asString(operationId, 'operationId')
+    if (running.has(id)) cancelled.add(id)
   })
 }

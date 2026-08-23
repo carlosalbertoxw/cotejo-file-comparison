@@ -3,7 +3,11 @@
   "private": true,
   "type": "module",
   "version": "0.0.0",
-  "description": "Sitio publico de Cotejo, generado estaticamente y publicado en GitHub Pages",
+  "description": "Sitio público de Cotejo, generado estáticamente y publicado en GitHub Pages",
+  "// engines": "El mismo suelo que pide la cadena de build de la aplicación (Vite 7). Deja el requisito escrito en el proyecto en vez de solo en el workflow, para que quien compile en local se entere por npm y no por un error raro de esbuild.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

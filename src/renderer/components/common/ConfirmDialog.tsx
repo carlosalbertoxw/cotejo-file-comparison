@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -18,6 +19,17 @@ export function ConfirmDialog({
   onCancel
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
+
+  // Escape cancela, como en «Acerca de». Un dialogo que pregunta antes de
+  // borrar tiene que poder cerrarse sin buscar el boton.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onCancel])
+
   return (
     <div
       className="dialog-backdrop"
