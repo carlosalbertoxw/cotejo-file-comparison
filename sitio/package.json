@@ -14,10 +14,14 @@
     "preview": "astro preview",
     "check": "astro check"
   },
+  "// overrides": "sharp entra como dependencia opcional de Astro, para optimizar imagenes que este sitio no tiene. Astro acepta ^0.34.0 || ^0.35.0 y npm se quedaba en la 0.34.5, que arrastra cuatro CVE de libvips. Fijarla en la 0.35.3 —la misma que usa la aplicacion para generar el icono— se queda dentro de lo que Astro pide.",
+  "overrides": {
+    "sharp": "^0.35.3"
+  },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
+    "@astrojs/check": "^0.9.10",
     "@types/node": "^22.20.1",
-    "astro": "^5.0.0",
+    "astro": "^7.2.4",
     "typescript": "^5.9.0"
   }
 }
