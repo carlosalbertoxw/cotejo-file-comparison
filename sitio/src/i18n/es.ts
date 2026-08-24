@@ -82,6 +82,10 @@ export const es = {
       h3: 'Guarda como estaba',
       p: 'Cada lado tiene su propio botón de guardar, y se conservan los finales de línea y el BOM originales del archivo. Editar una línea no te reescribe las otras mil.'
     },
+    safeSave: {
+      h3: 'Guardar no pisa nada',
+      p: 'Si el archivo cambió en el disco desde que lo abriste, Cotejo no escribe: te lo dice y eliges entre recargar o guardar de todas formas. La escritura pasa por un archivo temporal y un cambio de nombre encima, así que un corte a mitad no te deja el archivo incompleto.'
+    },
     ignore: {
       h3: 'Lo que decidas ignorar',
       p: 'Espacios, mayúsculas, líneas en blanco y ancho de tabulación. Lo ignorado se marca en gris en vez de desaparecer, para que sepas que sigue ahí.'
@@ -128,6 +132,10 @@ export const es = {
     open: {
       h3: 'Del árbol al texto',
       p: 'Doble clic sobre un archivo distinto lo abre comparado en una pestaña nueva. Si esa comparación ya estaba abierta, salta a ella en vez de duplicarla.'
+    },
+    keyboard: {
+      h3: 'La tabla, también con el teclado',
+      p: 'Flechas arriba y abajo para moverse, derecha e izquierda para abrir y cerrar carpetas, Inicio y Fin para los extremos, AvPág y RePág para saltar de pantalla, Espacio para añadir o quitar de la selección y Entrar para abrir la comparación de esa fila.'
     }
   },
 
@@ -239,7 +247,11 @@ export const es = {
     },
     large: {
       q: '¿Aguanta archivos grandes?',
-      a: 'La comparación corre fuera del hilo de la interfaz, así que la ventana sigue respondiendo mientras calcula. En carpetas, el modo contenido lee los archivos en streaming: comparar dos imágenes de disco cuesta lo mismo en memoria que comparar dos notas.'
+      a: 'La comparación corre fuera del hilo de la interfaz, así que la ventana sigue respondiendo mientras calcula. En carpetas no hay límite de tamaño: el modo contenido lee los archivos en streaming, y comparar dos imágenes de disco cuesta lo mismo en memoria que comparar dos notas. Un archivo de texto se abre hasta 12 MB, que es lo que la aplicación sostiene de verdad; por encima de eso lo dice en vez de intentarlo y quedarse sin memoria.'
+    },
+    encoding: {
+      q: '¿Y los archivos que no están en UTF-8?',
+      a: 'Se abren en solo lectura: se comparan con normalidad, pero no se dejan editar. Al leer un .txt heredado en Windows-1252 se pierden las eñes y los acentos, y guardarlo encima escribiría esa pérdida en el disco. Una franja lo avisa al abrirlo.'
     },
     bugs: {
       q: '¿Cómo informo de un fallo?',

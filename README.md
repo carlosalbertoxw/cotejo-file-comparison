@@ -142,8 +142,9 @@ Doble clic sobre un archivo distinto lo abre en una pestaña de comparación de 
 comparación ya está abierta, salta a su pestaña en vez de abrir otra igual.
 
 La tabla se maneja **también con el teclado**: flechas arriba y abajo para moverse, derecha e
-izquierda para abrir y cerrar carpetas, `Inicio` y `Fin` para los extremos, `Espacio` para añadir o
-quitar de la selección y `Entrar` para abrir la comparación de esa fila.
+izquierda para abrir y cerrar carpetas, `Inicio` y `Fin` para los extremos, `AvPág` y `RePág` para
+saltar de pantalla, `Espacio` para añadir o quitar de la selección y `Entrar` para abrir la
+comparación de esa fila.
 
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
 toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número

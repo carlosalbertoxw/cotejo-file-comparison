@@ -75,6 +75,10 @@ export const fr: Catalog = {
       h3: 'Enregistré tel quel',
       p: 'Chaque côté a son propre bouton d’enregistrement, et les fins de ligne et le BOM d’origine sont conservés. Modifier une ligne ne réécrit pas les mille autres.'
     },
+    safeSave: {
+      h3: 'Enregistrer n’écrase rien',
+      p: 'Si le fichier a changé sur le disque depuis son ouverture, Cotejo n’écrit rien : il vous le dit et vous choisissez entre recharger ou enregistrer quand même. L’écriture passe par un fichier temporaire puis un renommage par-dessus, si bien qu’une coupure en plein enregistrement ne vous laisse jamais un fichier à moitié écrit.'
+    },
     ignore: {
       h3: 'Ce que vous décidez d’ignorer',
       p: 'Espaces, majuscules, lignes vides et largeur de tabulation. Ce qui est ignoré passe en gris au lieu de disparaître, pour que vous sachiez que c’est toujours là.'
@@ -122,6 +126,10 @@ export const fr: Catalog = {
     open: {
       h3: 'De l’arborescence au texte',
       p: 'Un double-clic sur un fichier différent l’ouvre comparé dans un nouvel onglet. Si cette comparaison était déjà ouverte, il y saute au lieu de la dupliquer.'
+    },
+    keyboard: {
+      h3: 'Le tableau aussi au clavier',
+      p: 'Flèches haut et bas pour se déplacer, droite et gauche pour ouvrir et fermer les dossiers, Origine et Fin pour les extrémités, Page préc. et Page suiv. pour sauter d’un écran, Espace pour ajouter à la sélection ou l’en retirer, et Entrée pour ouvrir la comparaison de cette ligne.'
     }
   },
 
@@ -233,7 +241,11 @@ export const fr: Catalog = {
     },
     large: {
       q: 'Tient-elle le coup avec de gros fichiers ?',
-      a: 'La comparaison tourne hors du fil de l’interface : la fenêtre reste réactive pendant le calcul. Pour les dossiers, le mode contenu lit les fichiers en flux : comparer deux images disque coûte autant de mémoire que comparer deux notes.'
+      a: 'La comparaison tourne hors du fil de l’interface : la fenêtre reste réactive pendant le calcul. Pour les dossiers, il n’y a pas de limite de taille : le mode contenu lit les fichiers en flux, et comparer deux images disque coûte autant de mémoire que comparer deux notes. Un fichier texte s’ouvre jusqu’à 12 Mo, ce que l’application tient vraiment ; au-delà, elle le dit au lieu d’essayer et de manquer de mémoire.'
+    },
+    encoding: {
+      q: 'Et les fichiers qui ne sont pas en UTF-8 ?',
+      a: 'Ils s’ouvrent en lecture seule : on les compare normalement, mais on ne peut pas les modifier. Lire un vieux .txt en Windows-1252 fait perdre ses lettres accentuées, et l’enregistrer par-dessus écrirait cette perte sur le disque. Un bandeau le signale à l’ouverture.'
     },
     bugs: {
       q: 'Comment signaler un problème ?',

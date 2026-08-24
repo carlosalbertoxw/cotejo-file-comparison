@@ -75,6 +75,10 @@ export const pt: Catalog = {
       h3: 'Salva como estava',
       p: 'Cada lado tem seu próprio botão de salvar, e as quebras de linha e o BOM originais são preservados. Editar uma linha não reescreve as outras mil.'
     },
+    safeSave: {
+      h3: 'Salvar não passa por cima de nada',
+      p: 'Se o arquivo mudou no disco desde que você o abriu, o Cotejo não escreve: ele avisa e você escolhe entre recarregar ou salvar mesmo assim. A escrita passa por um arquivo temporário e uma troca de nome por cima, então uma queda no meio nunca deixa o arquivo pela metade.'
+    },
     ignore: {
       h3: 'O que você decidir ignorar',
       p: 'Espaços, maiúsculas, linhas em branco e largura da tabulação. O que é ignorado fica cinza em vez de sumir, para você saber que continua ali.'
@@ -122,6 +126,10 @@ export const pt: Catalog = {
     open: {
       h3: 'Da árvore para o texto',
       p: 'Clique duplo em um arquivo diferente e ele abre comparado em uma aba nova. Se essa comparação já estava aberta, ele salta para ela em vez de duplicá-la.'
+    },
+    keyboard: {
+      h3: 'A tabela também pelo teclado',
+      p: 'Setas para cima e para baixo para se mover, direita e esquerda para abrir e fechar pastas, Home e End para os extremos, Page Up e Page Down para saltar uma tela, Espaço para incluir ou tirar da seleção e Enter para abrir a comparação daquela linha.'
     }
   },
 
@@ -231,7 +239,11 @@ export const pt: Catalog = {
     },
     large: {
       q: 'Ele aguenta arquivos grandes?',
-      a: 'A comparação roda fora da thread da interface, então a janela continua respondendo enquanto ele calcula. Em pastas, o modo conteúdo lê os arquivos em streaming: comparar duas imagens de disco custa a mesma memória que comparar duas anotações.'
+      a: 'A comparação roda fora da thread da interface, então a janela continua respondendo enquanto ele calcula. Em pastas não há limite de tamanho: o modo conteúdo lê os arquivos em streaming, e comparar duas imagens de disco custa a mesma memória que comparar duas anotações. Um arquivo de texto abre até 12 MB, que é o que o aplicativo aguenta de verdade; acima disso ele avisa em vez de tentar e ficar sem memória.'
+    },
+    encoding: {
+      q: 'E os arquivos que não estão em UTF-8?',
+      a: 'Abrem em somente leitura: dá para comparar normalmente, mas não editar. Ler um .txt antigo em Windows-1252 perde os acentos, e salvar por cima gravaria essa perda no disco. Uma faixa avisa ao abrir.'
     },
     bugs: {
       q: 'Como relato um problema?',

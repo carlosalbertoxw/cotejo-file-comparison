@@ -74,6 +74,10 @@ export const en: Catalog = {
       h3: 'Saved the way it was',
       p: 'Each side has its own save button, and the original line endings and BOM are preserved. Editing one line does not rewrite the other thousand.'
     },
+    safeSave: {
+      h3: 'Saving overwrites nothing',
+      p: 'If the file changed on disk since you opened it, Cotejo writes nothing: it tells you, and you choose between reloading or saving anyway. The write goes through a temporary file and a rename on top, so an interruption halfway through never leaves you half a file.'
+    },
     ignore: {
       h3: 'Whatever you choose to ignore',
       p: 'Whitespace, letter case, blank lines and tab width. Ignored differences turn grey instead of disappearing, so you know they are still there.'
@@ -121,6 +125,10 @@ export const en: Catalog = {
     open: {
       h3: 'From the tree into the text',
       p: 'Double-click a differing file and it opens compared in a new tab. If that comparison was already open, it jumps there instead of duplicating it.'
+    },
+    keyboard: {
+      h3: 'The table, from the keyboard too',
+      p: 'Up and down arrows to move, right and left to open and close folders, Home and End for the ends, Page Up and Page Down to jump a screen, Space to add to or remove from the selection, and Enter to open that row compared.'
     }
   },
 
@@ -229,7 +237,11 @@ export const en: Catalog = {
     },
     large: {
       q: 'Can it handle large files?',
-      a: 'The comparison runs off the interface thread, so the window stays responsive while it works. For folders, content mode reads files as a stream: comparing two disk images costs the same memory as comparing two notes.'
+      a: 'The comparison runs off the interface thread, so the window stays responsive while it works. Folders have no size limit: content mode reads files as a stream, and comparing two disk images costs the same memory as comparing two notes. A text file opens up to 12 MB, which is what the app really holds; beyond that it says so instead of trying and running out of memory.'
+    },
+    encoding: {
+      q: 'What about files that are not UTF-8?',
+      a: 'They open read-only: you can compare them as usual, but not edit them. Reading a legacy Windows-1252 .txt loses its accented letters, and saving over it would write that loss to disk. A banner says so when you open it.'
     },
     bugs: {
       q: 'How do I report a bug?',
