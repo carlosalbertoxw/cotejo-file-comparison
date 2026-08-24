@@ -12,8 +12,10 @@ on:
     paths:
       - 'sitio/**'
       - '.github/workflows/pages.yml'
-  # Una release nueva cambia los enlaces de descarga, que se resuelven al
-  # compilar: hay que regenerar la pagina para que apunten a la ultima.
+  # Una release nueva cambia los enlaces de descarga y el numero de version,
+  # que se resuelven al compilar: hay que regenerar la pagina para que apunten
+  # a la ultima. Ese disparo no construye nada por si mismo; ver el job
+  # `relanzar`.
   release:
     types: [published]
   workflow_dispatch:
@@ -29,7 +31,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # El disparo por release no puede desplegar el mismo. Su run lleva la ref del
+  # tag, y el entorno github-pages solo admite despliegues desde la rama por
+  # defecto: el sitio se construia entero y el deploy se rechazaba al final con
+  # «Tag "vX.Y.Z" is not allowed to deploy to github-pages». Asi que ese caso se
+  # limita a relanzar este mismo workflow sobre main, que si tiene permiso.
+  #
+  # workflow_dispatch es una de las dos excepciones documentadas a la regla de
+  # que lo disparado con GITHUB_TOKEN no crea runs nuevos, de modo que esto no
+  # necesita un token propio.
+  relanzar:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run pages.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
   build:
+    if: github.event_name != 'release'
     runs-on: ubuntu-latest
     defaults:
       run:

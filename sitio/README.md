@@ -101,9 +101,16 @@ GITHUB_TOKEN=tu_token npm run build
 Lo hace `.github/workflows/pages.yml`, que se dispara:
 
 - al empujar cambios de `sitio/**` a `main`,
-- al **publicar una release** —porque los enlaces de descarga se resuelven al compilar y hay que
-  regenerarlos—,
+- al **publicar una release** —porque los enlaces de descarga y el número de versión se resuelven al
+  compilar y hay que regenerarlos—,
 - o a mano, desde la pestaña Actions.
+
+El disparo por release no compila: **se relanza a sí mismo sobre `main`**. El entorno `github-pages`
+solo admite despliegues desde la rama por defecto, y un run lanzado por una release lleva la ref del
+tag, así que construía el sitio entero para que el despliegue lo rechazara al final con «Tag
+"vX.Y.Z" is not allowed to deploy to github-pages». Pasó de verdad al publicar la v0.4.0: la página
+se quedó anunciando la versión anterior. Por eso ese caso se limita a un `gh workflow run pages.yml
+--ref main`, y es el run de `main` el que construye y despliega.
 
 En el repositorio, Settings → Pages → *Source* tiene que estar en **GitHub Actions**. Con la opción
 por rama no se ejecuta ninguna compilación y no se publicaría nada.
