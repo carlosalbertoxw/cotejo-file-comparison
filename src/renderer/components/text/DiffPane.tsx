@@ -3,6 +3,7 @@ import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { alignmentField, setAlignment, type SideAlignment } from './alignment'
+import { searchHighlightField } from './searchHighlight'
 import type { LineRange } from './merge'
 
 export interface DiffPaneHandle {
@@ -85,6 +86,7 @@ export function DiffPane({
       // Sin resaltado de linea activa: su fondo taparia el color del diff.
       keymap.of([...defaultKeymap, ...historyKeymap]),
       alignmentField,
+      searchHighlightField,
       optionsRef.current.of([]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) onChangeRef.current(update.state.doc.toString())

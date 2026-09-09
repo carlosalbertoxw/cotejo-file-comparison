@@ -10,9 +10,11 @@ import { useDiff } from './useDiff'
 import { useSideFile } from './useSideFile'
 import { useScrollSync } from './useScrollSync'
 import { useBlockNavigation } from './useBlockNavigation'
+import { useFind, type Find } from './useFind'
 import { deriveAlignment } from './alignment'
 import { DiffPane, type DiffPaneHandle } from './DiffPane'
 import { DiffToolbar } from './DiffToolbar'
+import { FindBar } from './FindBar'
 import { LineGutter } from './LineGutter'
 import { MergeGutter } from './MergeGutter'
 import { OverviewRuler } from './OverviewRuler'
@@ -51,6 +53,15 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
   const leftPane = useRef<DiffPaneHandle>(null)
   const rightPane = useRef<DiffPaneHandle>(null)
+
+  const leftFind = useFind(left.content, leftPane)
+  const rightFind = useFind(right.content, rightPane)
+  /** Donde se escribio por ultima vez: es el panel al que le toca Ctrl+F. */
+  const focusedSide = useRef<Side>('left')
+  const findOf = useCallback(
+    (side: Side): Find => (side === 'left' ? leftFind : rightFind),
+    [leftFind, rightFind]
+  )
 
   // Se compara lo que hay en los dos paneles, venga de un archivo o lo acabe de
   // escribir o pegar quien compara. Mientras los dos esten vacios no hay nada
@@ -193,10 +204,23 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         event.preventDefault()
         void save()
       }
+      // Ctrl+F busca en el panel donde se estaba, como haria cualquier editor
+      // con dos vistas abiertas; F3 recorre lo encontrado sin volver a la caja.
+      if (hasPrimaryModifier(event) && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        findOf(focusedSide.current).show()
+      }
+      if (event.key === 'F3') {
+        const find = findOf(focusedSide.current)
+        if (!find.open) return
+        event.preventDefault()
+        if (event.shiftKey) find.goPrev()
+        else find.goNext()
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [active, goNext, goPrev, save])
+  }, [active, goNext, goPrev, save, findOf])
 
   // ---------------------------------------------------------------- merge
 
@@ -295,6 +319,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         onToggleReadOnly={() => setReadOnly((value) => !value)}
         onPrev={goPrev}
         onNext={goNext}
+        onFind={() => findOf(focusedSide.current).show()}
         onTransferSelection={transferSelection}
         onReload={() => void reload()}
       />
@@ -307,16 +332,29 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
       <div className="diff-body" ref={bodyRef}>
         <LineGutter rows={rows} side="left" scrollTop={scroll.top} height={viewport.height} />
-        <DiffPane
-          ref={leftPane}
-          value={left.content}
-          alignment={leftAlignment}
-          readOnly={leftReadOnly}
-          tabSize={diffOptions.tabSize}
-          onChange={left.setContent}
-          onScroll={handleScroll}
-          onSelectionChange={(range) => handleSelection('left', range)}
-        />
+        {/* El foco y el Escape se escuchan en el envoltorio: asi valen tanto
+            desde el editor como desde la caja de busqueda que flota encima. */}
+        <div
+          className="diff-pane-slot"
+          onFocus={() => {
+            focusedSide.current = 'left'
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && leftFind.open) leftFind.close()
+          }}
+        >
+          <DiffPane
+            ref={leftPane}
+            value={left.content}
+            alignment={leftAlignment}
+            readOnly={leftReadOnly}
+            tabSize={diffOptions.tabSize}
+            onChange={left.setContent}
+            onScroll={handleScroll}
+            onSelectionChange={(range) => handleSelection('left', range)}
+          />
+          {leftFind.open && <FindBar find={leftFind} label={t('textDiff.find.inLeft')} />}
+        </div>
 
         <MergeGutter
           blocks={blocks}
@@ -329,16 +367,27 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         />
 
         <LineGutter rows={rows} side="right" scrollTop={scroll.top} height={viewport.height} />
-        <DiffPane
-          ref={rightPane}
-          value={right.content}
-          alignment={rightAlignment}
-          readOnly={rightReadOnly}
-          tabSize={diffOptions.tabSize}
-          onChange={right.setContent}
-          onScroll={handleScroll}
-          onSelectionChange={(range) => handleSelection('right', range)}
-        />
+        <div
+          className="diff-pane-slot"
+          onFocus={() => {
+            focusedSide.current = 'right'
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && rightFind.open) rightFind.close()
+          }}
+        >
+          <DiffPane
+            ref={rightPane}
+            value={right.content}
+            alignment={rightAlignment}
+            readOnly={rightReadOnly}
+            tabSize={diffOptions.tabSize}
+            onChange={right.setContent}
+            onScroll={handleScroll}
+            onSelectionChange={(range) => handleSelection('right', range)}
+          />
+          {rightFind.open && <FindBar find={rightFind} label={t('textDiff.find.inRight')} />}
+        </div>
 
         <OverviewRuler
           blocks={blocks}

@@ -10,9 +10,18 @@
   background: var(--bg);
 }
 
-.diff-pane {
+/* La columna de un panel. El editor la llena entera y la caja de busqueda
+   flota encima, sin robarle alto: si lo robara, las lineas de este lado
+   dejarian de estar enfrentadas con las del otro. */
+.diff-pane-slot {
   flex: 1 1 0;
   min-width: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.diff-pane {
+  height: 100%;
   overflow: hidden;
 }
 
@@ -118,6 +127,88 @@
     rgba(128, 128, 128, 0.12) 4px,
     rgba(128, 128, 128, 0.12) 8px
   );
+}
+
+/* --------------------------------------------------------------- busqueda */
+
+.find-bar {
+  position: absolute;
+  top: 4px;
+  /* Separada del borde para no taparle la barra de scroll al editor. */
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 24px);
+  padding: 3px 4px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.find-bar input[type='text'] {
+  width: 160px;
+  min-width: 0;
+}
+
+.find-bar input.no-match {
+  border-color: var(--danger);
+}
+
+.find-count {
+  min-width: 54px;
+  padding: 0 4px;
+  text-align: right;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.find-count.none {
+  color: var(--danger);
+}
+
+.find-toggle {
+  padding: 1px 5px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.find-toggle[aria-pressed='true'] {
+  background: var(--bg-selected);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.find-step {
+  padding: 1px 5px;
+  line-height: 1;
+}
+
+/* El resaltado va en la misma capa de fondo que los colores del diff, por
+   encima de ellos y por debajo de la seleccion: buscar no debe hacer perder de
+   vista que la linea estaba cambiada. */
+.cm-search-match {
+  position: relative;
+  background: transparent;
+}
+
+.cm-search-match::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  background: var(--search-match-bg);
+  border-radius: 2px;
+}
+
+/* La coincidencia actual, ademas de otro color, lleva contorno: quien no
+   distinga los dos violetas la sigue encontrando. */
+.cm-search-current::before {
+  background: var(--search-current-bg);
+  outline: 1px solid var(--text-dim);
 }
 
 /* --------------------------------------------------------- numeros de linea */

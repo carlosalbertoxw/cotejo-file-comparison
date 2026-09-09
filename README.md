@@ -84,6 +84,7 @@ algo".
 | Verde azulado | La línea solo existe en un lado. El otro lado muestra un hueco rayado. |
 | Gris atenuado | Difieren solo en algo que pediste ignorar (espacios, mayúsculas, líneas en blanco). |
 | Rojo | Únicamente en avisos de acciones destructivas. Nunca es un tipo de diferencia. |
+| Violeta | Lo que encontró la búsqueda. Tampoco es un tipo de diferencia: va encima del color de la línea, y la coincidencia actual lleva contorno. |
 
 Todas las combinaciones de texto sobre fondo cumplen un contraste WCAG de 4.5:1 (3:1 en los
 elementos secundarios como la numeración de líneas), en tema claro y oscuro.
@@ -97,6 +98,12 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   paneles miden exactamente lo mismo, así que nunca se desincronizan al hacer scroll.
 - `F7` / `Shift+F7` saltan a la diferencia siguiente / anterior. El mapa de la derecha resume el
   archivo entero y permite saltar con un clic.
+- El botón **Buscar** de la barra y `Ctrl+F` (`⌘F` en macOS) abren una **caja de búsqueda** en el
+  panel donde estabas, como la de «buscar en la página» del navegador: resalta todas las
+  coincidencias de ese lado y va contando en cuál estás. `Intro` / `Shift+Intro` —o `F3` / `Shift+F3` sin volver a la caja— saltan entre ellas,
+  y `Esc` la cierra. Cada panel tiene la suya, y se puede distinguir mayúsculas (`Aa`), buscar solo
+  palabras completas (`|ab|`) o escribir una expresión regular (`.*`). Si al abrirla había texto
+  seleccionado dentro de una línea, se busca eso.
 - Las flechas ◀ ▶ de la franja central copian un bloque al otro lado. Se aplican como una edición
   normal, así que `Ctrl+Z` las deshace.
 - Para transferir menos que un bloque, selecciona el texto y usa **Selección ▶** / **◀ Selección**:
@@ -299,7 +306,7 @@ src/
     diff/      Motor de comparación (normalize -> lineDiff -> pairing -> similarity -> inlineDiff -> align)
     state/     Stores de zustand: sesión, ajustes, historial y aviso de versión
     components/
-      text/    Vista de texto: paneles, alineación, gutters, merge, mapa lateral y sus hooks
+      text/    Vista de texto: paneles, alineación, gutters, merge, búsqueda, mapa lateral y hooks
       dir/     Vista de carpetas: tabla-árbol virtualizada y operaciones de archivo
 test/          Pruebas de la lógica pura y de los servicios que tocan disco
 ```

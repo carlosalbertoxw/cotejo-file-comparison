@@ -106,7 +106,21 @@
     "selectedLinesLeft_one": "{{count}} linha selecionada na esquerda",
     "selectedLinesLeft_other": "{{count}} linhas selecionadas na esquerda",
     "selectedLinesRight_one": "{{count}} linha selecionada na direita",
-    "selectedLinesRight_other": "{{count}} linhas selecionadas na direita"
+    "selectedLinesRight_other": "{{count}} linhas selecionadas na direita",
+    "find": {
+      "open": "Localizar",
+      "openTooltip": "Localizar texto no painel ativo ({{mod}}+F)",
+      "placeholder": "Localizar",
+      "inLeft": "Localizar no painel esquerdo",
+      "inRight": "Localizar no painel direito",
+      "matchCaseTooltip": "Diferenciar maiúsculas de minúsculas",
+      "wholeWordTooltip": "Somente palavras inteiras",
+      "regexTooltip": "Expressão regular",
+      "badRegex": "A expressão regular não é válida",
+      "prevTooltip": "Ocorrência anterior (Shift+Enter)",
+      "nextTooltip": "Próxima ocorrência (Enter)",
+      "closeTooltip": "Fechar a busca (Esc)"
+    }
   },
   "dirCompare": {
     "compare": "Comparar",

@@ -106,7 +106,21 @@
     "selectedLinesLeft_one": "{{count}} line selected on the left",
     "selectedLinesLeft_other": "{{count}} lines selected on the left",
     "selectedLinesRight_one": "{{count}} line selected on the right",
-    "selectedLinesRight_other": "{{count}} lines selected on the right"
+    "selectedLinesRight_other": "{{count}} lines selected on the right",
+    "find": {
+      "open": "Find",
+      "openTooltip": "Find text in the active pane ({{mod}}+F)",
+      "placeholder": "Find",
+      "inLeft": "Find in the left pane",
+      "inRight": "Find in the right pane",
+      "matchCaseTooltip": "Match case",
+      "wholeWordTooltip": "Whole words only",
+      "regexTooltip": "Regular expression",
+      "badRegex": "That regular expression is not valid",
+      "prevTooltip": "Previous match (Shift+Enter)",
+      "nextTooltip": "Next match (Enter)",
+      "closeTooltip": "Close the search (Esc)"
+    }
   },
   "dirCompare": {
     "compare": "Compare",

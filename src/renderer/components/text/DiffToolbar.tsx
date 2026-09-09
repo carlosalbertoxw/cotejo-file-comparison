@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { DiffOptions, Side } from '@shared/types'
+import { MOD_LABEL } from '../../platform'
 
 interface Props {
   options: DiffOptions
@@ -12,6 +13,7 @@ interface Props {
   onToggleReadOnly: () => void
   onPrev: () => void
   onNext: () => void
+  onFind: () => void
   onTransferSelection: () => void
   onReload: () => void
 }
@@ -26,6 +28,7 @@ export function DiffToolbar({
   onToggleReadOnly,
   onPrev,
   onNext,
+  onFind,
   onTransferSelection,
   onReload
 }: Props): React.JSX.Element {
@@ -44,6 +47,12 @@ export function DiffToolbar({
           ? t('textDiff.noDifferences')
           : `${activeBlock >= 0 ? activeBlock + 1 : '–'} / ${blockCount}`}
       </span>
+
+      {/* La caja de busqueda flota dentro de su panel y solo aparece al pedirla,
+          asi que sin este boton no habria nada que dijera que existe. */}
+      <button onClick={onFind} title={t('textDiff.find.openTooltip', { mod: MOD_LABEL })}>
+        {t('textDiff.find.open')}
+      </button>
 
       <span className="sep" />
 

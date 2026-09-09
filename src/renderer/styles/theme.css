@@ -34,6 +34,13 @@
   --diff-ignored-text: #717b7e;
   --diff-equal-bg: transparent;
 
+  /* Violeta para lo que encuentra la busqueda: no compite con el ambar de lo
+     cambiado ni con el verde azulado de lo que solo esta en un lado, asi que
+     una coincidencia dentro de una diferencia se sigue leyendo como las dos
+     cosas a la vez. */
+  --search-match-bg: #ded3fb;
+  --search-current-bg: #b79cf5;
+
   --gutter-bg: #f4f6f7;
   --gutter-text: #79868b;
 }
@@ -67,6 +74,9 @@
     --diff-gap-bg: #1c2427;
     --diff-ignored-text: #6d7c82;
 
+    --search-match-bg: #3b2f66;
+    --search-current-bg: #6b4fc0;
+
     --gutter-bg: #1b2326;
     --gutter-text: #74848a;
   }
@@ -94,6 +104,9 @@
   --diff-orphan-text: #8fd7ce;
   --diff-gap-bg: #1c2427;
   --diff-ignored-text: #6d7c82;
+
+  --search-match-bg: #3b2f66;
+  --search-current-bg: #6b4fc0;
 
   --gutter-bg: #1b2326;
   --gutter-text: #74848a;
