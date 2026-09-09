@@ -70,6 +70,10 @@ export const es = {
       h3: 'La palabra exacta que cambió',
       p: 'Dentro de una línea modificada se resalta el tramo que difiere, no la línea entera. Un mapa lateral resume el archivo completo y salta a cualquier diferencia con un clic.'
     },
+    find: {
+      h3: 'Buscar dentro de cada panel',
+      p: 'Ctrl+F abre una caja como la de «buscar en la página» del navegador, en el panel donde estés: resalta todas las coincidencias, dice en cuál de cuántas estás y salta entre ellas. Cada lado tiene la suya, así que puedes dejar una palabra marcada a la izquierda y buscar otra a la derecha. Distingue mayúsculas, se limita a palabras completas o acepta una expresión regular.'
+    },
     transfer: {
       h3: 'Copiar de un lado a otro',
       p: 'Las flechas de la franja central llevan un bloque al otro lado. Si quieres menos, selecciona el texto y transfiere solo esas líneas. Todo entra en el historial de edición, así que se deshace como cualquier otro cambio.'

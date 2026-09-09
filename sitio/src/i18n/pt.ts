@@ -63,6 +63,10 @@ export const pt: Catalog = {
       h3: 'A palavra exata que mudou',
       p: 'Dentro de uma linha alterada, destaca-se só o trecho diferente, não a linha inteira. Um mapa lateral resume o arquivo todo e salta para qualquer diferença com um clique.'
     },
+    find: {
+      h3: 'Buscar dentro de cada painel',
+      p: 'Ctrl+F abre uma caixa como a de “localizar na página” do navegador, no painel em que você estava: destaca todas as ocorrências, diz em qual de quantas você está e pula entre elas. Cada lado tem a sua, então dá para deixar uma palavra marcada na esquerda e procurar outra na direita. Diferencia maiúsculas, limita a busca a palavras inteiras ou aceita uma expressão regular.'
+    },
     transfer: {
       h3: 'Copiar de um lado para o outro',
       p: 'As setas da faixa central levam um bloco para o outro lado. Se quiser menos, selecione o texto e transfira só aquelas linhas. Tudo entra no histórico de edição, então desfaz como qualquer outra alteração.'

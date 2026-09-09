@@ -62,6 +62,10 @@ export const en: Catalog = {
       h3: 'The exact word that changed',
       p: 'Inside a modified line, only the part that differs is highlighted, not the whole line. A side map summarises the entire file and jumps to any difference with one click.'
     },
+    find: {
+      h3: 'Search inside each pane',
+      p: 'Ctrl+F opens a box like the find-in-page bar of a browser, in whichever pane you were working in: it highlights every match, says which one of how many you are on, and jumps between them. Each side has its own, so you can leave one word marked on the left while you look for another on the right. It can match case, limit the search to whole words, or take a regular expression.'
+    },
     transfer: {
       h3: 'Copy from one side to the other',
       p: 'The arrows in the middle strip carry a block across. If you want less than that, select the text and transfer just those lines. It all goes through the edit history, so it undoes like any other change.'

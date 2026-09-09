@@ -63,6 +63,10 @@ export const fr: Catalog = {
       h3: 'Le mot exact qui a changé',
       p: 'Dans une ligne modifiée, seule la portion qui diffère est surlignée, pas la ligne entière. Une carte latérale résume tout le fichier et saute à n’importe quelle différence d’un clic.'
     },
+    find: {
+      h3: 'Rechercher dans chaque panneau',
+      p: 'Ctrl+F ouvre une boîte comme celle de « rechercher dans la page » du navigateur, dans le panneau où vous étiez : elle surligne toutes les occurrences, indique laquelle sur combien et passe de l’une à l’autre. Chaque côté a la sienne, vous pouvez donc laisser un mot marqué à gauche et en chercher un autre à droite. Elle respecte la casse, se limite aux mots entiers ou accepte une expression régulière.'
+    },
     transfer: {
       h3: 'Copier d’un côté à l’autre',
       p: 'Les flèches de la bande centrale emportent un bloc en face. Pour moins que cela, sélectionnez le texte et ne transférez que ces lignes. Tout passe par l’historique d’édition et s’annule comme n’importe quelle autre modification.'
