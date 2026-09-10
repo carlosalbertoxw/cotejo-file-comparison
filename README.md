@@ -9,6 +9,13 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
+## Novedades de la 0.5.0
+
+Cada panel de la comparación de texto tiene ahora su propia **caja de búsqueda**, como la de
+«buscar en la página» del navegador. `Ctrl+F` (`⌘F` en macOS) la abre en el panel donde estés,
+resalta todas las coincidencias de ese lado y va contando en cuál estás. Están los detalles en
+[las notas de la versión](changelog/v0.5.0.md).
+
 ## Instalación
 
 Las descargas están en
@@ -235,7 +242,8 @@ nombre que su tag. Son el cuerpo de la release en GitHub, así que se escriben a
 lista de commits no cuenta es justo lo que le interesa a quien va a descargarla.
 
 Mientras se trabaja, lo nuevo se va anotando en `changelog/proxima.md`. Publicar es subir la
-versión, renombrar ese archivo y empujar el tag:
+versión, renombrar ese archivo, poner al día el «Novedades de la…» de aquí arriba —que es lo único
+del README que nombra una versión concreta, y por eso lo único que envejece— y empujar el tag:
 
 ```bash
 git mv changelog/proxima.md changelog/v0.2.0.md
