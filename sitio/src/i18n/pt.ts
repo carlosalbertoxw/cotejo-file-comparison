@@ -161,6 +161,11 @@ export const pt: Catalog = {
     red: {
       name: 'Vermelho',
       meaning: 'Só em avisos de ações destrutivas. Nunca é um tipo de diferença.'
+    },
+    violet: {
+      name: 'Violeta',
+      meaning:
+        'O que a busca encontrou. Não é um tipo de diferença: fica por cima da cor da linha, sem apagá-la.'
     }
   },
 

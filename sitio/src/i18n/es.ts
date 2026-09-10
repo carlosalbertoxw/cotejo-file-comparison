@@ -168,6 +168,11 @@ export const es = {
     red: {
       name: 'Rojo',
       meaning: 'Solo en avisos de acciones destructivas. Nunca es un tipo de diferencia.'
+    },
+    violet: {
+      name: 'Violeta',
+      meaning:
+        'Lo que encontró la búsqueda. No es un tipo de diferencia: va encima del color de la línea, sin borrarlo.'
     }
   },
 

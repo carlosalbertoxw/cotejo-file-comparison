@@ -159,6 +159,11 @@ export const en: Catalog = {
     red: {
       name: 'Red',
       meaning: 'Only in warnings about destructive actions. Never a kind of difference.'
+    },
+    violet: {
+      name: 'Violet',
+      meaning:
+        'What the search found. Not a kind of difference: it sits on top of the line colour without erasing it.'
     }
   },
 

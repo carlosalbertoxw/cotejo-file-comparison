@@ -163,6 +163,11 @@ export const fr: Catalog = {
       name: 'Rouge',
       meaning:
         'Uniquement dans les avertissements d’actions destructrices. Jamais un type de différence.'
+    },
+    violet: {
+      name: 'Violet',
+      meaning:
+        'Ce que la recherche a trouvé. Ce n’est pas un type de différence : il se pose par-dessus la couleur de la ligne sans l’effacer.'
     }
   },
 

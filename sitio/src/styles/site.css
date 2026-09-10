@@ -23,6 +23,7 @@
   --diff-orphan-text: #0f4f49;
   --diff-gap-bg: #f2f4f5;
   --diff-ignored-text: #717b7e;
+  --search-current-bg: #b79cf5;
   --gutter-bg: #f4f6f7;
   --gutter-text: #79868b;
 
@@ -55,6 +56,7 @@
     --diff-orphan-text: #8fd7ce;
     --diff-gap-bg: #1c2427;
     --diff-ignored-text: #6d7c82;
+    --search-current-bg: #6b4fc0;
     --gutter-bg: #1b2326;
     --gutter-text: #74848a;
   }
@@ -565,6 +567,11 @@ tbody tr:last-child td {
 
 .swatch.danger {
   background: #b3261e;
+}
+
+/* El de la coincidencia actual, que es el violeta que se ve al buscar. */
+.swatch.search {
+  background: var(--search-current-bg);
 }
 
 /* ------------------------------------------------------------ descargas */
