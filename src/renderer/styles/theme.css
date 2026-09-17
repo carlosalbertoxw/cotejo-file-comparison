@@ -710,6 +710,53 @@ input[type='text'] {
   margin: 0;
 }
 
+.about-files {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.about-files h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.about-files dl {
+  margin: 0;
+}
+
+.about-files dt {
+  margin-top: 6px;
+  color: var(--text-dim);
+}
+
+.about-files dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 2px 0 0;
+}
+
+/* Las rutas largas se parten por donde sea antes que ensanchar el dialogo. */
+.about-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.about-files dd button {
+  border-color: var(--border);
+  padding: 1px 8px;
+}
+
+.about-hint {
+  flex-basis: 100%;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
 .about-links {
   display: flex;
   flex-wrap: wrap;

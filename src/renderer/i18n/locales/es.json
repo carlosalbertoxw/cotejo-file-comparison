@@ -36,7 +36,17 @@
     "website": "Sitio web",
     "repository": "Código fuente",
     "issues": "Informar de un problema",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "files": {
+      "title": "Archivos del programa",
+      "userData": "Configuración y caché",
+      "userDataHint": "Preferencias, pestañas abiertas, historial y caché del navegador interno.",
+      "portable": "Portable descomprimido",
+      "portableHint": "Copia temporal del ejecutable portable; se borra al cerrar.",
+      "save": "Al guardar",
+      "saveHint": "Junto al archivo se escribe un temporal «.<número>{{suffix}}» que luego lo sustituye.",
+      "show": "Mostrar carpeta"
+    }
   },
   "update": {
     "available": "Hay una versión nueva de Cotejo: {{version}}.",

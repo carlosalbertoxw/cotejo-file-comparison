@@ -36,7 +36,17 @@
     "website": "Site web",
     "repository": "Code source",
     "issues": "Signaler un problème",
-    "close": "Fermer"
+    "close": "Fermer",
+    "files": {
+      "title": "Fichiers du programme",
+      "userData": "Configuration et cache",
+      "userDataHint": "Préférences, onglets ouverts, historique et cache du navigateur intégré.",
+      "portable": "Portable décompressé",
+      "portableHint": "Copie temporaire de l’exécutable portable ; supprimée à la fermeture.",
+      "save": "À l’enregistrement",
+      "saveHint": "Un fichier temporaire « .<nombre>{{suffix}} » est écrit à côté du fichier puis le remplace.",
+      "show": "Afficher le dossier"
+    }
   },
   "update": {
     "available": "Une nouvelle version de Cotejo est disponible : {{version}}.",

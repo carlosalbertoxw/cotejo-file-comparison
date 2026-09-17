@@ -9,13 +9,6 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
-## Novedades de la 0.5.0
-
-Cada panel de la comparación de texto tiene ahora su propia **caja de búsqueda**, como la de
-«buscar en la página» del navegador. `Ctrl+F` (`⌘F` en macOS) la abre en el panel donde estés,
-resalta todas las coincidencias de ese lado y va contando en cuál estás. Están los detalles en
-[las notas de la versión](changelog/v0.5.0.md).
-
 ## Instalación
 
 Las descargas están en
@@ -171,6 +164,17 @@ la versión instalada, la licencia, las versiones de Electron, Chromium y Node, 
 [sitio del proyecto](https://carlosalbertoxw.com/cotejo-file-comparison/), al código fuente y a los
 problemas. Los enlaces abren el navegador del sistema, nunca dentro de la ventana, y el del sitio
 va al idioma que tenga puesto la aplicación.
+
+La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equipo:
+
+| Qué | Dónde |
+| --- | --- |
+| Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
+| La copia descomprimida del `.exe` portable o del AppImage | Una carpeta temporal del sistema, que desaparece al cerrar. Solo sale si se está usando una de las versiones sin instalar. |
+| El temporal de cada guardado | Junto al propio archivo, como `.<número>.cotejo-tmp`, hasta que lo sustituye. Si aparece uno suelto es que el guardado se cortó a mitad, y se puede borrar. |
+
+Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas tres rutas
+la aplicación no guarda nada propio, tampoco archivos de log.
 
 Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
 que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la

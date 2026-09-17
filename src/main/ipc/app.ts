@@ -1,4 +1,5 @@
 import { app, ipcMain, shell } from 'electron'
+import { dirname } from 'node:path'
 import { IPC } from '@shared/ipc-channels'
 import type { AppInfo } from '@shared/types'
 import { checkForUpdates } from '../services/updates'
@@ -17,6 +18,19 @@ function isSafeExternalUrl(url: string): boolean {
   }
 }
 
+/**
+ * Los dos formatos portables se ejecutan desde una copia descomprimida en una
+ * carpeta temporal: el .exe portable de Windows avisa con
+ * `PORTABLE_EXECUTABLE_DIR` y la AppImage con `APPIMAGE`. En ambos casos el
+ * ejecutable que corre esta dentro de esa carpeta.
+ */
+function portableExtractDir(): string | null {
+  if (process.env['PORTABLE_EXECUTABLE_DIR'] || process.env['APPIMAGE']) {
+    return dirname(process.execPath)
+  }
+  return null
+}
+
 export function registerAppHandlers(): void {
   ipcMain.handle(
     IPC.appInfo,
@@ -26,7 +40,11 @@ export function registerAppHandlers(): void {
       chromium: process.versions.chrome,
       node: process.versions.node,
       platform: process.platform,
-      arch: process.arch
+      arch: process.arch,
+      paths: {
+        userData: app.getPath('userData'),
+        portableExtract: portableExtractDir()
+      }
     })
   )
 

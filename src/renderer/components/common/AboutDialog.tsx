@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ISSUES_URL, REPO_URL, siteDownloadsUrl, siteUrl } from '@shared/links'
 import { formatVersion } from '@shared/version'
+import { TEMP_SUFFIX } from '@shared/files'
 import type { AppInfo } from '@shared/types'
 import { useUpdates } from '../../state/updateStore'
 import { ExternalLink } from './ExternalLink'
@@ -100,6 +101,37 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
               </>
             )}
           </dl>
+
+          {info && (
+            <section className="about-files" aria-label={t('about.files.title')}>
+              <h4>{t('about.files.title')}</h4>
+              <dl>
+                <dt>{t('about.files.userData')}</dt>
+                <dd>
+                  <code className="about-path">{info.paths.userData}</code>
+                  <button onClick={() => void window.api.showItemInFolder(info.paths.userData)}>
+                    {t('about.files.show')}
+                  </button>
+                  <span className="about-hint">{t('about.files.userDataHint')}</span>
+                </dd>
+                {info.paths.portableExtract && (
+                  <>
+                    <dt>{t('about.files.portable')}</dt>
+                    <dd>
+                      <code className="about-path">{info.paths.portableExtract}</code>
+                      <span className="about-hint">{t('about.files.portableHint')}</span>
+                    </dd>
+                  </>
+                )}
+                <dt>{t('about.files.save')}</dt>
+                <dd>
+                  <span className="about-hint">
+                    {t('about.files.saveHint', { suffix: TEMP_SUFFIX })}
+                  </span>
+                </dd>
+              </dl>
+            </section>
+          )}
 
           <div className="about-links">
             {/* El sitio, en el idioma de la aplicacion; las de GitHub son las

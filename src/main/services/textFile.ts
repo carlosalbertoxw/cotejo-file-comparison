@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, stat, lstat, unlink } from 'node:fs/promis
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
 import { ipcError } from '@shared/ipc-errors'
+import { TEMP_SUFFIX } from '@shared/files'
 
 /**
  * Umbral por encima del cual nos negamos a cargar el archivo en un panel.
@@ -17,8 +18,6 @@ export const MAX_TEXT_BYTES = 12 * 1024 * 1024
 
 const BOM = '﻿'
 
-/** Sufijo del archivo temporal con el que se hace la escritura atomica. */
-const TEMP_SUFFIX = '.cotejo-tmp'
 
 /**
  * Heuristica estandar: un byte nulo en la cabecera significa binario.

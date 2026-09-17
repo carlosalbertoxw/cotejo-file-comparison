@@ -239,6 +239,22 @@ export interface AppInfo {
   node: string
   platform: string
   arch: string
+  /** Donde Cotejo deja datos propios, para ensenarlo en el dialogo Acerca de. */
+  paths: AppPaths
+}
+
+export interface AppPaths {
+  /**
+   * Carpeta de datos de Electron. Aqui guarda Chromium el `localStorage` con
+   * las preferencias, la sesion, el historial y la ultima comprobacion de
+   * versiones, ademas de su propia cache.
+   */
+  userData: string
+  /**
+   * Carpeta temporal a la que se descomprime el ejecutable portable (el .exe
+   * portable de Windows o la AppImage). `null` si la aplicacion esta instalada.
+   */
+  portableExtract: string | null
 }
 
 export interface UpdateCheck {

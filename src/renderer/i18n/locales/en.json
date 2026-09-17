@@ -36,7 +36,17 @@
     "website": "Website",
     "repository": "Source code",
     "issues": "Report an issue",
-    "close": "Close"
+    "close": "Close",
+    "files": {
+      "title": "Program files",
+      "userData": "Settings and cache",
+      "userDataHint": "Preferences, open tabs, history and the built-in browser cache.",
+      "portable": "Portable extracted to",
+      "portableHint": "Temporary copy of the portable executable; removed on exit.",
+      "save": "When saving",
+      "saveHint": "A temporary “.<number>{{suffix}}” file is written next to the file and then replaces it.",
+      "show": "Show folder"
+    }
   },
   "update": {
     "available": "A new version of Cotejo is available: {{version}}.",
