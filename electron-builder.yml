@@ -6,6 +6,28 @@ directories:
 files:
   - out/**/*
   - package.json
+# Interruptores grabados en el propio ejecutable de Electron. Sin ellos, el
+# binario de Cotejo arranca como Node puro con ELECTRON_RUN_AS_NODE, acepta
+# codigo por NODE_OPTIONS o --inspect, y carga lo que haya en una carpeta
+# `app/` junto al asar, todo con el nombre y el icono de Cotejo.
+#
+# grantFileProtocolExtraPrivileges se queda como viene: el renderer se sirve
+# desde file:// con scripts de modulo y un Worker de modulo, que sin esos
+# privilegios no cargan. Quitarlo exige servirlo antes por un protocolo propio.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  onlyLoadAppFromAsar: true
+  # Comprueba el app.asar contra el hash que electron-builder graba al
+  # empaquetar: en Windows dentro del .exe, en macOS en el Info.plist. Linux
+  # no lo admite y lo ignora.
+  enableEmbeddedAsarIntegrityValidation: true
+  # Cambiar un fuse modifica el binario e invalida la firma ad-hoc con la que
+  # llega Electron, y un Mac con Apple Silicon no ejecuta un binario con la
+  # firma rota. Mientras no haya certificado, electron-builder no firma nada
+  # despues, asi que hay que rehacerla aqui.
+  resetAdHocDarwinSignature: true
 # Junto al ejecutable, donde el usuario puede leerlos sin abrir el asar. Lo
 # exigen las licencias MIT y BSD del codigo de terceros que va en el bundle.
 extraResources:

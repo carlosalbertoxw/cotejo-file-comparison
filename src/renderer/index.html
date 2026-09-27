@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      style-src necesita 'unsafe-inline': CodeMirror inyecta sus estilos en
+      etiquetas <style> al montar el editor. Los scripts no lo necesitan y no
+      lo llevan: solo cargan los del propio paquete.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"

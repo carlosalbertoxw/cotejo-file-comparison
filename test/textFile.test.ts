@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, readFile, writeFile, rm } from 'node:fs/promises'
+import { chmod, link, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -242,5 +242,44 @@ describe('writeTextFile: escritura atomica', () => {
     const final = await readFile(path, 'utf8')
     expect(['viejo\n', 'nuevo del todo\n']).toContain(final)
     expect(final).toBe('nuevo del todo\n')
+  })
+})
+
+describe('writeTextFile: lo que el archivo era además de su contenido', () => {
+  // En Windows el modo solo refleja el atributo de solo lectura; los permisos
+  // de verdad son ACL, que esto no toca.
+  const posix = process.platform !== 'win32'
+
+  it.runIf(posix)('un script sigue siendo ejecutable después de guardarlo', async () => {
+    const path = join(dir, 'deploy.sh')
+    await writeFile(path, 'echo viejo\n', 'utf8')
+    await chmod(path, 0o755)
+
+    await writeTextFile(path, 'echo nuevo\n', 'lf', 'utf8')
+
+    expect((await stat(path)).mode & 0o777).toBe(0o755)
+  })
+
+  it.runIf(posix)('un archivo privado no se vuelve legible para otros', async () => {
+    const path = join(dir, '.env')
+    await writeFile(path, 'CLAVE=vieja\n', 'utf8')
+    await chmod(path, 0o600)
+
+    await writeTextFile(path, 'CLAVE=nueva\n', 'lf', 'utf8')
+
+    expect((await stat(path)).mode & 0o777).toBe(0o600)
+  })
+
+  it('los enlaces duros siguen compartiendo el contenido', async () => {
+    const path = join(dir, 'a.txt')
+    const other = join(dir, 'b.txt')
+    await writeFile(path, 'viejo\n', 'utf8')
+    await link(path, other)
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect(await readFile(other, 'utf8')).toBe('nuevo\n')
+    expect((await stat(path)).nlink).toBe(2)
+    expect((await readdir(dir)).sort()).toEqual(['a.txt', 'b.txt'])
   })
 })

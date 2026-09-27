@@ -1,4 +1,5 @@
-import { readFile, writeFile, rename, stat, lstat, unlink } from 'node:fs/promises'
+import { readFile, writeFile, rename, stat, lstat, unlink, chmod, chown } from 'node:fs/promises'
+import type { Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
 import { ipcError } from '@shared/ipc-errors'
@@ -111,9 +112,37 @@ export interface ExpectedState {
 }
 
 /**
+ * Da al temporal el propietario y los permisos del archivo al que va a
+ * sustituir. Sin esto el temporal nace con los del proceso y el umask: un
+ * script pierde el bit de ejecucion al guardarlo, y un archivo `0600` queda
+ * legible por el grupo.
+ *
+ * Devuelve `false` si el propietario no se puede conservar, que es lo normal
+ * al editar un archivo ajeno con permiso de escritura por grupo.
+ *
+ * En Windows no hace nada: el modo solo refleja el atributo de solo lectura, y
+ * los permisos de verdad son ACL que `chmod` no toca.
+ */
+async function inheritOwnership(temporary: string, original: Stats): Promise<boolean> {
+  if (process.platform === 'win32') return true
+
+  const created = await stat(temporary)
+  if (created.uid !== original.uid || created.gid !== original.gid) {
+    try {
+      await chown(temporary, original.uid, original.gid)
+    } catch {
+      return false
+    }
+  }
+  // Despues del chown, que borra los bits setuid y setgid.
+  await chmod(temporary, original.mode & 0o7777)
+  return true
+}
+
+/**
  * Escribe el archivo.
  *
- * Dos garantias que antes no habia:
+ * Tres garantias que antes no habia:
  *
  * 1. Si `expected` no cuadra con lo que hay en el disco, no se escribe nada.
  *    El archivo cambio desde que se abrio y guardar encima borraria el trabajo
@@ -122,6 +151,9 @@ export interface ExpectedState {
  *    encima. `writeFile` trunca antes de escribir, asi que un corte a mitad
  *    dejaba el archivo a medias; con el rename, o esta el contenido viejo o
  *    esta el nuevo.
+ * 3. El archivo que queda conserva el propietario y los permisos del que
+ *    habia (`inheritOwnership`), y los enlaces duros siguen compartiendo
+ *    contenido.
  */
 export async function writeTextFile(
   path: string,
@@ -146,14 +178,24 @@ export async function writeTextFile(
 
   // Un enlace simbolico se escribe en su sitio: el rename lo sustituiria por
   // un archivo normal y rompería el enlace, que casi nunca es lo que se quiere.
-  const link = await lstat(path).catch(() => null)
-  if (link?.isSymbolicLink()) {
+  // Lo mismo con varios enlaces duros: el rename dejaria a este nombre con el
+  // contenido nuevo y a los demas con el viejo, sin que nada lo avise.
+  const original = await lstat(path).catch(() => null)
+  if (original && (original.isSymbolicLink() || original.nlink > 1)) {
     await writeFile(path, data, 'utf8')
   } else {
     const temporary = join(dirname(path), `.${Date.now()}${TEMP_SUFFIX}`)
     try {
       await writeFile(temporary, data, 'utf8')
-      await rename(temporary, path)
+      if (original && !(await inheritOwnership(temporary, original))) {
+        // Sin poder conservar el propietario, sustituir el archivo se lo
+        // quedaria a quien guarda. Se pierde la atomicidad, que es lo menos
+        // malo de las dos cosas.
+        await unlink(temporary)
+        await writeFile(path, data, 'utf8')
+      } else {
+        await rename(temporary, path)
+      }
     } catch (error) {
       await unlink(temporary).catch(() => undefined)
       throw error

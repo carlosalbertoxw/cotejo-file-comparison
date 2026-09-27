@@ -1,4 +1,4 @@
-import { app, nativeTheme, shell, BrowserWindow } from 'electron'
+import { app, nativeTheme, session, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -166,6 +166,15 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.carlos.cotejo')
+
+    // Cotejo no usa ninguna API con permiso: ni camara, ni notificaciones, ni
+    // portapapeles asincrono —copiar y pegar en CodeMirror van por los eventos
+    // del teclado—. Sin manejador, Chromium decide por su cuenta segun el tipo
+    // de permiso; con este, cualquier peticion se deniega.
+    session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
+      callback(false)
+    )
+    session.defaultSession.setPermissionCheckHandler(() => false)
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)
