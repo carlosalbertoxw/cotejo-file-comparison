@@ -63,7 +63,7 @@
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.70.1",
     "vite": "^7.1.0",
-    "vitest": "^4.1.10",
+    "vitest": "^5.0.1",
     "zustand": "^5.0.15"
   },
   "allowScripts": {
