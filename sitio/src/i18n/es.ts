@@ -244,7 +244,7 @@ export const es = {
     },
     privacy: {
       q: '¿Envía mis archivos a alguna parte?',
-      a: 'No. Todo ocurre en tu equipo. La única conexión que hace es preguntarle a GitHub una vez al día si hay una versión más nueva, y si no hay red se calla y sigue funcionando.'
+      a: 'No. Todo ocurre en tu equipo. La única conexión que hace es preguntarle a GitHub una vez al día si hay una versión más nueva, y si no hay red se calla y sigue funcionando. Se puede desactivar en «Acerca de».'
     },
     updates: {
       q: '¿Se actualiza sola?',

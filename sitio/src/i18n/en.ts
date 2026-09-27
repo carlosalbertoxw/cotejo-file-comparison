@@ -234,7 +234,7 @@ export const en: Catalog = {
     },
     privacy: {
       q: 'Does it send my files anywhere?',
-      a: 'No. Everything happens on your machine. Its only connection is asking GitHub once a day whether a newer version exists, and with no network it stays quiet and keeps working.'
+      a: 'No. Everything happens on your machine. Its only connection is asking GitHub once a day whether a newer version exists, and with no network it stays quiet and keeps working. It can be turned off in “About”.'
     },
     updates: {
       q: 'Does it update itself?',

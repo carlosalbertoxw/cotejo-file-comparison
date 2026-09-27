@@ -236,7 +236,7 @@ export const pt: Catalog = {
     },
     privacy: {
       q: 'Ele manda meus arquivos para algum lugar?',
-      a: 'Não. Tudo acontece no seu computador. A única conexão que ele faz é perguntar ao GitHub uma vez por dia se existe versão mais nova, e sem rede ele fica quieto e continua funcionando.'
+      a: 'Não. Tudo acontece no seu computador. A única conexão que ele faz é perguntar ao GitHub uma vez por dia se existe versão mais nova, e sem rede ele fica quieto e continua funcionando. Dá para desativar em “Sobre”.'
     },
     updates: {
       q: 'Ele se atualiza sozinho?',

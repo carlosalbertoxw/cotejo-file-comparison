@@ -238,7 +238,7 @@ export const fr: Catalog = {
     },
     privacy: {
       q: 'Est-ce que mes fichiers partent quelque part ?',
-      a: 'Non. Tout se passe sur votre machine. Sa seule connexion consiste à demander à GitHub une fois par jour s’il existe une version plus récente ; sans réseau, elle se tait et continue de fonctionner.'
+      a: 'Non. Tout se passe sur votre machine. Sa seule connexion consiste à demander à GitHub une fois par jour s’il existe une version plus récente ; sans réseau, elle se tait et continue de fonctionner. On peut la désactiver dans « À propos ».'
     },
     updates: {
       q: 'Se met-elle à jour toute seule ?',
