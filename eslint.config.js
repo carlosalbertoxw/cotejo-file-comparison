@@ -24,6 +24,8 @@ export default tseslint.config(
       // Son datos de prueba, no codigo: existen justamente para tener
       // diferencias que comparar, incluidas variables sin usar.
       'test/fixtures/**',
+      'test-results/**',
+      'playwright-report/**',
       '**/*.tsbuildinfo',
       'node_modules/**'
     ]
@@ -95,7 +97,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['test/**/*.ts'],
+    files: ['test/**/*.ts', 'e2e/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node }
     }

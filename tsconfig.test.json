@@ -1,5 +1,5 @@
 {
-  "include": ["test/**/*.test.ts"],
+  "include": ["test/**/*.test.ts", "e2e/**/*.ts", "playwright.config.ts", "src/preload/index.d.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],

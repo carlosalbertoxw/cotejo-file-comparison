@@ -1,0 +1,40 @@
+# Actualizaciones de versión propuestas como pull request.
+#
+# Las alertas de seguridad ya llegaban solas, pero solo cubren lo que tiene un
+# aviso publicado. Electron es el caso que lo justifica: viaja entero dentro de
+# cada instalable, y sus parches traen correcciones de Chromium que no siempre
+# salen como aviso de dependencia. Sin esto, la 0.5.0 se publico con 43.2.0
+# cuando la rama ya iba por 43.7.5.
+#
+# Agrupado y semanal para que sean pocos PR y pequenos. Las versiones mayores
+# se quedan fuera de los grupos: cada una merece su propio PR y su lectura de
+# notas de cambios.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      parches-y-menores:
+        update-types: [minor, patch]
+
+  # El sitio es un proyecto npm aparte, con su propio lockfile.
+  - package-ecosystem: npm
+    directory: /sitio
+    schedule:
+      interval: weekly
+    groups:
+      parches-y-menores:
+        update-types: [minor, patch]
+
+  # Las acciones van fijadas por SHA; Dependabot mueve el SHA y el comentario
+  # con la version a la vez.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      acciones:
+        patterns: ['*']

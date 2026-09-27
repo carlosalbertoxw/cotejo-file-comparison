@@ -1,0 +1,19 @@
+# Lo que el codigo ya cumple, escrito para que el editor lo mantenga: dos
+# espacios, LF, UTF-8 y salto de linea al final. El resto del estilo —comillas
+# simples, sin punto y coma— es convencion: ESLint no lo comprueba, y un
+# formateador reescribiria de golpe una treintena de archivos.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+
+# Dos espacios al final de una linea son un salto de linea en Markdown.
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off

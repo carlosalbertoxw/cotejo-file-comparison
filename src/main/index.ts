@@ -126,6 +126,16 @@ function createWindow(): BrowserWindow {
 }
 
 /**
+ * Perfil desechable para las pruebas E2E, que arrancan la aplicacion sin
+ * empaquetar. Sin esto escribirian en la carpeta de datos de verdad —la misma
+ * que usa el Cotejo instalado— y chocarian con su cerrojo de instancia unica,
+ * que va por carpeta de datos. En el ejecutable empaquetado no existe.
+ */
+if (!app.isPackaged && process.env['COTEJO_USER_DATA']) {
+  app.setPath('userData', process.env['COTEJO_USER_DATA'])
+}
+
+/**
  * Una sola instancia.
  *
  * Cotejo se abre con rutas: desde la terminal, arrastrando al ejecutable o con

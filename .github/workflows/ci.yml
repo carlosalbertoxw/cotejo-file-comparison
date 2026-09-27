@@ -40,14 +40,21 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
+
+      # Sin --omit=dev a proposito: Electron, React y CodeMirror estan en
+      # devDependencies porque van dentro del bundle, pero son justo lo que se
+      # distribuye. Solo en Linux, que la lista de avisos no cambia por sistema.
+      - name: Vulnerabilidades conocidas
+        if: runner.os == 'Linux'
+        run: npm audit --audit-level=high
 
       - run: npm run lint
 
@@ -59,3 +66,16 @@ jobs:
       # comprobar que los tres bundles se generan, que es donde salen los
       # errores de configuracion que el typecheck no ve.
       - run: npm run build
+
+      # Ubuntu 24.04 prohibe por AppArmor los espacios de nombres de usuario
+      # sin privilegios, que es lo que usa el sandbox de Chromium, y Electron
+      # se niega a arrancar. Se levanta la restriccion en la maquina de CI en
+      # vez de apagar el sandbox, que es justo lo que se quiere probar.
+      - name: Permitir el sandbox de Chromium
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      # De punta a punta sobre lo que acaba de construir el paso anterior. En
+      # Linux no hay pantalla: xvfb-run le presta una virtual.
+      - name: Pruebas E2E
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
