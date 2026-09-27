@@ -9,6 +9,14 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
+## Novedades de la 0.6.0
+
+Guardar ya **no cambia los permisos del archivo**: un script sigue siendo ejecutable y un archivo
+privado sigue siéndolo. «Acerca de» dice **dónde deja archivos Cotejo** en ese equipo y tiene una
+casilla para **apagar la comprobación diaria de versiones**, su única conexión a internet. El
+ejecutable está más cerrado, y cada descarga se puede **comprobar** con sumas SHA-256 y una
+atestación de GitHub. Están los detalles en [las notas de la versión](changelog/v0.6.0.md).
+
 ## Instalación
 
 Las descargas están en
@@ -32,6 +40,30 @@ En macOS la aplicación **no está firmada**, porque firmarla exige una cuenta d
 Gatekeeper la bloqueará la primera vez con un aviso que parece de archivo dañado; se abre con clic
 derecho sobre la app → Abrir, y a partir de ahí funciona con normalidad. Los atajos usan ⌘ en vez
 de Ctrl, como cualquier otra aplicación de macOS.
+
+### Comprobar la descarga
+
+Que no vayan firmados no quiere decir que no se puedan comprobar. Cada release lleva un
+`SHA256SUMS.txt` con la huella de cada archivo, y una atestación de GitHub que certifica que
+salieron del workflow de release de este repositorio y de qué commit.
+
+La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
+
+```bash
+gh attestation verify "Cotejo Setup 0.6.0.exe" --repo carlosalbertoxw/cotejo-file-comparison
+```
+
+Solo la huella, en Linux o macOS, desde la carpeta de la descarga:
+
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+Y en Windows, comparando a ojo con la línea del archivo en `SHA256SUMS.txt`:
+
+```powershell
+Get-FileHash "Cotejo Setup 0.6.0.exe"
+```
 
 ## Uso
 
@@ -181,7 +213,8 @@ que la instalada, aparece una franja sobre la barra de pestañas con un enlace a
 [página de descargas](https://carlosalbertoxw.com/cotejo-file-comparison/#downloads), que explica
 qué archivo le toca a cada sistema. El aviso se puede cerrar y no vuelve para esa misma versión,
 pero sí para la siguiente. Desde «Acerca de» también se puede comprobar a mano en cualquier
-momento.
+momento, y ahí mismo se puede apagar la comprobación diaria: es la única conexión que hace Cotejo, y
+sin ella no sale nada del equipo salvo cuando se pulsa el botón.
 
 Cotejo **no se actualiza solo**: descargar y sustituir el ejecutable por su cuenta exige una
 aplicación firmada, y sin certificado eso no se sostiene. Solo avisa y te lleva a la descarga. Si
@@ -201,9 +234,22 @@ npm run typecheck
 npm test
 ```
 
-Las tres cosas, más el empaquetado de los bundles, corren en cada commit y en cada pull request
-—en Linux y en Windows— desde `.github/workflows/ci.yml`. El workflow de release solo se dispara
+Y la prueba de extremo a extremo, que arranca la aplicación construida con un perfil desechable,
+abre dos archivos, copia un bloque y guarda:
+
+```bash
+npm run build && npm run test:e2e
+```
+
+Todo eso corre en cada commit y en cada pull request —en Linux y en Windows— desde
+`.github/workflows/ci.yml`. El workflow de release solo se dispara
 con un tag, así que sin esto un fallo de tipos no aparecía hasta el momento de publicar.
+
+El mismo workflow pasa `npm audit` y falla si alguna dependencia tiene una vulnerabilidad conocida
+de severidad alta o crítica. Aparte, `.github/workflows/codeql.yml` analiza el código y los
+workflows con CodeQL en cada cambio y una vez a la semana; lo que encuentre aparece en la pestaña
+Security del repositorio. Las actualizaciones de dependencias y de acciones llegan como pull
+requests semanales de Dependabot.
 
 ### Empaquetar
 
@@ -231,8 +277,12 @@ hay forma de generarlo desde otro sitio, por eso existe el workflow de CI. Y Lin
 falla al crear los symlinks del AppImage, así que se construye en el contenedor oficial:
 
 ```bash
-docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:latest bash -c "npm ci && npm run package:linux"
+docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:22-05.26@sha256:b76a82a6c6a8a1dea1abbc93e394f54316744824b64e6a50d959f1e3ba8951a9 bash -c "npm ci && npm run package:linux"
 ```
+
+La imagen va fijada por etiqueta y por digest. `latest` sigue a la versión más nueva de Node —hoy la
+24— y no a la del proyecto, que es la de [.nvmrc](.nvmrc). Al actualizarla, se busca la etiqueta
+`22-<mes>.<año>` más reciente en Docker Hub y se sustituyen las dos partes.
 
 El volumen sobre `node_modules` no es un detalle menor: sin él, el `npm ci` de dentro reemplazaría
 en tu disco los binarios de Windows por los de Linux —`sharp` entre ellos— y `npm run dev` dejaría
@@ -266,6 +316,28 @@ archivo de notas del tag, y que **el tag y la `version` de `package.json` coinci
 importa porque el aviso de nueva versión compara la etiqueta de la última release con la versión que
 lleva dentro el ejecutable; publicar `v0.2.0` sin subir antes `package.json` dejaría a todas las
 copias recién instaladas creyéndose desactualizadas.
+
+### Retirar una release defectuosa
+
+Si una versión ya publicada rompe algo serio —sobre todo si corrompe archivos—, lo primero es que
+deje de ser la que se descarga y la que anuncia el aviso de actualización. Los dos leen «la última
+release» de GitHub, y esa nunca es una pre-release:
+
+```bash
+gh release edit v0.6.0 --prerelease
+```
+
+El sitio no se entera solo, porque la edición no dispara su workflow. Hay que regenerarlo para que
+la página de descargas vuelva a apuntar a la anterior:
+
+```bash
+gh workflow run pages.yml --ref main
+```
+
+Quien ya instaló la versión mala no recibe ningún aviso, porque la suya es más nueva que la que
+ahora figura como última. Solo lo arregla una versión corregida **con número superior**. No se
+reutiliza nunca el tag de la versión retirada ni se borra la release: los enlaces, las sumas y la
+atestación de lo que llegó a publicarse tienen que seguir existiendo.
 
 ### Firma
 
@@ -336,9 +408,9 @@ disco, y `safeJoin` impide que una ruta relativa se salga de la carpeta que se e
 
 [MIT](LICENSE) © 2026 Carlos Alberto.
 
-Todo lo que se distribuye con la aplicación es software libre con licencia permisiva: 23 paquetes
+Todo lo que se distribuye con la aplicación es software libre con licencia permisiva: 22 paquetes
 MIT y uno BSD-3-Clause (`diff`), más el propio Electron (MIT), que ya coloca junto al ejecutable
-sus avisos de Chromium y Node. Los avisos de copyright de esos 24 paquetes están en
+sus avisos de Chromium y Node. Los avisos de copyright de esos 23 paquetes están en
 [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), que se genera solo y viaja en el instalador
 junto a la licencia de Cotejo, porque el minificador borra del bundle los comentarios legales que
 MIT y BSD exigen conservar.
