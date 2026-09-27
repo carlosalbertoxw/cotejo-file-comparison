@@ -29,9 +29,12 @@ misma aplicación dentro.
 
 | Sistema | Instala | Sin instalar |
 | --- | --- | --- |
-| Windows | `Cotejo Setup <versión>.exe` | `Cotejo <versión> portable.exe` |
-| Linux | `.deb` (Debian, Ubuntu) o `.rpm` (Fedora, RHEL) | `Cotejo <versión> portable.AppImage` |
-| macOS | `Cotejo <versión> arm64.dmg` (Apple Silicon) o `x64.dmg` (Intel) | `.zip` con la app dentro |
+| Windows | `Cotejo.Setup.<versión>.exe` | `Cotejo.<versión>.portable.exe` |
+| Linux | `.deb` (Debian, Ubuntu) o `.rpm` (Fedora, RHEL) | `Cotejo.<versión>.portable.AppImage` |
+| macOS | `Cotejo.<versión>.arm64.dmg` (Apple Silicon) o `x64.dmg` (Intel) | `.zip` con la app dentro |
+
+Los nombres llevan puntos donde electron-builder pone espacios: GitHub los cambia al publicarlos, y
+así es como se descargan.
 
 Al AppImage hay que darle permiso de ejecución la primera vez, con `chmod +x`, y ya se abre con
 doble clic.
@@ -50,19 +53,25 @@ salieron del workflow de release de este repositorio y de qué commit.
 La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
 
 ```bash
-gh attestation verify "Cotejo Setup 0.6.0.exe" --repo carlosalbertoxw/cotejo-file-comparison
+gh attestation verify Cotejo.Setup.0.6.0.exe --repo carlosalbertoxw/cotejo-file-comparison
 ```
 
-Solo la huella, en Linux o macOS, desde la carpeta de la descarga:
+Solo la huella, desde la carpeta de la descarga. En Linux:
 
 ```bash
 sha256sum -c SHA256SUMS.txt --ignore-missing
 ```
 
+En macOS, filtrando la línea del archivo descargado:
+
+```bash
+grep arm64.dmg SHA256SUMS.txt | shasum -a 256 -c
+```
+
 Y en Windows, comparando a ojo con la línea del archivo en `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash "Cotejo Setup 0.6.0.exe"
+Get-FileHash Cotejo.Setup.0.6.0.exe
 ```
 
 ## Uso

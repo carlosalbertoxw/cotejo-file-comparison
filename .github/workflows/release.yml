@@ -126,9 +126,19 @@ jobs:
       # Se atesta en este job y no en cada `build` para no dar `id-token` a
       # jobs que ejecutan `npm ci`. La identidad que firma es el workflow y el
       # commit, no el job, asi que la garantia es la misma.
+      #
+      # GitHub cambia los espacios por puntos al subir un archivo a una
+      # release: «Cotejo Setup 0.6.0.exe» se descarga como
+      # «Cotejo.Setup.0.6.0.exe». Se renombra aqui primero para que las sumas
+      # nombren los archivos como los tiene quien los descarga; si no,
+      # `sha256sum -c` no encuentra ninguno.
       - name: Sumas SHA-256
         working-directory: dist
-        run: sha256sum -- * > SHA256SUMS.txt
+        run: |
+          shopt -s nullglob
+          for file in *' '*; do mv -- "$file" "${file// /.}"; done
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
