@@ -64,6 +64,20 @@ test('copiar un bloque al otro lado y guardar lo escribe en el disco', async () 
   const removed = rightBefore.indexOf('  timeout: number')
   expect(removed).toBeGreaterThan(-1)
   const expected = rightBefore.filter((_line, index) => index !== removed)
-  await expect.poll(() => lines(right)).toEqual(expected)
+  try {
+    await expect.poll(() => lines(right)).toEqual(expected)
+  } catch (error) {
+    // Si el guardado no llega al disco, lo que explica el porque esta en la
+    // ventana: un dialogo de conflicto, un error en la barra de estado. Sin
+    // esto, en CI solo se ve que el archivo no cambio.
+    await test.info().attach('ventana', { body: await window.screenshot(), contentType: 'image/png' })
+    const dialogs = await window.locator('[role="dialog"], [role="alertdialog"]').allInnerTexts()
+    const alerts = await window.locator('.load-error').allInnerTexts()
+    throw new Error(
+      `El guardado no llego al disco.\nDialogos: ${JSON.stringify(dialogs)}\n` +
+        `Errores: ${JSON.stringify(alerts)}`,
+      { cause: error }
+    )
+  }
   expect(await lines(left)).toEqual(leftBefore)
 })

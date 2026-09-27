@@ -79,3 +79,12 @@ jobs:
       # Linux no hay pantalla: xvfb-run le presta una virtual.
       - name: Pruebas E2E
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
+
+      # Si la E2E falla, la captura de la ventana en ese momento suele decir
+      # mas que el log.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: e2e-${{ matrix.os }}
+          path: test-results/
+          if-no-files-found: ignore
