@@ -56,7 +56,8 @@
     "check": "Check for updates",
     "checking": "Checking…",
     "upToDate": "You already have the latest version.",
-    "error": "Could not check for updates."
+    "error": "Could not check for updates.",
+    "autoCheck": "Check for updates automatically once a day"
   },
   "pathBar": {
     "pickFile": "Choose file…",

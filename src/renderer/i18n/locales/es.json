@@ -56,7 +56,8 @@
     "check": "Buscar actualizaciones",
     "checking": "Buscando…",
     "upToDate": "Ya tienes la última versión.",
-    "error": "No se pudo comprobar si hay actualizaciones."
+    "error": "No se pudo comprobar si hay actualizaciones.",
+    "autoCheck": "Buscar actualizaciones automáticamente una vez al día"
   },
   "pathBar": {
     "pickFile": "Elegir archivo…",

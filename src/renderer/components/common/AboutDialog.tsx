@@ -22,6 +22,8 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
   const status = useUpdates((state) => state.status)
   const latest = useUpdates((state) => state.latest)
   const check = useUpdates((state) => state.check)
+  const autoCheck = useUpdates((state) => state.autoCheck)
+  const setAutoCheck = useUpdates((state) => state.setAutoCheck)
 
   useEffect(() => {
     let alive = true
@@ -154,6 +156,14 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
               </ExternalLink>
             )}
           </div>
+          <label className="about-autocheck">
+            <input
+              type="checkbox"
+              checked={autoCheck}
+              onChange={(event) => setAutoCheck(event.target.checked)}
+            />
+            {t('update.autoCheck')}
+          </label>
         </div>
         <div className="dialog-actions">
           <button className="primary" onClick={onClose} autoFocus>

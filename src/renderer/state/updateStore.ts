@@ -18,8 +18,16 @@ interface UpdateState {
   lastCheck: number
   /** Version cuyo aviso ya cerro el usuario; no se vuelve a ensenar. */
   dismissed: string | null
+  /**
+   * Si se comprueba sola una vez al dia. Es la unica conexion que hace
+   * Cotejo, y en un equipo sin salida a internet, o para quien no quiere que
+   * su IP llegue a GitHub, sobra. Buscar a mano desde «Acerca de» sigue
+   * funcionando igual.
+   */
+  autoCheck: boolean
   check: (force?: boolean) => Promise<void>
   dismiss: () => void
+  setAutoCheck: (enabled: boolean) => void
 }
 
 export const useUpdates = create<UpdateState>()(
@@ -30,10 +38,12 @@ export const useUpdates = create<UpdateState>()(
       current: null,
       lastCheck: 0,
       dismissed: null,
+      autoCheck: true,
 
       check: async (force = false) => {
         const state = get()
         if (state.status === 'checking') return
+        if (!force && !state.autoCheck) return
         if (!force && Date.now() - state.lastCheck < CHECK_INTERVAL_MS) return
 
         set({ status: 'checking' })
@@ -53,12 +63,18 @@ export const useUpdates = create<UpdateState>()(
         }
       },
 
-      dismiss: () => set({ dismissed: get().latest })
+      dismiss: () => set({ dismissed: get().latest }),
+
+      setAutoCheck: (enabled) => set({ autoCheck: enabled })
     }),
     {
       name: 'cotejo-updates',
       // Del resto no hay nada que recordar: se recalcula al comprobar.
-      partialize: (state) => ({ lastCheck: state.lastCheck, dismissed: state.dismissed })
+      partialize: (state) => ({
+        lastCheck: state.lastCheck,
+        dismissed: state.dismissed,
+        autoCheck: state.autoCheck
+      })
     }
   )
 )

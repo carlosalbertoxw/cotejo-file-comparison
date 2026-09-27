@@ -56,7 +56,8 @@
     "check": "Rechercher des mises à jour",
     "checking": "Recherche…",
     "upToDate": "Vous avez déjà la dernière version.",
-    "error": "Impossible de vérifier les mises à jour."
+    "error": "Impossible de vérifier les mises à jour.",
+    "autoCheck": "Rechercher les mises à jour automatiquement une fois par jour"
   },
   "pathBar": {
     "pickFile": "Choisir un fichier…",

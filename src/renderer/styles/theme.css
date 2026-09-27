@@ -779,6 +779,14 @@ input[type='text'] {
   color: var(--text-dim);
 }
 
+.about-autocheck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--text-dim);
+}
+
 /* ------------------------------------------------------------------ progress */
 
 .progress-line {
