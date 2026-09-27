@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename, stat, lstat, unlink, chmod, chown } from 'node:fs/promises'
+import { open, writeFile, rename, stat, lstat, unlink, chmod, chown } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
@@ -87,22 +87,41 @@ export function encodeText(content: string, eol: Eol, encoding: 'utf8' | 'utf8-b
   return encoding === 'utf8-bom' ? BOM + withEol : withEol
 }
 
+/**
+ * Todo sobre el mismo descriptor: comprobar el tamano con `stat` y leer
+ * despues con `readFile` son dos aperturas, y si el archivo crece o se
+ * sustituye entre medias el limite de arriba ya no vale nada. Aqui se lee como
+ * mucho lo que `fstat` dijo, y la fecha y el tamano devueltos son los del mismo
+ * contenido que se leyo.
+ */
 export async function readTextFile(path: string): Promise<TextFilePayload> {
-  const info = await stat(path)
-  if (info.isDirectory()) throw ipcError('notAFile', { path })
-  if (info.size > MAX_TEXT_BYTES) {
-    throw ipcError('fileTooLarge', {
-      size: (info.size / 1024 / 1024).toFixed(1),
-      limit: MAX_TEXT_BYTES / 1024 / 1024
-    })
-  }
+  // Windows no deja abrir una carpeta; Linux y macOS si, y es el `stat` del
+  // descriptor el que lo dice.
+  const handle = await open(path, 'r').catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'EISDIR') throw ipcError('notAFile', { path })
+    throw error
+  })
+  try {
+    const info = await handle.stat()
+    if (info.isDirectory()) throw ipcError('notAFile', { path })
+    if (info.size > MAX_TEXT_BYTES) {
+      throw ipcError('fileTooLarge', {
+        size: (info.size / 1024 / 1024).toFixed(1),
+        limit: MAX_TEXT_BYTES / 1024 / 1024
+      })
+    }
 
-  const buffer = await readFile(path)
-  if (looksBinary(buffer)) {
-    throw ipcError('binaryFile', { path })
-  }
+    const buffer = Buffer.alloc(info.size)
+    const { bytesRead } = await handle.read(buffer, 0, info.size, 0)
+    const content = buffer.subarray(0, bytesRead)
+    if (looksBinary(content)) {
+      throw ipcError('binaryFile', { path })
+    }
 
-  return { path, ...decodeText(buffer), size: info.size, mtimeMs: info.mtimeMs }
+    return { path, ...decodeText(content), size: bytesRead, mtimeMs: info.mtimeMs }
+  } finally {
+    await handle.close()
+  }
 }
 
 /** Lo que el renderer sabia del archivo cuando lo leyo, para detectar cambios. */

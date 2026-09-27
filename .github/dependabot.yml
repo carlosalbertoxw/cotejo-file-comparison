@@ -19,6 +19,12 @@ updates:
     groups:
       parches-y-menores:
         update-types: [minor, patch]
+    # Los tipos de Node siguen a la version que corre el proyecto (.nvmrc),
+    # no a la ultima: con los de una mayor, el typecheck dejaria usar APIs que
+    # Node 22 no tiene. Se suben a mano junto con .nvmrc.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   # El sitio es un proyecto npm aparte, con su propio lockfile.
   - package-ecosystem: npm
@@ -28,9 +34,17 @@ updates:
     groups:
       parches-y-menores:
         update-types: [minor, patch]
+    # Los tipos de Node siguen a la version que corre el proyecto (.nvmrc),
+    # no a la ultima: con los de una mayor, el typecheck dejaria usar APIs que
+    # Node 22 no tiene. Se suben a mano junto con .nvmrc.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   # Las acciones van fijadas por SHA; Dependabot mueve el SHA y el comentario
-  # con la version a la vez.
+  # con la version a la vez. Como en npm, solo se agrupan parches y menores:
+  # la primera tanda metio ocho mayores en un solo PR, y varias de esas
+  # acciones solo corren al publicar, donde el verde del PR no las ha probado.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -38,3 +52,4 @@ updates:
     groups:
       acciones:
         patterns: ['*']
+        update-types: [minor, patch]
