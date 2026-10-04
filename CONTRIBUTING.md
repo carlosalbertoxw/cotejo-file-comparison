@@ -13,7 +13,15 @@ Gracias por echar una mano. Esta guía recoge lo que un cambio necesita para ent
 
 ## Preparar el entorno
 
-Node según [.nvmrc](.nvmrc) (hoy la 22) y npm:
+Node según [.nvmrc](.nvmrc) (hoy la 22) y npm 11.16 o posterior, que es el que aplica la lista de
+scripts de instalación permitidos (`allowScripts` en `package.json`; el porqué está en la sección
+Desarrollo del README). Si tu npm es anterior:
+
+```bash
+npx --yes npm@11.16.0 ci
+```
+
+Y si no:
 
 ```bash
 npm ci
@@ -59,6 +67,11 @@ Además:
 - **Lo que note el usuario va en `changelog/proxima.md`,** escrito para quien descarga la
   aplicación, no para quien lee el código. Las reglas están en
   [changelog/README.md](changelog/README.md).
+- **Una dependencia nueva con script de instalación se revisa antes de aprobarla.** `npm ci`
+  falla hasta que se aprueba con `npm approve-scripts <paquete>` o se deniega con
+  `npm deny-scripts <paquete>`. Lo que hace el script va en el PR.
+- **Las decisiones que cruzan todo el proyecto, en `docs/adr/`.** Cambiar una de las que ya hay
+  —o tomar otra de ese calibre— es un registro nuevo, no una edición del viejo.
 - **La documentación, en el mismo cambio.** Si cambia un comando, una ruta o un comportamiento
   descrito en el README, se actualiza en el mismo PR.
 

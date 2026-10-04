@@ -12,6 +12,7 @@
  * lo que faltaba era aplicarla en todos los canales y no solo en dos.
  */
 
+import { isAbsolute } from 'node:path'
 import { ipcError } from '@shared/ipc-errors'
 import {
   DEFAULT_FILTERS,
@@ -36,14 +37,22 @@ export function asString(value: unknown, field: string): string {
 }
 
 /**
- * Una ruta del sistema de archivos.
+ * Una ruta absoluta del sistema de archivos.
  *
  * El byte nulo se rechaza aparte: las llamadas del sistema tratan la cadena
  * como terminada ahi, asi que «a.txt\0.png» abre otro archivo del que parece.
+ *
+ * Una relativa se resolveria contra la carpeta de trabajo del proceso
+ * principal, que no es nada que el usuario vea ni elija: la de instalacion, la
+ * del sistema o desde la que se lanzo Cotejo la primera vez. Todo lo que el
+ * renderer manda ya es absoluto —los dialogos, lo que se arrastra y los
+ * argumentos, que se resuelven al llegar (`argv.ts`)—; lo unico relativo es
+ * lo que alguien escriba asi a mano, y merece un aviso y no otro archivo.
  */
 export function asPath(value: unknown, field: string): string {
   const path = asString(value, field)
   if (path === '' || path.includes('\0')) fail(field)
+  if (!isAbsolute(path)) throw ipcError('pathNotAbsolute', { path })
   return path
 }
 

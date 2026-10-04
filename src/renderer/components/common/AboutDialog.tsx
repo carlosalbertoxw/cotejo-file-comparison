@@ -116,6 +116,16 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
                   </button>
                   <span className="about-hint">{t('about.files.userDataHint')}</span>
                 </dd>
+                {/* Se ensena la carpeta y no el archivo: si nada ha fallado
+                    nunca, `cotejo.log` no existe todavia. */}
+                <dt>{t('about.files.logs')}</dt>
+                <dd>
+                  <code className="about-path">{info.paths.logs}</code>
+                  <button onClick={() => void window.api.showItemInFolder(info.paths.logs)}>
+                    {t('about.files.show')}
+                  </button>
+                  <span className="about-hint">{t('about.files.logsHint')}</span>
+                </dd>
                 {info.paths.portableExtract && (
                   <>
                     <dt>{t('about.files.portable')}</dt>

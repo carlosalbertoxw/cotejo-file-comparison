@@ -1,6 +1,7 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron'
 import type { IpcChannel } from '@shared/ipc-channels'
 import { rendererUrl } from '../rendererUrl'
+import { logError } from '../services/log'
 import { isAppUrl } from './sender'
 
 /**
@@ -18,7 +19,13 @@ export function handle(
   listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
 ): void {
   ipcMain.handle(channel, (event, ...args) => {
-    if (!isTrustedSender(event)) throw new Error(`Remitente no permitido en ${channel}`)
+    if (!isTrustedSender(event)) {
+      // Hoy no puede pasar; si pasa, es que algo ajeno ha llegado a hablar con
+      // el proceso principal, y eso tiene que quedar escrito en algun sitio.
+      const error = new Error(`Remitente no permitido en ${channel}: ${event.senderFrame?.url}`)
+      logError('ipc', error)
+      throw error
+    }
     return listener(event, ...args)
   })
 }

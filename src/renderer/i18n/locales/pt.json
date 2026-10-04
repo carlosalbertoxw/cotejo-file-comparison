@@ -53,6 +53,8 @@
       "title": "Arquivos do programa",
       "userData": "Configuração e cache",
       "userDataHint": "Preferências, abas abertas, histórico e cache do navegador interno.",
+      "logs": "Registro de erros",
+      "logsHint": "Só quando algo falha: qual operação, em qual caminho e com qual erro. Nunca o conteúdo dos arquivos. Não sai do seu computador; anexe-o se relatar um problema.",
       "portable": "Portátil descompactado",
       "portableHint": "Cópia temporária do executável portátil; removida ao fechar.",
       "save": "Ao salvar",
@@ -243,6 +245,7 @@
     "fileChangedOnDisk": "«{{path}}» mudou no disco depois de ser aberto.",
     "badRequest": "Requisição malformada: {{field}}.",
     "absolutePathRejected": "Era esperado um caminho relativo, não \"{{path}}\".",
+    "pathNotAbsolute": "\"{{path}}\" não é um caminho completo: precisa começar na raiz do disco.",
     "pathOutsideRoot": "Caminho fora da pasta comparada: \"{{path}}\"."
   }
 }

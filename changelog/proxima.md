@@ -19,8 +19,21 @@ aunque la tabla no los muestre: los ocultos, los excluidos por los filtros y los
 simbólicos. Copiar `src/` con los filtros por defecto podía pisar un `.env` del otro lado sin que
 apareciera en ninguna parte.
 
+## Un registro de errores para informar de problemas
+
+Si una copia, un movimiento, un borrado o un guardado fallan, o la ventana se cierra de golpe,
+Cotejo lo anota en `cotejo.log`: cuándo, qué operación, sobre qué ruta y con qué error. Nunca el
+contenido de los archivos, y nunca sale del equipo. «Acerca de» dice dónde está y tiene un botón
+para abrir la carpeta, por si quieres adjuntarlo al informar de un problema. No pasa de 2 MB.
+
 ## Arreglos
 
+- Con Cotejo ya abierto, `cotejo notas.txt` desde una terminal en otra carpeta abría el
+  `notas.txt` de la carpeta desde la que se lanzó Cotejo la primera vez, o nada si ahí no había
+  ninguno. Ahora abre el de la carpeta en la que estás. Las rutas que llegan así se guardan además
+  completas en las pestañas y el historial, y siguen valiendo en el siguiente arranque.
+- Una ruta escrita a mano sin la carpeta de inicio, como `notas.txt`, ya no se busca en una
+  carpeta que no elegiste: Cotejo avisa de que tiene que ser una ruta completa.
 - Una expresión regular que tarda demasiado ya no congela la ventana al buscar: a los dos segundos
   la búsqueda se detiene y la caja lo indica.
 - `Ctrl+T` y `Ctrl+W` funcionan también con Bloq Mayús activado.

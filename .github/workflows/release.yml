@@ -25,7 +25,7 @@ jobs:
   notas:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # workflow_dispatch corre sin tag, y ahi no hay nada que comprobar.
       - name: Comprobar las notas y la version
@@ -70,17 +70,24 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # El mismo npm que en el CI, para que se aplique `allowScripts`.
+      - run: npx --yes npm@11.16.0 ci
 
       # Lo mismo que exige el CI, por si el tag sale de un commit que no paso
       # por el. Los tipos no hace falta: `package` los comprueba al construir.
+      # El audit va aqui y no solo en el CI porque un aviso publicado entre el
+      # ultimo push y el tag tiene que parar los instalables.
+      - name: Vulnerabilidades conocidas
+        if: runner.os == 'Linux'
+        run: npm audit --audit-level=high
+
       - run: npm run lint
 
       - run: npm test
@@ -91,6 +98,18 @@ jobs:
           # Sin certificado electron-builder avisa y sigue sin firmar, que es
           # justo lo que queremos mientras no haya cuenta de Apple Developer.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # La E2E sobre lo que se acaba de construir (`package` deja el bundle en
+      # out/), con el mismo arreglo del sandbox que en el CI. En macOS no: el
+      # CI nunca la ha corrido ahi, y estrenarla en mitad de una release solo
+      # anadiria una forma nueva de fallar.
+      - name: Permitir el sandbox de Chromium
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Pruebas E2E
+        if: runner.os != 'macOS'
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
 
       # Inventario de las versiones exactas que van dentro (SBOM CycloneDX):
       # ante un aviso sobre una dependencia o sobre un Electron concreto, dice
@@ -107,7 +126,7 @@ jobs:
           npm sbom --sbom-format cyclonedx --sbom-type application --package-lock-only \
             > "release/Cotejo-${version}-sbom.cdx.json"
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cotejo-${{ matrix.os }}
           path: ${{ matrix.artifacts }}
@@ -127,7 +146,7 @@ jobs:
       attestations: write
     steps:
       # El checkout es solo para leer las notas de la version.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -162,7 +181,7 @@ jobs:
 
       # El cuerpo de la release sale de changelog/, escrito a mano. Debajo,
       # GitHub anade sola la lista de commits y de contribuyentes.
-      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: dist/*
           draft: true

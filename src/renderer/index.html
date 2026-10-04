@@ -7,10 +7,14 @@
       style-src necesita 'unsafe-inline': CodeMirror inyecta sus estilos en
       etiquetas <style> al montar el editor. Los scripts no lo necesitan y no
       lo llevan: solo cargan los del propio paquete.
+
+      base-uri y form-action no heredan de default-src: sin nombrarlos, un
+      <base> o un <form> colados podrian redirigir rutas o mandar datos fuera.
+      La pagina no usa ninguno de los dos, ni plugins.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>Cotejo</title>
   </head>

@@ -279,6 +279,12 @@ export interface AppPaths {
    */
   userData: string
   /**
+   * Carpeta del registro de errores (`cotejo.log`). En Windows y Linux cuelga
+   * de `userData`; en macOS esta en `~/Library/Logs`. El archivo solo existe
+   * si alguna vez algo fallo.
+   */
+  logs: string
+  /**
    * Carpeta temporal a la que se descomprime el ejecutable portable (el .exe
    * portable de Windows o la AppImage). `null` si la aplicacion esta instalada.
    */

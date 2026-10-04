@@ -1,7 +1,9 @@
 import { dialog, BrowserWindow } from 'electron'
 import { stat } from 'node:fs/promises'
 import { IPC } from '@shared/ipc-channels'
+import { parseIpcError } from '@shared/ipc-errors'
 import { readTextFile, writeTextFile } from '../services/textFile'
+import { logError } from '../services/log'
 import { asEnum, asExpectedState, asPath, asString, ENCODINGS, EOLS } from './validate'
 import { handle } from './handle'
 
@@ -18,6 +20,21 @@ async function pick(
   return result.canceled ? null : (result.filePaths[0] ?? null)
 }
 
+/** `writeTextFile`, anotando en el registro los guardados que no llegan al disco. */
+async function save(...args: Parameters<typeof writeTextFile>): ReturnType<typeof writeTextFile> {
+  try {
+    return await writeTextFile(...args)
+  } catch (error) {
+    // Que el archivo haya cambiado en el disco no es un fallo: es el aviso que
+    // deja elegir al usuario. Lo demas es un guardado que no llego.
+    const message = (error as Error).message
+    if (parseIpcError(message)?.code !== 'fileChangedOnDisk') {
+      logError('guardar', `${args[0]}: ${message}`)
+    }
+    throw error
+  }
+}
+
 export function registerFsHandlers(): void {
   handle(IPC.pickFile, (event, title: unknown) =>
     pick(event, asString(title, 'title'), 'openFile')
@@ -31,7 +48,7 @@ export function registerFsHandlers(): void {
   handle(
     IPC.writeTextFile,
     (_e, path: unknown, content: unknown, eol: unknown, encoding: unknown, expected: unknown) =>
-      writeTextFile(
+      save(
         asPath(path, 'path'),
         asString(content, 'content'),
         asEnum(eol, EOLS, 'eol'),

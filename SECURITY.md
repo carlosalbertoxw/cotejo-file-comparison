@@ -22,6 +22,32 @@ reporta aparece en las notas de esa versión, salvo que prefiera no hacerlo.
 Solo la última versión publicada. Las correcciones salen como versión nueva y la aplicación avisa
 de ella; no se publican parches para versiones anteriores.
 
+## Si una release sale comprometida
+
+Una release rota se retira como cuenta el README («Retirar una release defectuosa»). Este es el caso
+peor: un instalable que alguien manipuló, porque se hizo con la cuenta de GitHub, con un token o
+con el propio workflow. Los instalables no van firmados, así que la cuenta y la cadena de
+publicación son la única garantía, y la primera hora no se puede improvisar.
+
+1. **Que deje de descargarse.** `gh release edit vX.Y.Z --prerelease` y regenerar el sitio con
+   `gh workflow run pages.yml --ref main`, como en una retirada normal. Si hay duda sobre la
+   integridad de la propia cuenta, borrar además los archivos de esa release: aquí la regla de no
+   borrar nada no vale, porque lo que hay publicado es justo lo que no tiene que llegar a nadie.
+2. **Cortar el acceso.** Cerrar todas las sesiones de GitHub, cambiar la contraseña, revisar los
+   métodos de MFA, y revocar los tokens personales, las claves SSH, las deploy keys y las
+   aplicaciones OAuth que no se reconozcan. El registro de seguridad de la cuenta
+   (`Settings → Security log`) dice qué se hizo y desde dónde.
+3. **Medir el alcance.** Revisar los últimos commits, los tags y cualquier cambio en `.github/`;
+   comprobar qué ejecución del workflow produjo cada archivo. `gh attestation verify` delata un
+   archivo que no salió del workflow, pero no uno que salió de un workflow manipulado: si se tocó
+   `.github/`, las atestaciones de esas ejecuciones no prueban nada.
+4. **Avisar.** Un GitHub Security Advisory en el repositorio con las versiones y los archivos
+   afectados, sus sumas SHA-256 y qué hacer si se instalaron. El mismo aviso, en la release
+   retirada y en el sitio. Quien la tenga instalada no recibe nada de la propia aplicación: su
+   versión es más nueva que la que pasa a figurar como última.
+5. **Publicar una versión limpia** con número superior, desde un commit revisado y con la cuenta ya
+   asegurada. Nunca se reutiliza el número de la comprometida.
+
 ## Qué se protege y de quién
 
 Este es el modelo de amenazas con el que se ha diseñado Cotejo. Sirve para decidir si algo es una
@@ -60,7 +86,8 @@ vulnerabilidad y para revisar los cambios que tocan las fronteras de abajo.
    niega a arrancar si alguien modifica su `app.asar`.
 5. **Cadena de publicación.** Los jobs que instalan dependencias solo tienen permisos de lectura.
    Crear la release, subir los archivos y firmar su procedencia lo hace un job aparte que no
-   ejecuta código del proyecto. Las acciones de GitHub van fijadas por SHA. Cada release lleva
+   ejecuta código del proyecto. Las acciones de GitHub van fijadas por SHA, y ninguna dependencia
+   ejecuta scripts al instalarse salvo las aprobadas en `allowScripts`. Cada release lleva
    `SHA256SUMS.txt`, un SBOM CycloneDX con las versiones exactas de lo que va dentro, y una
    atestación que cubre a ambos y se comprueba con `gh attestation verify`.
 
