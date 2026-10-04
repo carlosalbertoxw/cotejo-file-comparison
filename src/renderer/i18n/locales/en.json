@@ -53,6 +53,8 @@
       "title": "Program files",
       "userData": "Settings and cache",
       "userDataHint": "Preferences, open tabs, history and the built-in browser cache.",
+      "logs": "Error log",
+      "logsHint": "Only when something fails: which operation, on which path and with what error. Never the contents of your files. It never leaves your computer; attach it if you report a problem.",
       "portable": "Portable extracted to",
       "portableHint": "Temporary copy of the portable executable; removed on exit.",
       "save": "When saving",
@@ -243,6 +245,7 @@
     "fileChangedOnDisk": "«{{path}}» changed on disk after it was opened.",
     "badRequest": "Malformed request: {{field}}.",
     "absolutePathRejected": "Expected a relative path, not \"{{path}}\".",
+    "pathNotAbsolute": "\"{{path}}\" is not a full path: it has to start at the root of the drive.",
     "pathOutsideRoot": "Path outside the compared folder: \"{{path}}\"."
   }
 }

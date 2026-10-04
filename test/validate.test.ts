@@ -8,6 +8,7 @@
  * aflojar sin que falle nada.
  */
 
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { parseIpcError } from '../src/shared/ipc-errors'
 import { DEFAULT_FILTERS } from '../src/shared/types'
@@ -50,8 +51,23 @@ describe('asString y asPath', () => {
     expect(rejected(() => asPath('secreto.txt\0.png', 'ruta'))).toBe('ruta')
   })
 
-  it('una ruta normal pasa tal cual', () => {
-    expect(asPath('C:\\datos\\a.txt', 'ruta')).toBe('C:\\datos\\a.txt')
+  it('una ruta absoluta pasa tal cual', () => {
+    const absolute = resolve('datos', 'a.txt')
+    expect(asPath(absolute, 'ruta')).toBe(absolute)
+  })
+
+  it('una ruta relativa se rechaza con su propio aviso', () => {
+    // Se resolveria contra la carpeta de trabajo del proceso principal, que no
+    // es nada que el usuario haya elegido.
+    for (const path of ['a.txt', 'datos/a.txt', '../a.txt']) {
+      let code: string | undefined
+      try {
+        asPath(path, 'ruta')
+      } catch (error) {
+        code = parseIpcError((error as Error).message)?.code
+      }
+      expect(code).toBe('pathNotAbsolute')
+    }
   })
 })
 

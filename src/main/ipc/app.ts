@@ -58,6 +58,7 @@ export function registerAppHandlers(): void {
       arch: process.arch,
       paths: {
         userData: app.getPath('userData'),
+        logs: app.getPath('logs'),
         portableExtract: portableExtractDir()
       }
     })

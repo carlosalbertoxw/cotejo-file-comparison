@@ -230,9 +230,16 @@ La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equ
 | Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
 | La copia descomprimida del `.exe` portable o del AppImage | Una carpeta temporal del sistema, que desaparece al cerrar. Solo sale si se está usando una de las versiones sin instalar. |
 | El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), hasta que lo sustituye. Si aparece uno suelto es que el guardado se cortó a mitad, y se puede borrar. |
+| El registro de errores, `cotejo.log` | `logs` dentro de la carpeta de datos en Windows y Linux, `~/Library/Logs/cotejo` en macOS. Tiene botón para abrirla. |
 
-Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas tres rutas
-la aplicación no guarda nada propio, tampoco archivos de log.
+Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas cuatro rutas
+la aplicación no guarda nada propio.
+
+El registro de errores solo existe si algo ha fallado: una copia, un movimiento o un borrado que no
+se completó, un guardado que no llegó al disco, o la ventana que se cerró de golpe. Cada línea dice
+cuándo, qué operación, sobre qué ruta y con qué error del sistema; nunca el contenido de los
+archivos. Pasado 1 MB se renombra a `cotejo.old.log`, así que nunca ocupa más de 2 MB. No sale del
+equipo: es para adjuntarlo, si se quiere, al informar de un problema.
 
 Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
 que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la
@@ -247,6 +254,14 @@ aplicación firmada, y sin certificado eso no se sostiene. Solo avisa y te lleva
 no hay red, el aviso se calla y lo reintenta al siguiente arranque.
 
 ## Desarrollo
+
+Hace falta Node 22 ([.nvmrc](.nvmrc)) y **npm 11.16 o posterior**, que no es el que trae Node 22.
+Es el primero que aplica el campo `allowScripts` de `package.json`: con `strict-allow-scripts` en
+[.npmrc](.npmrc), una dependencia que traiga un script de instalación que nadie ha aprobado hace
+fallar `npm ci` en vez de ejecutarse, que es justo por donde entra un paquete comprometido. Con un
+npm anterior el campo se ignora y la instalación avisa del motor. El CI usa
+`npx --yes npm@11.16.0 ci`. Si una actualización trae un script nuevo, se revisa qué hace y se
+aprueba o se deniega con `npm approve-scripts <paquete>` o `npm deny-scripts <paquete>`.
 
 ```bash
 npm run lint
@@ -277,6 +292,29 @@ workflows con CodeQL en cada cambio y una vez a la semana; lo que encuentre apar
 Security del repositorio. Las actualizaciones de dependencias y de acciones llegan como pull
 requests semanales de Dependabot.
 
+En Linux, el CI pasa las pruebas con cobertura y deja el resumen en el log. Es un informe, no una
+puerta: no hay umbral que haga fallar nada. En local, el detalle por archivo queda en
+`coverage/index.html`:
+
+```bash
+npm run test:coverage
+```
+
+### Rendimiento
+
+Cotejo está pensado para que estos casos quepan con holgura en un portátil normal:
+
+| Caso | Hoy | Tope en las pruebas |
+| --- | --- | --- |
+| Fusionar el escaneo de dos carpetas con 50 000 archivos cada una | menos de 1 s | 10 s |
+| Comparar dos textos de 50 000 líneas | menos de 0,5 s | 5 s |
+| Abrir un archivo de texto | — | 12 MB como máximo; por encima se rechaza |
+
+`test/performance.test.ts` comprueba los dos primeros. No mide la velocidad: está para que un cambio
+que vuelva cuadrático el escaneo o el diff falle en el CI en vez de aparecer en la carpeta grande de
+alguien. Los topes son más de diez veces lo que se tarda hoy, para que un runner lento no los
+dispare.
+
 ### Empaquetar
 
 Hay un script por plataforma, y los tres regeneran antes el icono y los avisos de terceros, así que
@@ -303,7 +341,7 @@ hay forma de generarlo desde otro sitio, por eso existe el workflow de CI. Y Lin
 falla al crear los symlinks del AppImage, así que se construye en el contenedor oficial:
 
 ```bash
-docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:22-05.26@sha256:b76a82a6c6a8a1dea1abbc93e394f54316744824b64e6a50d959f1e3ba8951a9 bash -c "npm ci && npm run package:linux"
+docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:22-05.26@sha256:b76a82a6c6a8a1dea1abbc93e394f54316744824b64e6a50d959f1e3ba8951a9 bash -c "npx --yes npm@11.16.0 ci && npm run package:linux"
 ```
 
 La imagen va fijada por etiqueta y por digest. `latest` sigue a la versión más nueva de Node —hoy la
@@ -342,6 +380,10 @@ archivo de notas del tag, y que **el tag y la `version` de `package.json` coinci
 importa porque el aviso de nueva versión compara la etiqueta de la última release con la versión que
 lleva dentro el ejecutable; publicar `v0.2.0` sin subir antes `package.json` dejaría a todas las
 copias recién instaladas creyéndose desactualizadas.
+
+Después cada plataforma repite lo que exige el CI, porque el tag puede salir de un commit que no
+pasó por él: lint, pruebas, `npm audit` (en Linux) y, sobre lo recién empaquetado, la E2E (en Linux
+y Windows). Si algo falla, esa plataforma no sube nada y la release no se crea.
 
 ### Retirar una release defectuosa
 
@@ -403,13 +445,15 @@ funciona en español y se rompe en cuanto cambia el orden de las palabras en otr
 ```
 build/         Icono (SVG como fuente de verdad)
 changelog/     Notas de cada versión, una por tag; son el cuerpo de la release
+docs/adr/      Decisiones de arquitectura: qué se decidió, frente a qué y por qué
 scripts/       Utilidades de build: icono y avisos de terceros
 sitio/         Página pública (Astro), publicada en GitHub Pages; proyecto npm aparte
 src/
   shared/      Tipos, canales IPC, códigos de error, enlaces y rutas: lo que comparten los tres procesos
   main/
     ipc/       Adaptadores finos sobre los servicios, con la validación de lo que cruza el puente
-    services/  Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera
+    services/  Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera, registro de errores
+    argv.ts    Rutas recibidas por la línea de comandos, resueltas contra la carpeta desde la que se lanzó
   preload/     contextBridge -> window.api (contextIsolation y sandbox activados)
   renderer/
     i18n/      Catálogos de traducción, detección de idioma y traducción de errores IPC

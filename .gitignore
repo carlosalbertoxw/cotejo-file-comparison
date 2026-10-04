@@ -8,3 +8,4 @@ release/
 *.tsbuildinfo
 test-results/
 playwright-report/
+coverage/

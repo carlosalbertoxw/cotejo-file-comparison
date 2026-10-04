@@ -47,7 +47,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # Con el npm 11.16 y no con el 10 que trae Node 22: el 10 no conoce
+      # `allowScripts` ni `strict-allow-scripts` (.npmrc), y ejecutaria el
+      # script de instalacion de cualquier dependencia sin preguntar.
+      - run: npx --yes npm@11.16.0 ci
 
       # Sin --omit=dev a proposito: Electron, React y CodeMirror estan en
       # devDependencies porque van dentro del bundle, pero son justo lo que se
@@ -60,7 +63,9 @@ jobs:
 
       - run: npm run typecheck
 
-      - run: npm test
+      # En Linux con cobertura, que sale en el log. Es un informe, no una
+      # puerta: no hay umbral que haga fallar el job.
+      - run: npm run ${{ runner.os == 'Linux' && 'test:coverage' || 'test' }}
 
       # Empaquetar entero es cosa del workflow de release; aqui basta con
       # comprobar que los tres bundles se generan, que es donde salen los

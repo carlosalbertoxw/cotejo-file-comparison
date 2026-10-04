@@ -1,6 +1,7 @@
 import { IPC } from '@shared/ipc-channels'
 import type { FileOpPlan, FileOpResult, FileOpProgress } from '@shared/types'
 import { planFileOp, runFileOp } from '../services/fileOpsService'
+import { logError } from '../services/log'
 import { asFileOpRequest, asString } from './validate'
 import { handle } from './handle'
 
@@ -31,6 +32,11 @@ export function registerFileOpsHandlers(): void {
           } satisfies FileOpProgress)
         }
       })
+      // La barra de estado solo cuenta el primer fallo; aqui quedan todos.
+      const roots = `${request.leftRoot} ↔ ${request.rightRoot}`
+      for (const failure of result.failed) {
+        logError(request.kind, `${failure.relPath} (${roots}): ${failure.message}`)
+      }
       return { operationId: request.operationId, ...result }
     } finally {
       running.delete(request.operationId)

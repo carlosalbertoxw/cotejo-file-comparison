@@ -8,21 +8,14 @@ import { registerDirCompareHandlers } from './ipc/dirCompare'
 import { registerFileOpsHandlers } from './ipc/fileOps'
 import { clearCloseGuard, closeGuardFor, registerAppHandlers } from './ipc/app'
 import { rendererUrl } from './rendererUrl'
+import { pathsFromArgv } from './argv'
+import { initLog, logError } from './services/log'
 
 /**
- * Argumentos que son rutas de verdad. En desarrollo argv incluye el ejecutable
- * de Electron y el directorio del proyecto, asi que hay que saltarselos.
- *
- * Permite `cotejo izquierda derecha` desde la terminal o desde el explorador.
+ * En desarrollo argv incluye el ejecutable de Electron y el directorio del
+ * proyecto, asi que hay que saltarselos.
  */
-function pathsFromArgv(argv: string[]): string[] {
-  const start = is.dev ? 2 : 1
-  return argv
-    .slice(start)
-    .filter((argument) => !argument.startsWith('-'))
-    .filter((argument) => existsSync(argument))
-    .slice(0, 2)
-}
+const ARGV_SKIP = is.dev ? 2 : 1
 
 /**
  * macOS no pasa las rutas por argv: entrega un `open-file` por cada archivo,
@@ -83,7 +76,10 @@ function createWindow(): BrowserWindow {
   window.on('ready-to-show', () => {
     window.show()
     // argv en Windows y Linux; lo que haya llegado por `open-file` en macOS.
-    const paths = [...pathsFromArgv(process.argv), ...pendingPaths.splice(0, pendingPaths.length)]
+    const paths = [
+      ...pathsFromArgv(process.argv, process.cwd(), ARGV_SKIP),
+      ...pendingPaths.splice(0, pendingPaths.length)
+    ]
     if (paths.length > 0) window.webContents.send(IPC.openPathsFromArgv, paths.slice(0, 2))
   })
 
@@ -167,12 +163,14 @@ if (!app.isPackaged && process.env['COTEJO_USER_DATA']) {
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', (_event, argv) => {
+  // `workingDirectory` es la carpeta de la instancia que se lanzo, que es
+  // contra la que hay que resolver sus rutas relativas.
+  app.on('second-instance', (_event, argv, workingDirectory) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
     }
-    deliverPaths(pathsFromArgv(argv))
+    deliverPaths(pathsFromArgv(argv, workingDirectory, ARGV_SKIP))
   })
 
   app.on('open-file', (event, filePath) => {
@@ -187,6 +185,17 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.carlos.cotejo')
+
+    initLog(app.getPath('logs'))
+    // Un renderer que se cae —casi siempre por memoria, con archivos enormes—
+    // deja la ventana en blanco sin decir por que. Que al menos quede escrito.
+    app.on('render-process-gone', (_event, _contents, details) => {
+      logError('renderer', `${details.reason} (codigo ${details.exitCode})`)
+    })
+    app.on('child-process-gone', (_event, details) => {
+      if (details.reason === 'clean-exit') return
+      logError(details.type, `${details.reason} (codigo ${details.exitCode})`)
+    })
 
     // Cotejo no usa ninguna API con permiso: ni camara, ni notificaciones, ni
     // portapapeles asincrono —copiar y pegar en CodeMirror van por los eventos

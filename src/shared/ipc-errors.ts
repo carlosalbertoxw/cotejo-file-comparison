@@ -13,6 +13,8 @@ export type IpcErrorCode =
   | 'fileTooLarge'
   | 'binaryFile'
   | 'absolutePathRejected'
+  /** Una ruta que tenia que ser absoluta y no lo es. */
+  | 'pathNotAbsolute'
   | 'pathOutsideRoot'
   /** El archivo cambio en el disco entre que se leyo y se fue a guardar. */
   | 'fileChangedOnDisk'

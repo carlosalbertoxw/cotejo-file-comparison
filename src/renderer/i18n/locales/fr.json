@@ -53,6 +53,8 @@
       "title": "Fichiers du programme",
       "userData": "Configuration et cache",
       "userDataHint": "Préférences, onglets ouverts, historique et cache du navigateur intégré.",
+      "logs": "Journal des erreurs",
+      "logsHint": "Seulement en cas d’échec : quelle opération, sur quel chemin et avec quelle erreur. Jamais le contenu des fichiers. Il ne quitte pas votre ordinateur ; joignez-le si vous signalez un problème.",
       "portable": "Portable décompressé",
       "portableHint": "Copie temporaire de l’exécutable portable ; supprimée à la fermeture.",
       "save": "À l’enregistrement",
@@ -243,6 +245,7 @@
     "fileChangedOnDisk": "«{{path}}» a changé sur le disque depuis son ouverture.",
     "badRequest": "Requête mal formée : {{field}}.",
     "absolutePathRejected": "Un chemin relatif était attendu, pas « {{path}} ».",
+    "pathNotAbsolute": "« {{path}} » n’est pas un chemin complet : il doit partir de la racine du disque.",
     "pathOutsideRoot": "Chemin hors du dossier comparé : « {{path}} »."
   }
 }

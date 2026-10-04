@@ -53,6 +53,8 @@
       "title": "Archivos del programa",
       "userData": "Configuración y caché",
       "userDataHint": "Preferencias, pestañas abiertas, historial y caché del navegador interno.",
+      "logs": "Registro de errores",
+      "logsHint": "Solo si algo falla: qué operación, sobre qué ruta y con qué error. Nunca el contenido de los archivos. No sale del equipo; adjúntalo si informas de un problema.",
       "portable": "Portable descomprimido",
       "portableHint": "Copia temporal del ejecutable portable; se borra al cerrar.",
       "save": "Al guardar",
@@ -243,6 +245,7 @@
     "fileChangedOnDisk": "«{{path}}» cambió en el disco desde que se abrió.",
     "badRequest": "Petición mal formada: {{field}}.",
     "absolutePathRejected": "Se esperaba una ruta relativa, no «{{path}}».",
+    "pathNotAbsolute": "«{{path}}» no es una ruta completa: tiene que empezar en la raíz del disco.",
     "pathOutsideRoot": "Ruta fuera de la carpeta comparada: «{{path}}»."
   }
 }

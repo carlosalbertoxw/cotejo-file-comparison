@@ -77,10 +77,17 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      # El mismo npm que en el CI, para que se aplique `allowScripts`.
+      - run: npx --yes npm@11.16.0 ci
 
       # Lo mismo que exige el CI, por si el tag sale de un commit que no paso
       # por el. Los tipos no hace falta: `package` los comprueba al construir.
+      # El audit va aqui y no solo en el CI porque un aviso publicado entre el
+      # ultimo push y el tag tiene que parar los instalables.
+      - name: Vulnerabilidades conocidas
+        if: runner.os == 'Linux'
+        run: npm audit --audit-level=high
+
       - run: npm run lint
 
       - run: npm test
@@ -91,6 +98,18 @@ jobs:
           # Sin certificado electron-builder avisa y sigue sin firmar, que es
           # justo lo que queremos mientras no haya cuenta de Apple Developer.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # La E2E sobre lo que se acaba de construir (`package` deja el bundle en
+      # out/), con el mismo arreglo del sandbox que en el CI. En macOS no: el
+      # CI nunca la ha corrido ahi, y estrenarla en mitad de una release solo
+      # anadiria una forma nueva de fallar.
+      - name: Permitir el sandbox de Chromium
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Pruebas E2E
+        if: runner.os != 'macOS'
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
 
       # Inventario de las versiones exactas que van dentro (SBOM CycloneDX):
       # ante un aviso sobre una dependencia o sobre un Electron concreto, dice

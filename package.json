@@ -11,7 +11,8 @@
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "npm": ">=11.16.0"
   },
   "type": "module",
   "scripts": {
@@ -22,6 +23,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "icon": "node scripts/make-icon.mjs",
     "notices": "node scripts/make-notices.mjs",
@@ -49,8 +51,9 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^5.0.3",
     "diff": "^9.0.0",
-    "electron": "^43.7.5",
+    "electron": "^43.7.7",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.11.0",
@@ -67,9 +70,10 @@
     "vitest": "^5.0.3",
     "zustand": "^5.0.15"
   },
+  "// allowScripts": "Que dependencias pueden ejecutar scripts al instalarse. Con strict-allow-scripts (.npmrc), cualquier otra que traiga uno hace fallar npm ci en vez de ejecutarlo, que es justo por donde entra un paquete comprometido. Van por nombre y no por version: fijadas, cada PR de Dependabot que sube esbuild fallaria hasta aprobarla a mano. esbuild instala su binario y fsevents se compila en macOS para vigilar archivos en desarrollo. electron-winstaller solo sirve al instalador Squirrel, que no se usa, y se le deniega. Electron no aparece porque desde la 43 no tiene script de instalacion: baja su binario la primera vez que se arranca.",
   "allowScripts": {
-    "electron@43.7.5": true,
-    "esbuild@0.25.12": true,
-    "esbuild@0.28.1": true
+    "esbuild": true,
+    "fsevents": true,
+    "electron-winstaller": false
   }
 }
