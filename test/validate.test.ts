@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { parseIpcError } from '../src/shared/ipc-errors'
 import { DEFAULT_FILTERS } from '../src/shared/types'
 import {
+  asCloseGuard,
   asCompareRequest,
   asEnum,
   asExpectedState,
@@ -150,5 +151,36 @@ describe('asFileOpRequest', () => {
 
   it('rechaza una lista de elementos que no es una lista', () => {
     expect(rejected(() => asFileOpRequest({ ...valid, items: item }))).toBe('request.items')
+  })
+
+  it('sin filtros usa los de por defecto, y los mal formados se rechazan', () => {
+    expect(asFileOpRequest(valid).filters).toEqual(DEFAULT_FILTERS)
+    const filters = { exclude: '*.log', include: [], includeHidden: false }
+    expect(rejected(() => asFileOpRequest({ ...valid, filters }))).toBe('request.filters.exclude')
+  })
+})
+
+describe('asCloseGuard', () => {
+  const valid = {
+    title: 'Cotejo',
+    message: 'Hay trabajo sin guardar.',
+    detail: 'Una pestaña tiene cambios.',
+    discard: 'Cerrar sin guardar',
+    cancel: 'Cancelar'
+  }
+
+  it('acepta null, que quita el aviso', () => {
+    expect(asCloseGuard(null)).toBeNull()
+  })
+
+  it('reconstruye el aviso con solo los campos conocidos', () => {
+    expect(asCloseGuard({ ...valid, extra: 'no' })).toEqual(valid)
+  })
+
+  it('rechaza un texto que falta o que no cabe en un dialogo', () => {
+    expect(rejected(() => asCloseGuard({ ...valid, cancel: undefined }))).toBe('guard.cancel')
+    expect(rejected(() => asCloseGuard({ ...valid, detail: 'x'.repeat(1001) }))).toBe(
+      'guard.detail'
+    )
   })
 })

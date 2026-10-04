@@ -16,6 +16,18 @@
     "newDir": "＋ Carpetas",
     "newDirTooltip": "Comparar carpetas"
   },
+  "unsaved": {
+    "closeTabTitle": "¿Cerrar «{{title}}»?",
+    "closeTabDirty": "Esta pestaña tiene cambios sin guardar. Si la cierras sin guardar, se perderán.",
+    "closeTabScratch": "El texto escrito o pegado en esta pestaña no está en ningún archivo y se perderá al cerrarla.",
+    "closeTabBoth": "Esta pestaña tiene cambios sin guardar, y además texto escrito o pegado que no está en ningún archivo. Guardar conserva los cambios de los archivos; el resto se perderá al cerrarla.",
+    "saveAndClose": "Guardar y cerrar",
+    "discardAndClose": "Cerrar sin guardar",
+    "windowMessage": "Hay trabajo sin guardar.",
+    "windowDetail_one": "{{count}} pestaña tiene cambios que no están en el disco. Si cierras ahora, se perderán.",
+    "windowDetail_other": "{{count}} pestañas tienen cambios que no están en el disco. Si cierras ahora, se perderán.",
+    "windowDiscard": "Cerrar sin guardar"
+  },
   "welcome": {
     "tagline": "Pon dos cosas una al lado de la otra y mira en qué se diferencian.",
     "compareText": "Comparar archivos de texto",
@@ -44,7 +56,7 @@
       "portable": "Portable descomprimido",
       "portableHint": "Copia temporal del ejecutable portable; se borra al cerrar.",
       "save": "Al guardar",
-      "saveHint": "Junto al archivo se escribe un temporal «.<número>{{suffix}}» que luego lo sustituye.",
+      "saveHint": "Junto al archivo se escribe un temporal «.<código>{{suffix}}» que luego lo sustituye.",
       "show": "Mostrar carpeta"
     }
   },
@@ -128,6 +140,7 @@
       "wholeWordTooltip": "Solo palabras completas",
       "regexTooltip": "Expresión regular",
       "badRegex": "La expresión regular no es válida",
+      "slowRegex": "La expresión regular tardaba demasiado y se ha detenido la búsqueda",
       "prevTooltip": "Coincidencia anterior (Shift+Intro)",
       "nextTooltip": "Coincidencia siguiente (Intro)",
       "closeTooltip": "Cerrar la búsqueda (Esc)"
@@ -216,9 +229,12 @@
     "trashNotice": "Se moverán a la papelera del sistema, así que podrás recuperarlos.",
     "overwriteWarning_one": "Se sobrescribirá {{count}} archivo que ya existe en el destino:",
     "overwriteWarning_other": "Se sobrescribirán {{count}} archivos que ya existen en el destino:",
+    "overwriteTrashNotice": "Antes de escribir encima, cada uno irá a la papelera del sistema, así que podrás recuperarlo.",
     "overflowMore_one": "… y {{count}} más",
     "overflowMore_other": "… y {{count}} más",
-    "noOverwrites": "No se sobrescribe nada: todos los destinos son nuevos."
+    "noOverwrites": "No se sobrescribe nada: todos los destinos son nuevos.",
+    "unseenWarning_one": "Dentro de lo seleccionado va {{count}} archivo que la tabla no muestra (oculto, excluido por los filtros o enlace simbólico):",
+    "unseenWarning_other": "Dentro de lo seleccionado van {{count}} archivos que la tabla no muestra (ocultos, excluidos por los filtros o enlaces simbólicos):"
   },
   "errors": {
     "notAFile": "«{{path}}» es una carpeta, no un archivo.",

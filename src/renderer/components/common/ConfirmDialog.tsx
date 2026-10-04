@@ -6,6 +6,11 @@ interface Props {
   message: React.ReactNode
   confirmLabel?: string
   danger?: boolean
+  /**
+   * Una tercera salida entre cancelar y confirmar, como «Cerrar sin guardar»
+   * junto a «Guardar y cerrar». Nunca es la accion por defecto.
+   */
+  alternative?: { label: string; onClick: () => void }
   onConfirm: () => void
   onCancel: () => void
 }
@@ -15,6 +20,7 @@ export function ConfirmDialog({
   message,
   confirmLabel,
   danger,
+  alternative,
   onConfirm,
   onCancel
 }: Props): React.JSX.Element {
@@ -42,6 +48,7 @@ export function ConfirmDialog({
         <div className="dialog-body">{message}</div>
         <div className="dialog-actions">
           <button onClick={onCancel}>{t('common.cancel')}</button>
+          {alternative && <button onClick={alternative.onClick}>{alternative.label}</button>}
           <button className={danger ? '' : 'primary'} onClick={onConfirm} autoFocus>
             {confirmLabel ?? t('common.accept')}
           </button>

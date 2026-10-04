@@ -18,8 +18,9 @@ export function FindBar({ find, label }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { options } = find
 
-  const empty = find.query !== '' && !find.invalid && find.matchCount === 0
-  const counter = find.invalid
+  const failed = find.invalid || find.timedOut
+  const empty = find.query !== '' && !failed && find.matchCount === 0
+  const counter = failed
     ? '!'
     : find.query === ''
       ? ''
@@ -30,7 +31,7 @@ export function FindBar({ find, label }: Props): React.JSX.Element {
       <input
         type="text"
         ref={find.inputRef}
-        className={find.invalid || empty ? 'no-match' : undefined}
+        className={failed || empty ? 'no-match' : undefined}
         value={find.query}
         aria-label={label}
         placeholder={t('textDiff.find.placeholder')}
@@ -45,8 +46,14 @@ export function FindBar({ find, label }: Props): React.JSX.Element {
       />
 
       <span
-        className={find.invalid || empty ? 'find-count none' : 'find-count'}
-        title={find.invalid ? t('textDiff.find.badRegex') : undefined}
+        className={failed || empty ? 'find-count none' : 'find-count'}
+        title={
+          find.invalid
+            ? t('textDiff.find.badRegex')
+            : find.timedOut
+              ? t('textDiff.find.slowRegex')
+              : undefined
+        }
       >
         {counter}
       </span>

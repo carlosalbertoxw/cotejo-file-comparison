@@ -28,7 +28,8 @@ export const IPC = {
 
   // Aplicacion
   appInfo: 'app:info',
-  checkForUpdates: 'app:checkForUpdates'
+  checkForUpdates: 'app:checkForUpdates',
+  setCloseGuard: 'app:setCloseGuard'
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

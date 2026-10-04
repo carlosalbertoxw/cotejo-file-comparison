@@ -5,14 +5,15 @@ import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface Props {
   onShowAbout: () => void
+  /** Cerrar pasa por App, que pregunta si la pestana tiene algo sin guardar. */
+  onClose: (id: string) => void
 }
 
-export function TabBar({ onShowAbout }: Props): React.JSX.Element {
+export function TabBar({ onShowAbout, onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const tabs = useSession((state) => state.tabs)
   const activeId = useSession((state) => state.activeId)
   const setActive = useSession((state) => state.setActive)
-  const closeTab = useSession((state) => state.closeTab)
   const openTab = useSession((state) => state.openTab)
 
   return (
@@ -39,7 +40,7 @@ export function TabBar({ onShowAbout }: Props): React.JSX.Element {
             title={t('tabs.closeTooltip', { mod: MOD_LABEL })}
             onClick={(event) => {
               event.stopPropagation()
-              closeTab(tab.id)
+              onClose(tab.id)
             }}
           >
             ✕

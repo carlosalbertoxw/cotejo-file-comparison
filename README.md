@@ -48,7 +48,10 @@ de Ctrl, como cualquier otra aplicación de macOS.
 
 Que no vayan firmados no quiere decir que no se puedan comprobar. Cada release lleva un
 `SHA256SUMS.txt` con la huella de cada archivo, y una atestación de GitHub que certifica que
-salieron del workflow de release de este repositorio y de qué commit.
+salieron del workflow de release de este repositorio y de qué commit. Lleva también un
+`Cotejo-X.Y.Z-sbom.cdx.json`, el inventario en formato CycloneDX de las versiones exactas de
+Electron y de cada paquete que entra en la aplicación, para saber si un aviso de seguridad sobre
+alguno de ellos afecta a la versión que tienes.
 
 La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
 
@@ -156,6 +159,13 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   **preservando los finales de línea y el BOM originales**.
 - Opciones: ignorar espacios, mayúsculas o líneas en blanco, y ancho de tabulación.
 
+### Al cerrar
+
+**Cerrar una pestaña con cambios sin guardar pregunta antes**, tanto con su ✕ como con `Ctrl+W`
+(`⌘W` en macOS): se puede guardar y cerrar, cerrar sin guardar o seguir donde estabas. Cuenta
+también el texto escrito o pegado en un panel sin archivo, que no tiene dónde guardarse y se
+perdería igual. Cerrar la ventana o salir de la aplicación con trabajo pendiente pregunta lo mismo.
+
 ### Al guardar
 
 - **Si el archivo cambió en el disco** desde que se abrió, no se escribe nada: Cotejo lo dice y
@@ -195,8 +205,15 @@ saltar de pantalla, `Espacio` para añadir o quitar de la selección y `Entrar` 
 comparación de esa fila.
 
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
-toque—, y toda operación destructiva o que sobrescriba pide confirmación mostrando antes el número
-exacto de archivos, los bytes y la lista de lo que se va a sobrescribir.
+toque—, y **lo que se sobrescribe, también**: antes de copiar o mover encima de un archivo, el que
+había va a la papelera. Toda operación destructiva o que sobrescriba pide confirmación mostrando
+antes el número exacto de archivos, los bytes y la lista, archivo por archivo, de lo que se va a
+sobrescribir; si se copia una carpeta que existe en los dos lados, cada archivo de dentro que
+coincida, no solo el nombre de la carpeta.
+
+Una carpeta viaja entera, con lo que la tabla no enseña: los archivos ocultos, los excluidos por
+los filtros y los enlaces simbólicos. Cuando hay algo así dentro de lo seleccionado, el diálogo lo
+avisa y lo lista antes de confirmar.
 
 ## Acerca de y actualizaciones
 
@@ -212,7 +229,7 @@ La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equ
 | --- | --- |
 | Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
 | La copia descomprimida del `.exe` portable o del AppImage | Una carpeta temporal del sistema, que desaparece al cerrar. Solo sale si se está usando una de las versiones sin instalar. |
-| El temporal de cada guardado | Junto al propio archivo, como `.<número>.cotejo-tmp`, hasta que lo sustituye. Si aparece uno suelto es que el guardado se cortó a mitad, y se puede borrar. |
+| El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), hasta que lo sustituye. Si aparece uno suelto es que el guardado se cortó a mitad, y se puede borrar. |
 
 Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas tres rutas
 la aplicación no guarda nada propio, tampoco archivos de log.

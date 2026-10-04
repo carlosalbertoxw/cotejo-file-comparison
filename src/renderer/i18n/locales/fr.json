@@ -16,6 +16,18 @@
     "newDir": "＋ Dossiers",
     "newDirTooltip": "Comparer des dossiers"
   },
+  "unsaved": {
+    "closeTabTitle": "Fermer « {{title}} » ?",
+    "closeTabDirty": "Cet onglet contient des modifications non enregistrées. Si vous le fermez sans enregistrer, elles seront perdues.",
+    "closeTabScratch": "Le texte saisi ou collé dans cet onglet n’est dans aucun fichier et sera perdu à la fermeture.",
+    "closeTabBoth": "Cet onglet contient des modifications non enregistrées, ainsi que du texte saisi ou collé qui n’est dans aucun fichier. Enregistrer conserve les modifications des fichiers ; le reste sera perdu à la fermeture.",
+    "saveAndClose": "Enregistrer et fermer",
+    "discardAndClose": "Fermer sans enregistrer",
+    "windowMessage": "Du travail n’est pas enregistré.",
+    "windowDetail_one": "{{count}} onglet contient des modifications qui ne sont pas sur le disque. Si vous fermez maintenant, elles seront perdues.",
+    "windowDetail_other": "{{count}} onglets contiennent des modifications qui ne sont pas sur le disque. Si vous fermez maintenant, elles seront perdues.",
+    "windowDiscard": "Fermer sans enregistrer"
+  },
   "welcome": {
     "tagline": "Mettez deux choses côte à côte et voyez en quoi elles diffèrent.",
     "compareText": "Comparer des fichiers texte",
@@ -44,7 +56,7 @@
       "portable": "Portable décompressé",
       "portableHint": "Copie temporaire de l’exécutable portable ; supprimée à la fermeture.",
       "save": "À l’enregistrement",
-      "saveHint": "Un fichier temporaire « .<nombre>{{suffix}} » est écrit à côté du fichier puis le remplace.",
+      "saveHint": "Un fichier temporaire « .<code>{{suffix}} » est écrit à côté du fichier puis le remplace.",
       "show": "Afficher le dossier"
     }
   },
@@ -128,6 +140,7 @@
       "wholeWordTooltip": "Mots entiers uniquement",
       "regexTooltip": "Expression régulière",
       "badRegex": "L'expression régulière n'est pas valide",
+      "slowRegex": "L’expression régulière prenait trop de temps et la recherche a été arrêtée",
       "prevTooltip": "Occurrence précédente (Maj+Entrée)",
       "nextTooltip": "Occurrence suivante (Entrée)",
       "closeTooltip": "Fermer la recherche (Échap)"
@@ -216,9 +229,12 @@
     "trashNotice": "Ils seront déplacés vers la corbeille du système, vous pourrez donc les récupérer.",
     "overwriteWarning_one": "{{count}} fichier qui existe déjà à destination sera écrasé :",
     "overwriteWarning_other": "{{count}} fichiers qui existent déjà à destination seront écrasés :",
+    "overwriteTrashNotice": "Avant d’être écrasé, chacun ira dans la corbeille du système : vous pourrez le récupérer.",
     "overflowMore_one": "… et {{count}} de plus",
     "overflowMore_other": "… et {{count}} de plus",
-    "noOverwrites": "Rien n'est écrasé : toutes les destinations sont nouvelles."
+    "noOverwrites": "Rien n'est écrasé : toutes les destinations sont nouvelles.",
+    "unseenWarning_one": "La sélection contient {{count}} fichier que le tableau n’affiche pas (caché, exclu par les filtres ou lien symbolique) :",
+    "unseenWarning_other": "La sélection contient {{count}} fichiers que le tableau n’affiche pas (cachés, exclus par les filtres ou liens symboliques) :"
   },
   "errors": {
     "notAFile": "« {{path}} » est un dossier, pas un fichier.",

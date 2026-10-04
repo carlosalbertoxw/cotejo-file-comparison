@@ -1,4 +1,5 @@
 import { open, writeFile, rename, stat, lstat, unlink, chmod, chown } from 'node:fs/promises'
+import { randomBytes } from 'node:crypto'
 import type { Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
@@ -18,7 +19,6 @@ import { TEMP_SUFFIX } from '@shared/files'
 export const MAX_TEXT_BYTES = 12 * 1024 * 1024
 
 const BOM = '﻿'
-
 
 /**
  * Heuristica estandar: un byte nulo en la cabecera significa binario.
@@ -203,9 +203,15 @@ export async function writeTextFile(
   if (original && (original.isSymbolicLink() || original.nlink > 1)) {
     await writeFile(path, data, 'utf8')
   } else {
-    const temporary = join(dirname(path), `.${Date.now()}${TEMP_SUFFIX}`)
+    // Nombre aleatorio y creacion exclusiva (`wx`): dos guardados en el mismo
+    // milisegundo no comparten temporal, y si alguien ha dejado algo con ese
+    // nombre —un enlace plantado en una carpeta compartida, por ejemplo— la
+    // escritura falla en vez de seguirlo y truncar lo que haya al otro lado.
+    const temporary = join(dirname(path), `.${randomBytes(6).toString('hex')}${TEMP_SUFFIX}`)
+    let created = false
     try {
-      await writeFile(temporary, data, 'utf8')
+      await writeFile(temporary, data, { encoding: 'utf8', flag: 'wx' })
+      created = true
       if (original && !(await inheritOwnership(temporary, original))) {
         // Sin poder conservar el propietario, sustituir el archivo se lo
         // quedaria a quien guarda. Se pierde la atomicidad, que es lo menos
@@ -216,7 +222,8 @@ export async function writeTextFile(
         await rename(temporary, path)
       }
     } catch (error) {
-      await unlink(temporary).catch(() => undefined)
+      // Solo se borra lo que se creo aqui: si `wx` fallo, el archivo es de otro.
+      if (created) await unlink(temporary).catch(() => undefined)
       throw error
     }
   }

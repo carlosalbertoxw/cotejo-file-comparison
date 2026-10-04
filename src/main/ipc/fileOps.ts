@@ -1,8 +1,8 @@
-import { ipcMain } from 'electron'
 import { IPC } from '@shared/ipc-channels'
 import type { FileOpPlan, FileOpResult, FileOpProgress } from '@shared/types'
 import { planFileOp, runFileOp } from '../services/fileOpsService'
 import { asFileOpRequest, asString } from './validate'
+import { handle } from './handle'
 
 const cancelled = new Set<string>()
 
@@ -10,11 +10,11 @@ const cancelled = new Set<string>()
 const running = new Set<string>()
 
 export function registerFileOpsHandlers(): void {
-  ipcMain.handle(IPC.planFileOp, (_e, raw: unknown): Promise<FileOpPlan> => {
+  handle(IPC.planFileOp, (_e, raw: unknown): Promise<FileOpPlan> => {
     return planFileOp(asFileOpRequest(raw))
   })
 
-  ipcMain.handle(IPC.runFileOp, async (event, raw: unknown): Promise<FileOpResult> => {
+  handle(IPC.runFileOp, async (event, raw: unknown): Promise<FileOpResult> => {
     const request = asFileOpRequest(raw)
     cancelled.delete(request.operationId)
     running.add(request.operationId)
@@ -38,7 +38,7 @@ export function registerFileOpsHandlers(): void {
     }
   })
 
-  ipcMain.handle(IPC.cancelFileOp, (_e, operationId: unknown) => {
+  handle(IPC.cancelFileOp, (_e, operationId: unknown) => {
     const id = asString(operationId, 'operationId')
     if (running.has(id)) cancelled.add(id)
   })

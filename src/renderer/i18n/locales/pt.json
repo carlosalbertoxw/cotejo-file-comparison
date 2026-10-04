@@ -16,6 +16,18 @@
     "newDir": "＋ Pastas",
     "newDirTooltip": "Comparar pastas"
   },
+  "unsaved": {
+    "closeTabTitle": "Fechar “{{title}}”?",
+    "closeTabDirty": "Esta aba tem alterações não salvas. Se você fechá-la sem salvar, elas serão perdidas.",
+    "closeTabScratch": "O texto digitado ou colado nesta aba não está em nenhum arquivo e será perdido ao fechá-la.",
+    "closeTabBoth": "Esta aba tem alterações não salvas e também texto digitado ou colado que não está em nenhum arquivo. Salvar mantém as alterações dos arquivos; o resto será perdido ao fechá-la.",
+    "saveAndClose": "Salvar e fechar",
+    "discardAndClose": "Fechar sem salvar",
+    "windowMessage": "Há trabalho não salvo.",
+    "windowDetail_one": "{{count}} aba tem alterações que não estão no disco. Se você fechar agora, elas serão perdidas.",
+    "windowDetail_other": "{{count}} abas têm alterações que não estão no disco. Se você fechar agora, elas serão perdidas.",
+    "windowDiscard": "Fechar sem salvar"
+  },
   "welcome": {
     "tagline": "Coloque duas coisas lado a lado e veja em que elas diferem.",
     "compareText": "Comparar arquivos de texto",
@@ -44,7 +56,7 @@
       "portable": "Portátil descompactado",
       "portableHint": "Cópia temporária do executável portátil; removida ao fechar.",
       "save": "Ao salvar",
-      "saveHint": "Um arquivo temporário “.<número>{{suffix}}” é gravado ao lado do arquivo e depois o substitui.",
+      "saveHint": "Um arquivo temporário “.<código>{{suffix}}” é gravado ao lado do arquivo e depois o substitui.",
       "show": "Mostrar pasta"
     }
   },
@@ -128,6 +140,7 @@
       "wholeWordTooltip": "Somente palavras inteiras",
       "regexTooltip": "Expressão regular",
       "badRegex": "A expressão regular não é válida",
+      "slowRegex": "A expressão regular estava demorando demais e a busca foi interrompida",
       "prevTooltip": "Ocorrência anterior (Shift+Enter)",
       "nextTooltip": "Próxima ocorrência (Enter)",
       "closeTooltip": "Fechar a busca (Esc)"
@@ -216,9 +229,12 @@
     "trashNotice": "Eles serão movidos para a lixeira do sistema, então você poderá recuperá-los.",
     "overwriteWarning_one": "{{count}} arquivo que já existe no destino será sobrescrito:",
     "overwriteWarning_other": "{{count}} arquivos que já existem no destino serão sobrescritos:",
+    "overwriteTrashNotice": "Antes de ser sobrescrito, cada um vai para a lixeira do sistema, então você poderá recuperá-lo.",
     "overflowMore_one": "… e mais {{count}}",
     "overflowMore_other": "… e mais {{count}}",
-    "noOverwrites": "Nada é sobrescrito: todos os destinos são novos."
+    "noOverwrites": "Nada é sobrescrito: todos os destinos são novos.",
+    "unseenWarning_one": "A seleção inclui {{count}} arquivo que a tabela não mostra (oculto, excluído pelos filtros ou link simbólico):",
+    "unseenWarning_other": "A seleção inclui {{count}} arquivos que a tabela não mostra (ocultos, excluídos pelos filtros ou links simbólicos):"
   },
   "errors": {
     "notAFile": "\"{{path}}\" é uma pasta, não um arquivo.",

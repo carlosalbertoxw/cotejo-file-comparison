@@ -1,9 +1,10 @@
-import { ipcMain, type WebContents } from 'electron'
+import type { WebContents } from 'electron'
 import { IPC } from '@shared/ipc-channels'
 import type { CompareRequest, CompareResponse, CompareProgress } from '@shared/types'
 import { scanDirectory } from '../services/scanner'
 import { compareTrees } from '../services/compareTree'
 import { asCompareRequest, asString } from './validate'
+import { handle } from './handle'
 
 /** Comparaciones vivas ahora mismo. */
 const running = new Set<string>()
@@ -81,7 +82,7 @@ async function runCompare(
 }
 
 export function registerDirCompareHandlers(): void {
-  ipcMain.handle(
+  handle(
     IPC.compareDirectories,
     async (event, rawRequestId: unknown, rawRequest: unknown) => {
       const requestId = asString(rawRequestId, 'requestId')
@@ -97,7 +98,7 @@ export function registerDirCompareHandlers(): void {
     }
   )
 
-  ipcMain.handle(IPC.cancelCompare, (_e, requestId: unknown) => {
+  handle(IPC.cancelCompare, (_e, requestId: unknown) => {
     // Cancelar algo que ya termino no es un error, pero apuntarlo dejaria el
     // identificador en el conjunto para siempre.
     const id = asString(requestId, 'requestId')

@@ -5,6 +5,7 @@ import type { DiffBlock, Side } from '@shared/types'
 import { hasPrimaryModifier } from '../../platform'
 import { useSettings } from '../../state/settingsStore'
 import { useSession } from '../../state/sessionStore'
+import { registerTabSaver } from '../../state/tabSavers'
 import { useHistory } from '../../state/historyStore'
 import { useDiff } from './useDiff'
 import { useSideFile } from './useSideFile'
@@ -85,9 +86,15 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
     [result]
   )
 
+  // Un panel sin archivo con algo escrito no tiene donde guardarse, pero
+  // cerrar la pestana lo perderia igual.
+  const scratch =
+    (left.payload === null && left.content !== '') ||
+    (right.payload === null && right.content !== '')
+
   useEffect(() => {
-    updateTab(tabId, { dirty: left.dirty || right.dirty })
-  }, [tabId, left.dirty, right.dirty, updateTab])
+    updateTab(tabId, { dirty: left.dirty || right.dirty, scratch })
+  }, [tabId, left.dirty, right.dirty, scratch, updateTab])
 
   // ----------------------------------------------------------------- cargar
 
@@ -141,25 +148,31 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
    * habia guardado.
    */
   const saveSide = useCallback(
-    async (side: Side, force = false): Promise<void> => {
+    async (side: Side, force = false): Promise<boolean> => {
       const outcome = await sideOf(side).save(force)
       if (outcome.status === 'conflict') {
         setConflict(side)
-        return
+        return false
       }
       if (outcome.status === 'error') {
         setSaveError(outcome.message)
-        return
+        return false
       }
       if (outcome.status === 'saved') setSaveError(null)
+      return true
     },
     [sideOf]
   )
 
-  const save = useCallback(async (): Promise<void> => {
-    await saveSide('left')
-    await saveSide('right')
+  /** `true` si los dos lados quedaron en el disco, o no tenian nada que guardar. */
+  const save = useCallback(async (): Promise<boolean> => {
+    const leftSaved = await saveSide('left')
+    const rightSaved = await saveSide('right')
+    return leftSaved && rightSaved
   }, [saveSide])
+
+  // Cerrar la pestana con cambios ofrece guardar, y eso se decide fuera.
+  useEffect(() => registerTabSaver(tabId, save), [tabId, save])
 
   // El historial recuerda comparaciones que de verdad se abrieron, no rutas a
   // medio escribir: solo entra lo que se leyo del disco sin error.

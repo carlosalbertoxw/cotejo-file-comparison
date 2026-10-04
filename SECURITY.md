@@ -46,7 +46,8 @@ vulnerabilidad y para revisar los cambios que tocan las fronteras de abajo.
 
 1. **Renderer → proceso principal.** El renderer corre con `sandbox`, `contextIsolation` y sin
    Node. Solo ve las funciones de `window.api` (`src/preload/index.ts`). El proceso principal
-   valida la forma de cada mensaje (`src/main/ipc/validate.ts`) y confina las operaciones de
+   solo atiende mensajes del marco principal de su propia página (`src/main/ipc/handle.ts`),
+   valida la forma de cada uno (`src/main/ipc/validate.ts`) y confina las operaciones de
    carpetas a sus raíces (`safeJoin` en `src/main/services/fileOpsService.ts`).
 2. **Contenido de los archivos → renderer.** El texto de un archivo se muestra como texto, nunca
    como HTML. La CSP (`src/renderer/index.html`) solo permite scripts del propio paquete, y la
@@ -60,7 +61,8 @@ vulnerabilidad y para revisar los cambios que tocan las fronteras de abajo.
 5. **Cadena de publicación.** Los jobs que instalan dependencias solo tienen permisos de lectura.
    Crear la release, subir los archivos y firmar su procedencia lo hace un job aparte que no
    ejecuta código del proyecto. Las acciones de GitHub van fijadas por SHA. Cada release lleva
-   `SHA256SUMS.txt` y una atestación que se comprueba con `gh attestation verify`.
+   `SHA256SUMS.txt`, un SBOM CycloneDX con las versiones exactas de lo que va dentro, y una
+   atestación que cubre a ambos y se comprueba con `gh attestation verify`.
 
 ### Riesgo asumido
 

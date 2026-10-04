@@ -22,6 +22,23 @@ export default defineConfig({
   compressHTML: true,
   devToolbar: { enabled: false },
 
+  // CSP en una <meta> de cada pagina, con los hashes de cada script y estilo
+  // que Astro mete en linea. Pages no deja poner cabeceras, asi que
+  // `frame-ancestors` —que en una <meta> no vale— queda fuera de alcance. Hoy
+  // no entra contenido de nadie, pero es la pagina desde la que se bajan
+  // instalables sin firma: mejor cerrada por si un dia entra algo dinamico.
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'none'"
+      ]
+    }
+  },
+
   // Los mismos cuatro idiomas que la aplicación. El español no lleva prefijo:
   // vive en la raíz, y los demás cuelgan de /en/, /fr/ y /pt/.
   i18n: {

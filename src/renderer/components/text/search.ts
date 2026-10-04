@@ -31,6 +31,8 @@ export interface SearchResult {
   truncated: boolean
   /** La expresion regular no compila: no hay nada que resaltar ni que contar. */
   invalid: boolean
+  /** La expresion regular tardaba demasiado y se paro sin terminar. */
+  timedOut?: boolean
 }
 
 /**

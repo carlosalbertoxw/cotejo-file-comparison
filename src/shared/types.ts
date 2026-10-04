@@ -199,6 +199,12 @@ export interface FileOpRequest {
   leftRoot: string
   rightRoot: string
   items: FileOpItem[]
+  /**
+   * Los filtros con los que se escaneo la comparacion. Solo sirven para que el
+   * plan diga que parte del contenido de una carpeta no se veia en la tabla;
+   * la operacion en si copia, mueve o borra la carpeta entera.
+   */
+  filters?: ScanFilters
 }
 
 /** Resumen calculado antes de ejecutar, para mostrarlo en el dialogo de confirmacion. */
@@ -207,8 +213,17 @@ export interface FileOpPlan {
   fileCount: number
   dirCount: number
   totalBytes: number
-  /** Destinos que ya existen y seran sobrescritos. */
+  /**
+   * Archivos que ya existen en el destino y seran sobrescritos, uno por uno:
+   * si se copia una carpeta que existe en los dos lados, cada archivo de
+   * dentro que coincida, no el nombre de la carpeta.
+   */
   overwrites: string[]
+  /**
+   * Archivos que viajan dentro de una carpeta seleccionada pero que la tabla
+   * no mostraba: ocultos, excluidos por los filtros o enlaces simbolicos.
+   */
+  unseen: string[]
   /** Rutas absolutas afectadas, para el re-escaneo incremental. */
   affected: string[]
 }
@@ -230,6 +245,19 @@ export interface FileOpResult {
 // ---------------------------------------------------------------------------
 // Aplicacion
 // ---------------------------------------------------------------------------
+
+/**
+ * Lo que el proceso principal pregunta antes de cerrar la ventana mientras
+ * hay trabajo sin guardar. Los textos los pone el renderer, que es quien sabe
+ * en que idioma esta la interfaz.
+ */
+export interface CloseGuard {
+  title: string
+  message: string
+  detail: string
+  discard: string
+  cancel: string
+}
 
 /** Lo que la pagina «Acerca de» muestra sobre esta copia de Cotejo. */
 export interface AppInfo {

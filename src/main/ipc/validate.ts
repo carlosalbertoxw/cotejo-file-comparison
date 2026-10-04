@@ -15,6 +15,7 @@
 import { ipcError } from '@shared/ipc-errors'
 import {
   DEFAULT_FILTERS,
+  type CloseGuard,
   type CompareMode,
   type CompareRequest,
   type Eol,
@@ -127,7 +128,8 @@ export function asFileOpRequest(value: unknown): FileOpRequest {
     kind: asEnum(raw.kind, KINDS, 'request.kind'),
     leftRoot: asPath(raw.leftRoot, 'request.leftRoot'),
     rightRoot: asPath(raw.rightRoot, 'request.rightRoot'),
-    items: raw.items.map((item, index) => asFileOpItem(item, `request.items[${index}]`))
+    items: raw.items.map((item, index) => asFileOpItem(item, `request.items[${index}]`)),
+    filters: asFilters(raw.filters, 'request.filters')
   }
 }
 
@@ -141,4 +143,26 @@ export function asExpectedState(
   if (typeof raw.mtimeMs !== 'number' || !Number.isFinite(raw.mtimeMs)) fail(`${field}.mtimeMs`)
   if (typeof raw.size !== 'number' || !Number.isFinite(raw.size)) fail(`${field}.size`)
   return { mtimeMs: raw.mtimeMs, size: raw.size }
+}
+
+/** Un texto de dialogo tiene que caber en un dialogo. */
+const MAX_DIALOG_TEXT = 1000
+
+function asDialogText(value: unknown, field: string): string {
+  const text = asString(value, field)
+  if (text.length > MAX_DIALOG_TEXT) fail(field)
+  return text
+}
+
+/** Los textos del aviso al cerrar, o `null` si no hay nada sin guardar. */
+export function asCloseGuard(value: unknown): CloseGuard | null {
+  if (value === null) return null
+  const raw = asRecord(value, 'guard')
+  return {
+    title: asDialogText(raw.title, 'guard.title'),
+    message: asDialogText(raw.message, 'guard.message'),
+    detail: asDialogText(raw.detail, 'guard.detail'),
+    discard: asDialogText(raw.discard, 'guard.discard'),
+    cancel: asDialogText(raw.cancel, 'guard.cancel')
+  }
 }

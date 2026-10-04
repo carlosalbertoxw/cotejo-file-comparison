@@ -50,22 +50,29 @@ const localeTag = LOCALE_TAG[lang];
   )
 }
 
-<script is:inline>
+<script>
   // Resalta la tarjeta del sistema desde el que se visita. Es solo una ayuda
   // visual: las tres siguen visibles y con sus enlaces, así que si la
   // detección falla o no hay JavaScript no se pierde nada.
+  //
+  // Sin `is:inline`: así lo procesa Astro y queda cubierto por la CSP del
+  // sitio. Un script en línea tal cual no entra en la lista de hashes y el
+  // navegador lo bloquearía.
+  // `userAgentData` aun no esta en los tipos del DOM de TypeScript.
+  type WithUserAgentData = Navigator & { userAgentData?: { platform?: string } };
+
   (function () {
-    var ua = navigator.userAgent || "";
+    const ua = navigator.userAgent || "";
     if (/Android|iPhone|iPad|iPod/i.test(ua)) return;
 
-    var hint = (navigator.userAgentData && navigator.userAgentData.platform) || ua;
-    var id = null;
+    const hint = (navigator as WithUserAgentData).userAgentData?.platform || ua;
+    let id: string | null = null;
     if (/Windows|Win32|Win64/i.test(hint)) id = "windows";
     else if (/macOS|Mac OS X|Macintosh/i.test(hint)) id = "macos";
     else if (/Linux|X11|CrOS/i.test(hint)) id = "linux";
     if (!id) return;
 
-    var card = document.getElementById("plat-" + id);
+    const card = document.getElementById("plat-" + id);
     if (card) card.classList.add("suggested");
   })();
 </script>

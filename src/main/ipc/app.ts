@@ -1,9 +1,10 @@
-import { app, ipcMain, shell } from 'electron'
+import { app, shell, type WebContents } from 'electron'
 import { dirname } from 'node:path'
 import { IPC } from '@shared/ipc-channels'
-import type { AppInfo } from '@shared/types'
+import type { AppInfo, CloseGuard } from '@shared/types'
 import { checkForUpdates } from '../services/updates'
-import { asPath, asString } from './validate'
+import { asCloseGuard, asPath, asString } from './validate'
+import { handle } from './handle'
 
 /**
  * Solo https sale al navegador. El renderer nunca deberia pedir otra cosa,
@@ -31,8 +32,22 @@ function portableExtractDir(): string | null {
   return null
 }
 
+/**
+ * Aviso al cerrar, por ventana. Lo mantiene al dia el renderer: lo pone en
+ * cuanto hay algo sin guardar y lo quita cuando ya no.
+ */
+const closeGuards = new WeakMap<WebContents, CloseGuard>()
+
+export function closeGuardFor(contents: WebContents): CloseGuard | undefined {
+  return closeGuards.get(contents)
+}
+
+export function clearCloseGuard(contents: WebContents): void {
+  closeGuards.delete(contents)
+}
+
 export function registerAppHandlers(): void {
-  ipcMain.handle(
+  handle(
     IPC.appInfo,
     (): AppInfo => ({
       version: app.getVersion(),
@@ -48,15 +63,21 @@ export function registerAppHandlers(): void {
     })
   )
 
-  ipcMain.handle(IPC.checkForUpdates, () => checkForUpdates())
+  handle(IPC.checkForUpdates, () => checkForUpdates())
 
-  ipcMain.handle(IPC.openExternal, async (_e, raw: unknown) => {
+  handle(IPC.openExternal, async (_e, raw: unknown) => {
     const url = asString(raw, 'url')
     if (!isSafeExternalUrl(url)) throw new Error(`URL no permitida: ${url}`)
     await shell.openExternal(url)
   })
 
-  ipcMain.handle(IPC.showItemInFolder, (_e, fullPath: unknown) => {
+  handle(IPC.setCloseGuard, (event, raw: unknown) => {
+    const guard = asCloseGuard(raw)
+    if (guard) closeGuards.set(event.sender, guard)
+    else closeGuards.delete(event.sender)
+  })
+
+  handle(IPC.showItemInFolder, (_e, fullPath: unknown) => {
     shell.showItemInFolder(asPath(fullPath, 'fullPath'))
   })
 }
