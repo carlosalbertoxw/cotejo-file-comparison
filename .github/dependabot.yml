@@ -25,6 +25,14 @@ updates:
     ignore:
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # TypeScript 7 es el compilador nuevo y typescript-eslint todavia pide
+      # `<6.1.0`: el PR ni siquiera pasa `npm ci`. Quitar cuando lo acepte.
+      - dependency-name: typescript
+        versions: ['>=7']
+      # electron-vite 5 solo admite hasta Vite 7; el soporte de Vite 8 esta en
+      # la 6, aun en beta. Quitar al subir a electron-vite 6.
+      - dependency-name: vite
+        versions: ['>=8']
 
   # El sitio es un proyecto npm aparte, con su propio lockfile.
   - package-ecosystem: npm
@@ -40,6 +48,9 @@ updates:
     ignore:
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # @astrojs/check pide TypeScript 5 o 6. Quitar cuando acepte el 7.
+      - dependency-name: typescript
+        versions: ['>=7']
 
   # Las acciones van fijadas por SHA; Dependabot mueve el SHA y el comentario
   # con la version a la vez. Como en npm, solo se agrupan parches y menores:
