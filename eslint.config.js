@@ -11,6 +11,7 @@
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
+import stylistic from '@stylistic/eslint-plugin'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
@@ -53,6 +54,36 @@ export default tseslint.config(
       // plantilla y es intencionado.
       'no-irregular-whitespace': ['error', { skipTemplates: true }],
       'no-console': ['warn', { allow: ['warn', 'error'] }]
+    }
+  },
+
+  // El estilo que pide CONTRIBUTING.md, comprobado en vez de confiado a la
+  // disciplina de cada uno. Solo reglas que el codigo ya cumple: un
+  // formateador como Prettier reescribiria de golpe una treintena de archivos
+  // por diferencias que nadie ha pedido, y esto deja el historial como esta.
+  {
+    plugins: { '@stylistic': stylistic },
+    rules: {
+      '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
+      '@stylistic/semi': ['error', 'never'],
+      '@stylistic/comma-dangle': ['error', 'never'],
+      '@stylistic/eol-last': 'error',
+      '@stylistic/no-trailing-spaces': 'error',
+      '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
+      '@stylistic/object-curly-spacing': ['error', 'always'],
+      // El mismo ancho que `.editorconfig`. La sangria no se comprueba: la
+      // regla de @stylistic discrepa del codigo en JSX y en ternarios
+      // anidados, y ahi manda lo que ya hay.
+      '@stylistic/max-len': [
+        'error',
+        {
+          code: 100,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true
+        }
+      ]
     }
   },
 

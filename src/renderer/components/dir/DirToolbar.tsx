@@ -61,7 +61,10 @@ export function DirToolbar({
 
         <label title={t(MODE_HELP_KEY[mode])}>
           {t('dirCompare.mode')}
-          <select value={mode} onChange={(event) => onModeChange(event.target.value as CompareMode)}>
+          <select
+            value={mode}
+            onChange={(event) => onModeChange(event.target.value as CompareMode)}
+          >
             <option value="quick">{t('dirCompare.modeQuick')}</option>
             <option value="size">{t('dirCompare.modeSize')}</option>
             <option value="content">{t('dirCompare.modeContent')}</option>
@@ -83,8 +86,11 @@ export function DirToolbar({
 
         <span className="sep" />
 
+        {/* `data-action` no lo usa la aplicacion: es como las pruebas E2E
+            encuentran cada boton sin depender del idioma de la interfaz. */}
         <button
           disabled={!hasSelection}
+          data-action="copy-right"
           onClick={() => onCopy('left')}
           title={t('dirCompare.copyRightTooltip')}
         >
@@ -92,6 +98,7 @@ export function DirToolbar({
         </button>
         <button
           disabled={!hasSelection}
+          data-action="copy-left"
           onClick={() => onCopy('right')}
           title={t('dirCompare.copyLeftTooltip')}
         >
@@ -99,6 +106,7 @@ export function DirToolbar({
         </button>
         <button
           disabled={!hasSelection}
+          data-action="move-right"
           onClick={() => onMove('left')}
           title={t('dirCompare.moveRightTooltip')}
         >
@@ -106,6 +114,7 @@ export function DirToolbar({
         </button>
         <button
           disabled={!hasSelection}
+          data-action="move-left"
           onClick={() => onMove('right')}
           title={t('dirCompare.moveLeftTooltip')}
         >
@@ -116,6 +125,7 @@ export function DirToolbar({
 
         <button
           disabled={!hasSelection}
+          data-action="delete-left"
           onClick={() => onDelete('left')}
           title={t('dirCompare.deleteLeftTooltip')}
         >
@@ -123,6 +133,7 @@ export function DirToolbar({
         </button>
         <button
           disabled={!hasSelection}
+          data-action="delete-right"
           onClick={() => onDelete('right')}
           title={t('dirCompare.deleteRightTooltip')}
         >
@@ -131,7 +142,7 @@ export function DirToolbar({
 
         <span className="spacer" />
 
-        <button onClick={onSync} title={t('dirCompare.syncTooltip')}>
+        <button data-action="sync" onClick={onSync} title={t('dirCompare.syncTooltip')}>
           {t('dirCompare.sync')}
         </button>
       </div>

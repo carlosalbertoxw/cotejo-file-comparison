@@ -60,6 +60,7 @@ jobs:
               release/*.AppImage
               release/*.deb
               release/*.rpm
+              release/*.cdx.json
           - os: macos-latest
             script: package:mac
             artifacts: |
@@ -90,6 +91,21 @@ jobs:
           # Sin certificado electron-builder avisa y sigue sin firmar, que es
           # justo lo que queremos mientras no haya cuenta de Apple Developer.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # Inventario de las versiones exactas que van dentro (SBOM CycloneDX):
+      # ante un aviso sobre una dependencia o sobre un Electron concreto, dice
+      # que releases publicadas estan afectadas sin tener que reconstruirlas.
+      # Es el arbol completo del lockfile, herramientas de build incluidas,
+      # porque Electron, React y CodeMirror estan en devDependencies y son
+      # justo lo que se distribuye. El lockfile es el mismo en los tres
+      # sistemas, asi que basta con uno. Viaja con los instalables: entra en
+      # las sumas, en la atestacion y en la release.
+      - name: SBOM
+        if: runner.os == 'Linux'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          npm sbom --sbom-format cyclonedx --sbom-type application --package-lock-only \
+            > "release/Cotejo-${version}-sbom.cdx.json"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

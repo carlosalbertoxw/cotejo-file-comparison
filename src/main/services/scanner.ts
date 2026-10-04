@@ -28,6 +28,35 @@ function buildMatchers(filters: ScanFilters): {
   }
 }
 
+export interface EntryKind {
+  name: string
+  isDir: boolean
+  isSymlink: boolean
+}
+
+/**
+ * Las reglas con las que el escaneo decide que entra en la tabla, sueltas para
+ * que las operaciones de carpeta puedan aplicar exactamente las mismas: copiar
+ * una carpeta arrastra todo su contenido, y el dialogo tiene que poder decir
+ * que parte de ese contenido no se ve en la tabla.
+ *
+ * Se pregunta entrada a entrada, de la raiz hacia abajo: si una carpeta queda
+ * fuera, todo lo que cuelga de ella tambien, y eso lo resuelve quien recorre.
+ */
+export function createVisibility(
+  filters: ScanFilters
+): (relPath: string, entry: EntryKind) => boolean {
+  const { isExcluded, isIncluded } = buildMatchers(filters)
+  return (relPath, entry) => {
+    if (entry.name.startsWith('.') && !filters.includeHidden) return false
+    if (isExcluded(relPath)) return false
+    // Los enlaces simbolicos no se siguen: evita ciclos y copias sorpresa.
+    if (entry.isSymlink) return false
+    if (entry.isDir) return true
+    return isIncluded(relPath)
+  }
+}
+
 /**
  * Recorre `root` en anchura y devuelve un indice plano de todas las entradas.
  *
@@ -41,7 +70,7 @@ export async function scanDirectory(
   filters: ScanFilters,
   callbacks: ScanCallbacks = {}
 ): Promise<ScanResult> {
-  const { isExcluded, isIncluded } = buildMatchers(filters)
+  const isVisible = createVisibility(filters)
   const index: ScanIndex = new Map()
   const errors: { relPath: string; message: string }[] = []
 
@@ -68,15 +97,15 @@ export async function scanDirectory(
       for await (const entry of dir) {
         if (callbacks.isCancelled?.()) break
 
-        if (entry.name.startsWith('.') && !filters.includeHidden) continue
-
         const relPath = currentRel === '' ? entry.name : `${currentRel}/${entry.name}`
-        if (isExcluded(relPath)) continue
+        const kind = {
+          name: entry.name,
+          isDir: entry.isDirectory(),
+          isSymlink: entry.isSymbolicLink()
+        }
+        if (!isVisible(relPath, kind)) continue
 
-        // Los enlaces simbolicos no se siguen: evita ciclos y copias sorpresa.
-        if (entry.isSymbolicLink()) continue
-
-        if (entry.isDirectory()) {
+        if (kind.isDir) {
           index.set(relPath, { size: 0, mtimeMs: 0, isDir: true })
           queue.push(relPath)
           callbacks.onEntry?.(relPath)
@@ -84,7 +113,6 @@ export async function scanDirectory(
         }
 
         if (!entry.isFile()) continue
-        if (!isIncluded(relPath)) continue
 
         try {
           const info = await stat(join(currentAbs, entry.name))

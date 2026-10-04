@@ -27,6 +27,13 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
+  // Si una prueba falla con cambios sin guardar, cerrar preguntaria con un
+  // dialogo nativo que nadie va a contestar. Destruir la ventana se lo salta.
+  await app
+    ?.evaluate(({ BrowserWindow }) => {
+      for (const window of BrowserWindow.getAllWindows()) window.destroy()
+    })
+    .catch(() => undefined)
   await app?.close()
   await rm(dir, { recursive: true, force: true })
 })
@@ -80,4 +87,41 @@ test('copiar un bloque al otro lado y guardar lo escribe en el disco', async () 
     )
   }
   expect(await lines(left)).toEqual(leftBefore)
+})
+
+test('cerrar una pestana con cambios pregunta, y guardar y cerrar los escribe', async () => {
+  const left = join(dir, 'izquierda.ts')
+  const right = join(dir, 'derecha.ts')
+  await copyFile(join(FIXTURES, 'left/src/app.ts'), left)
+  await copyFile(join(FIXTURES, 'right/src/app.ts'), right)
+  const rightBefore = await lines(right)
+
+  app = await electron.launch({
+    args: ['.', left, right],
+    env: { ...process.env, COTEJO_USER_DATA: join(dir, 'perfil') }
+  })
+  const window = await app.firstWindow()
+  const closeShortcut = process.platform === 'darwin' ? 'Meta+W' : 'Control+W'
+
+  const blocks = window.locator('.merge-block')
+  await expect(blocks.first()).toBeVisible()
+  await blocks.first().locator('.merge-arrow').first().click()
+  await expect(window.locator('.tab-dirty')).toBeVisible()
+
+  // Cancelar deja la pestana como estaba, con sus cambios.
+  await window.keyboard.press(closeShortcut)
+  const dialog = window.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible()
+  await dialog.locator('.dialog-actions button').first().click()
+  await expect(dialog).toBeHidden()
+  await expect(window.locator('.tab')).toHaveCount(1)
+  expect(await lines(right)).toEqual(rightBefore)
+
+  // Guardar y cerrar escribe el archivo y luego cierra.
+  await window.keyboard.press(closeShortcut)
+  await expect(dialog).toBeVisible()
+  await dialog.locator('button.primary').click()
+
+  await expect(window.locator('.tab')).toHaveCount(0)
+  await expect.poll(() => lines(right)).not.toEqual(rightBefore)
 })

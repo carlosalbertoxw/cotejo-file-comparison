@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, writeFile, rm, stat } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, writeFile, rm, stat, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -137,6 +137,62 @@ describe('planFileOp', () => {
     expect(plan.affected).toContain(join(right, 'a.txt'))
   })
 
+  it('en una carpeta que existe en los dos lados, lista cada archivo que se pisa', async () => {
+    await write(left, 'src/a.ts', 'nuevo')
+    await write(left, 'src/sub/b.ts', 'nuevo')
+    await write(left, 'src/solo-aqui.ts', 'x')
+    await write(right, 'src/a.ts', 'viejo')
+    await write(right, 'src/sub/b.ts', 'viejo')
+
+    const plan = await planFileOp(request('copy', [folder('src')]))
+
+    // Antes salia solo «src», y el dialogo no decia que archivos iban a perderse.
+    expect(plan.overwrites.sort()).toEqual(['src/a.ts', 'src/sub/b.ts'])
+  })
+
+  it('avisa de los ocultos y excluidos que viajan dentro de la carpeta', async () => {
+    await write(left, 'src/a.ts', 'x')
+    await write(left, 'src/.env', 'CLAVE=izquierda')
+    await write(left, 'src/node_modules/m/index.js', 'x')
+    await write(right, 'src/.env', 'CLAVE=derecha')
+
+    const plan = await planFileOp({
+      ...request('copy', [folder('src')]),
+      filters: { exclude: ['**/node_modules/**'], include: [], includeHidden: false }
+    })
+
+    expect(plan.overwrites).toEqual(['src/.env'])
+    expect(plan.unseen.sort()).toEqual(['src/.env', 'src/node_modules/m/index.js'])
+  })
+
+  it('con los ocultos a la vista, un oculto ya no es una sorpresa', async () => {
+    await write(left, 'src/.env', 'x')
+
+    const plan = await planFileOp({
+      ...request('copy', [folder('src')]),
+      filters: { exclude: [], include: [], includeHidden: true }
+    })
+
+    expect(plan.unseen).toEqual([])
+  })
+
+  it('un archivo seleccionado se ve aunque sea oculto: viene de la tabla', async () => {
+    await write(left, '.gitignore', 'x')
+    const plan = await planFileOp(request('copy', [file('.gitignore')]))
+    expect(plan.unseen).toEqual([])
+  })
+
+  it.runIf(process.platform !== 'win32')('no sigue los enlaces simbolicos al planificar', async () => {
+    await write(left, 'dir/a.txt', '123')
+    // Un enlace a su propia carpeta padre: seguirlo acababa en ELOOP.
+    await symlink('..', join(left, 'dir/bucle'))
+
+    const plan = await planFileOp(request('copy', [folder('dir')]))
+
+    expect(plan.totalBytes).toBeLessThan(100)
+    expect(plan.unseen).toEqual(['dir/bucle'])
+  })
+
   it('ignora lo que ya no esta en el disco', async () => {
     const plan = await planFileOp(request('copy', [file('fantasma.txt')]))
     expect(plan.fileCount).toBe(0)
@@ -162,6 +218,43 @@ describe('runFileOp: copiar', () => {
     await runFileOp(request('copy', [file('a.txt')]))
 
     expect(await readFile(join(right, 'a.txt'), 'utf8')).toBe('nuevo')
+  })
+
+  it('manda a la papelera lo que va a sobrescribir antes de copiar encima', async () => {
+    await write(left, 'a.txt', 'nuevo')
+    await write(right, 'a.txt', 'viejo')
+    await write(left, 'b.txt', 'nuevo')
+
+    await runFileOp(request('copy', [file('a.txt'), file('b.txt')]))
+
+    expect(trashItem).toHaveBeenCalledTimes(1)
+    expect(trashItem).toHaveBeenCalledWith(join(right, 'a.txt'))
+  })
+
+  it('al fusionar una carpeta, cada archivo pisado pasa antes por la papelera', async () => {
+    await write(left, 'src/a.ts', 'nuevo')
+    await write(left, 'src/.env', 'izquierda')
+    await write(right, 'src/a.ts', 'viejo')
+    await write(right, 'src/.env', 'derecha')
+    await write(right, 'src/solo-derecha.ts', 'se queda')
+
+    await runFileOp(request('copy', [folder('src')]))
+
+    const trashed = trashItem.mock.calls.map(([path]) => path).sort()
+    expect(trashed).toEqual([join(right, 'src/.env'), join(right, 'src/a.ts')].sort())
+    // Fusionar no es reemplazar: lo que solo estaba en el destino sigue ahi.
+    expect(await readFile(join(right, 'src/solo-derecha.ts'), 'utf8')).toBe('se queda')
+  })
+
+  it('si la papelera falla, no escribe nada encima', async () => {
+    await write(left, 'a.txt', 'nuevo')
+    await write(right, 'a.txt', 'viejo')
+    trashItem.mockRejectedValueOnce(new Error('sin papelera'))
+
+    const result = await runFileOp(request('copy', [file('a.txt')]))
+
+    expect(result.failed).toHaveLength(1)
+    expect(await readFile(join(right, 'a.txt'), 'utf8')).toBe('viejo')
   })
 
   it('crea las carpetas intermedias que falten en el destino', async () => {
@@ -209,6 +302,15 @@ describe('runFileOp: mover', () => {
 
     expect(await exists(join(left, 'a.txt'))).toBe(false)
     expect(await readFile(join(right, 'a.txt'), 'utf8')).toBe('x')
+  })
+
+  it('tambien manda a la papelera lo que pisa al mover', async () => {
+    await write(left, 'a.txt', 'nuevo')
+    await write(right, 'a.txt', 'viejo')
+
+    await runFileOp(request('move', [file('a.txt')]))
+
+    expect(trashItem).toHaveBeenCalledWith(join(right, 'a.txt'))
   })
 
   it('mueve una carpeta entera', async () => {

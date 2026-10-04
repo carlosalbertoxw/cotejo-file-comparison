@@ -7,6 +7,7 @@ import type {
   FileOpItem,
   FileOpKind,
   FileOpPlan,
+  ScanFilters,
   Side
 } from '@shared/types'
 import { joinPath } from '@shared/paths'
@@ -63,6 +64,10 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
   const [message, setMessage] = useState<string | null>(null)
 
   const requestIdRef = useRef<string | null>(null)
+  // Los filtros de la comparacion que esta en pantalla, no los de los ajustes:
+  // pueden haber cambiado sin volver a comparar, y el plan tiene que juzgar que
+  // se veia en la tabla con las mismas reglas que la pinto.
+  const scanFiltersRef = useRef<ScanFilters>(filters)
 
   // ------------------------------------------------------------- comparar
 
@@ -87,6 +92,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         filters
       })
       if (requestIdRef.current !== requestId) return
+      scanFiltersRef.current = filters
       setResponse(result)
       setSelected(new Set())
       // Solo entra en el historial lo que llego a compararse de verdad.
@@ -204,7 +210,8 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
           kind,
           leftRoot: tab.leftPath,
           rightRoot: tab.rightPath,
-          items
+          items,
+          filters: scanFiltersRef.current
         })
         setPendingOp({ kind, from, items, plan })
       } catch (error) {
@@ -432,18 +439,35 @@ function OpSummary({ op }: { op: PendingOp }): React.JSX.Element {
           <p className="danger">
             {t('opSummary.overwriteWarning', { count: plan.overwrites.length })}
           </p>
-          <ul>
-            {plan.overwrites.slice(0, 50).map((path) => (
-              <li key={path}>{path}</li>
-            ))}
-            {plan.overwrites.length > 50 && (
-              <li>{t('opSummary.overflowMore', { count: plan.overwrites.length - 50 })}</li>
-            )}
-          </ul>
+          <PathList paths={plan.overwrites} />
+          <p>{t('opSummary.overwriteTrashNotice')}</p>
         </>
       ) : (
         <p>{t('opSummary.noOverwrites')}</p>
       )}
+
+      {plan.unseen.length > 0 && (
+        <>
+          <p className="danger">{t('opSummary.unseenWarning', { count: plan.unseen.length })}</p>
+          <PathList paths={plan.unseen} />
+        </>
+      )}
     </div>
+  )
+}
+
+const LIST_LIMIT = 50
+
+function PathList({ paths }: { paths: string[] }): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <ul>
+      {paths.slice(0, LIST_LIMIT).map((path) => (
+        <li key={path}>{path}</li>
+      ))}
+      {paths.length > LIST_LIMIT && (
+        <li>{t('opSummary.overflowMore', { count: paths.length - LIST_LIMIT })}</li>
+      )}
+    </ul>
   )
 }

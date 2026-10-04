@@ -16,6 +16,18 @@
     "newDir": "＋ Folders",
     "newDirTooltip": "Compare folders"
   },
+  "unsaved": {
+    "closeTabTitle": "Close “{{title}}”?",
+    "closeTabDirty": "This tab has unsaved changes. If you close it without saving, they will be lost.",
+    "closeTabScratch": "The text typed or pasted in this tab isn't in any file and will be lost when you close it.",
+    "closeTabBoth": "This tab has unsaved changes, plus text typed or pasted that isn't in any file. Saving keeps the changes to the files; the rest will be lost when you close it.",
+    "saveAndClose": "Save and close",
+    "discardAndClose": "Close without saving",
+    "windowMessage": "There is unsaved work.",
+    "windowDetail_one": "{{count}} tab has changes that aren't on disk. If you close now, they will be lost.",
+    "windowDetail_other": "{{count}} tabs have changes that aren't on disk. If you close now, they will be lost.",
+    "windowDiscard": "Close without saving"
+  },
   "welcome": {
     "tagline": "Put two things side by side and see how they differ.",
     "compareText": "Compare text files",
@@ -44,7 +56,7 @@
       "portable": "Portable extracted to",
       "portableHint": "Temporary copy of the portable executable; removed on exit.",
       "save": "When saving",
-      "saveHint": "A temporary “.<number>{{suffix}}” file is written next to the file and then replaces it.",
+      "saveHint": "A temporary “.<code>{{suffix}}” file is written next to the file and then replaces it.",
       "show": "Show folder"
     }
   },
@@ -128,6 +140,7 @@
       "wholeWordTooltip": "Whole words only",
       "regexTooltip": "Regular expression",
       "badRegex": "That regular expression is not valid",
+      "slowRegex": "The regular expression was taking too long and the search was stopped",
       "prevTooltip": "Previous match (Shift+Enter)",
       "nextTooltip": "Next match (Enter)",
       "closeTooltip": "Close the search (Esc)"
@@ -216,9 +229,12 @@
     "trashNotice": "They will be moved to the system trash, so you can get them back.",
     "overwriteWarning_one": "{{count}} file that already exists at the destination will be overwritten:",
     "overwriteWarning_other": "{{count}} files that already exist at the destination will be overwritten:",
+    "overwriteTrashNotice": "Before anything is written over, each one goes to the system trash, so you can recover it.",
     "overflowMore_one": "… and {{count}} more",
     "overflowMore_other": "… and {{count}} more",
-    "noOverwrites": "Nothing gets overwritten: all destinations are new."
+    "noOverwrites": "Nothing gets overwritten: all destinations are new.",
+    "unseenWarning_one": "The selection includes {{count}} file the table doesn't show (hidden, excluded by the filters, or a symbolic link):",
+    "unseenWarning_other": "The selection includes {{count}} files the table doesn't show (hidden, excluded by the filters, or symbolic links):"
   },
   "errors": {
     "notAFile": "\"{{path}}\" is a folder, not a file.",

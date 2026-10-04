@@ -1,8 +1,9 @@
-import { dialog, ipcMain, BrowserWindow } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import { stat } from 'node:fs/promises'
 import { IPC } from '@shared/ipc-channels'
 import { readTextFile, writeTextFile } from '../services/textFile'
 import { asEnum, asExpectedState, asPath, asString, ENCODINGS, EOLS } from './validate'
+import { handle } from './handle'
 
 async function pick(
   event: Electron.IpcMainInvokeEvent,
@@ -18,16 +19,16 @@ async function pick(
 }
 
 export function registerFsHandlers(): void {
-  ipcMain.handle(IPC.pickFile, (event, title: unknown) =>
+  handle(IPC.pickFile, (event, title: unknown) =>
     pick(event, asString(title, 'title'), 'openFile')
   )
-  ipcMain.handle(IPC.pickDirectory, (event, title: unknown) =>
+  handle(IPC.pickDirectory, (event, title: unknown) =>
     pick(event, asString(title, 'title'), 'openDirectory')
   )
 
-  ipcMain.handle(IPC.readTextFile, (_e, path: unknown) => readTextFile(asPath(path, 'path')))
+  handle(IPC.readTextFile, (_e, path: unknown) => readTextFile(asPath(path, 'path')))
 
-  ipcMain.handle(
+  handle(
     IPC.writeTextFile,
     (_e, path: unknown, content: unknown, eol: unknown, encoding: unknown, expected: unknown) =>
       writeTextFile(
@@ -39,7 +40,7 @@ export function registerFsHandlers(): void {
       )
   )
 
-  ipcMain.handle(IPC.statPath, async (_e, path: unknown) => {
+  handle(IPC.statPath, async (_e, path: unknown) => {
     const info = await stat(asPath(path, 'path'))
     return { size: info.size, mtimeMs: info.mtimeMs, isDir: info.isDirectory() }
   })

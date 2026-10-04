@@ -8,6 +8,7 @@ import {
   type SearchOptions,
   type SearchResult
 } from './search'
+import { searchWithRegex } from './regexSearch'
 import { setSearchHighlight } from './searchHighlight'
 import type { DiffPaneHandle } from './DiffPane'
 
@@ -22,6 +23,12 @@ import type { DiffPaneHandle } from './DiffPane'
 
 const CLOSED: SearchResult = { matches: [], truncated: false, invalid: false }
 
+/**
+ * Espera antes de lanzar una busqueda con expresion regular. Cada una arranca
+ * un worker, y no tiene sentido hacerlo por cada letra que se teclea.
+ */
+const REGEX_DEBOUNCE_MS = 150
+
 /** Una seleccion mas larga que esto no es lo que se queria buscar. */
 const MAX_SEED_LENGTH = 100
 
@@ -34,6 +41,8 @@ export interface Find {
   current: number
   truncated: boolean
   invalid: boolean
+  /** La expresion regular tardaba demasiado y se paro. */
+  timedOut: boolean
   inputRef: React.RefObject<HTMLInputElement | null>
   /** Abre la caja, o la reenfoca si ya estaba abierta. */
   show: () => void
@@ -66,10 +75,41 @@ export function useFind(
    */
   const pendingReveal = useRef(false)
 
-  const { matches, truncated, invalid } = useMemo(
-    () => (open ? findMatches(content, query, options) : CLOSED),
-    [open, content, query, options]
+  /**
+   * Un texto literal se busca aqui mismo: escapado no puede desbocarse, y asi
+   * el resultado sale en la misma pulsacion. Una expresion regular va a un
+   * worker con tiempo limitado, porque una mal escrita congelaria la ventana
+   * y, con cambios sin guardar, la unica salida seria matar la aplicacion.
+   */
+  const viaWorker = open && options.regex && query !== ''
+
+  const literal = useMemo(
+    () => (open && !viaWorker ? findMatches(content, query, options) : CLOSED),
+    [open, viaWorker, content, query, options]
   )
+
+  const [regexResult, setRegexResult] = useState<SearchResult>(CLOSED)
+  useEffect(() => {
+    if (!viaWorker) return
+    // Mientras llega el resultado nuevo se queda el anterior: vaciarlo haria
+    // parpadear el resaltado en cada letra.
+    let cancel = (): void => undefined
+    let live = true
+    const timer = setTimeout(() => {
+      const search = searchWithRegex(content, query, options)
+      cancel = search.cancel
+      void search.result.then((result) => {
+        if (live) setRegexResult(result)
+      })
+    }, REGEX_DEBOUNCE_MS)
+    return () => {
+      live = false
+      clearTimeout(timer)
+      cancel()
+    }
+  }, [viaWorker, content, query, options])
+
+  const { matches, truncated, invalid, timedOut = false } = viaWorker ? regexResult : literal
 
   const reveal = useCallback(
     (index: number): void => {
@@ -100,9 +140,9 @@ export function useFind(
 
   useEffect(() => {
     pane.current?.view?.dispatch({
-      effects: setSearchHighlight.of(open && !invalid ? { matches, current } : null)
+      effects: setSearchHighlight.of(open && !invalid && !timedOut ? { matches, current } : null)
     })
-  }, [open, invalid, matches, current, pane])
+  }, [open, invalid, timedOut, matches, current, pane])
 
   const focusInput = useCallback((): void => {
     inputRef.current?.focus()
@@ -175,6 +215,7 @@ export function useFind(
     current,
     truncated,
     invalid,
+    timedOut,
     inputRef,
     show,
     close,

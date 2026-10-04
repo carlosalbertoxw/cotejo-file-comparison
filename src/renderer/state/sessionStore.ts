@@ -10,7 +10,19 @@ export interface Tab {
   leftPath: string | null
   rightPath: string | null
   title: string
+  /** Algun archivo abierto en la pestana tiene cambios sin guardar. */
   dirty: boolean
+  /**
+   * Hay texto escrito o pegado en un panel sin archivo. No se puede guardar
+   * —no hay donde—, pero cerrar la pestana lo pierde igual, y hay que avisar.
+   * Es opcional para que las sesiones guardadas antes sigan cargando.
+   */
+  scratch?: boolean
+}
+
+/** Si cerrar la pestana perderia algo. */
+export function hasUnsavedWork(tab: Tab): boolean {
+  return tab.dirty || tab.scratch === true
 }
 
 let counter = 0
@@ -133,7 +145,7 @@ export const useSession = create<SessionState>()(
       name: 'cotejo-session',
       // Se guardan las rutas, no el contenido: al reabrir se relee del disco.
       partialize: (state) => ({
-        tabs: state.tabs.map((tab) => ({ ...tab, dirty: false })),
+        tabs: state.tabs.map((tab) => ({ ...tab, dirty: false, scratch: false })),
         activeId: state.activeId
       }),
       onRehydrateStorage: () => (state) => {

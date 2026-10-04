@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { samePath, titleFor } from '@renderer/state/sessionStore'
+import { hasUnsavedWork, samePath, titleFor, type Tab } from '@renderer/state/sessionStore'
 
 describe('samePath', () => {
   it('da igual como se escriban las barras', () => {
@@ -36,5 +36,29 @@ describe('titleFor', () => {
 
   it('sin rutas no hay titulo: lo pone quien renderiza, traducido', () => {
     expect(titleFor(null, null)).toBe('')
+  })
+})
+
+describe('hasUnsavedWork', () => {
+  const tab: Tab = {
+    id: 'tab-1',
+    kind: 'text',
+    leftPath: null,
+    rightPath: null,
+    title: '',
+    dirty: false
+  }
+
+  it('una pestana limpia se cierra sin preguntar', () => {
+    expect(hasUnsavedWork(tab)).toBe(false)
+    expect(hasUnsavedWork({ ...tab, scratch: false })).toBe(false)
+  })
+
+  it('pregunta si hay archivos con cambios', () => {
+    expect(hasUnsavedWork({ ...tab, dirty: true })).toBe(true)
+  })
+
+  it('pregunta tambien por el texto escrito sin archivo, que no tiene donde guardarse', () => {
+    expect(hasUnsavedWork({ ...tab, scratch: true })).toBe(true)
   })
 })

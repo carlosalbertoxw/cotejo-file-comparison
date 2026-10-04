@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC } from '@shared/ipc-channels'
 import type {
   AppInfo,
+  CloseGuard,
   CompareProgress,
   CompareRequest,
   CompareResponse,
@@ -74,6 +75,12 @@ const api = {
 
   appInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC.appInfo),
   checkForUpdates: (): Promise<UpdateCheck> => ipcRenderer.invoke(IPC.checkForUpdates),
+  /**
+   * Lo que preguntar si se cierra la ventana con trabajo sin guardar; `null`
+   * cuando no lo hay y se puede cerrar sin mas.
+   */
+  setCloseGuard: (guard: CloseGuard | null): Promise<void> =>
+    ipcRenderer.invoke(IPC.setCloseGuard, guard),
 
   /** Ruta real de un File soltado en la ventana. `File.path` ya no existe. */
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),

@@ -48,8 +48,10 @@ Además:
 - **Una cosa por pull request.** Un arreglo y una refactorización son dos PR.
 - **Pruebas para lo que cambia.** La lógica pura y los servicios que tocan disco se prueban en
   `test/`; los flujos que cruzan el puente IPC, en `e2e/`.
-- **Nada de rutas nuevas al disco sin validar.** Un canal IPC nuevo pasa por
-  `src/main/ipc/validate.ts`, y una operación sobre una carpeta, por `safeJoin`. Ver
+- **Nada de rutas nuevas al disco sin validar.** Un canal IPC nuevo se registra con `handle`
+  (`src/main/ipc/handle.ts`), que rechaza a cualquier remitente que no sea la propia página, y
+  pasa sus argumentos por `src/main/ipc/validate.ts`; una operación sobre una carpeta, por
+  `safeJoin`. Ver
   [SECURITY.md](SECURITY.md).
 - **Textos en los cuatro idiomas.** Los catálogos están en `src/renderer/i18n/locales/`, con
   `es.json` como fuente de verdad, y un test exige que tengan las mismas claves. Cada frase va
@@ -62,8 +64,9 @@ Además:
 
 ## Estilo
 
-- TypeScript estricto, comillas simples, sin punto y coma, dos espacios. `.editorconfig` se
-  encarga de lo básico.
+- TypeScript estricto, comillas simples, sin punto y coma, dos espacios y 100 columnas.
+  `.editorconfig` se encarga de lo básico, y `npm run lint` comprueba las comillas, el punto y
+  coma, las comas finales y el ancho de línea.
 - Los comentarios explican **por qué**, no qué: la decisión, la alternativa descartada, el caso
   raro que obliga a hacerlo así. Si el código se entiende solo, no necesita comentario.
 - Los mensajes de commit, en español y en imperativo («Guardar sin perder los permisos»). El

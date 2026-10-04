@@ -1,13 +1,13 @@
-import { app, nativeTheme, session, shell, BrowserWindow } from 'electron'
+import { app, dialog, nativeTheme, session, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { IPC } from '@shared/ipc-channels'
 import { registerFsHandlers } from './ipc/fs'
 import { registerDirCompareHandlers } from './ipc/dirCompare'
 import { registerFileOpsHandlers } from './ipc/fileOps'
-import { registerAppHandlers } from './ipc/app'
+import { clearCloseGuard, closeGuardFor, registerAppHandlers } from './ipc/app'
+import { rendererUrl } from './rendererUrl'
 
 /**
  * Argumentos que son rutas de verdad. En desarrollo argv incluye el ejecutable
@@ -55,14 +55,6 @@ function devIcon(): { icon: string } | undefined {
   return existsSync(icon) ? { icon } : undefined
 }
 
-/** La unica pagina que la ventana tiene permitido cargar. */
-function rendererUrl(): string {
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    return process.env['ELECTRON_RENDERER_URL']
-  }
-  return pathToFileURL(join(__dirname, '../renderer/index.html')).href
-}
-
 function createWindow(): BrowserWindow {
   const url = rendererUrl()
 
@@ -94,6 +86,35 @@ function createWindow(): BrowserWindow {
     const paths = [...pathsFromArgv(process.argv), ...pendingPaths.splice(0, pendingPaths.length)]
     if (paths.length > 0) window.webContents.send(IPC.openPathsFromArgv, paths.slice(0, 2))
   })
+
+  /**
+   * Cerrar con cambios sin guardar pregunta antes.
+   *
+   * Cubre la ventana y tambien salir de la aplicacion, que cierra las
+   * ventanas una a una y se cancela si alguna dice que no. Se decide aqui y
+   * no con `beforeunload`, que esta sujeto a las reglas de Chromium sobre si
+   * la pagina ha tenido interaccion: lo que esta en juego es el trabajo del
+   * usuario, y la decision tiene que ser nuestra.
+   */
+  window.on('close', (event) => {
+    const guard = closeGuardFor(window.webContents)
+    if (!guard) return
+    const choice = dialog.showMessageBoxSync(window, {
+      type: 'warning',
+      title: guard.title,
+      message: guard.message,
+      detail: guard.detail,
+      buttons: [guard.discard, guard.cancel],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true
+    })
+    if (choice !== 0) event.preventDefault()
+  })
+
+  // Una recarga empieza de cero: lo que el renderer avisase antes ya no vale,
+  // y la pagina nueva lo volvera a poner si hace falta.
+  window.webContents.on('did-start-loading', () => clearCloseGuard(window.webContents))
 
   window.on('closed', () => {
     if (mainWindow === window) mainWindow = null

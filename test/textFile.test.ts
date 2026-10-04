@@ -245,6 +245,24 @@ describe('writeTextFile: escritura atomica', () => {
   })
 })
 
+describe('writeTextFile: el temporal', () => {
+  it('dos guardados a la vez en la misma carpeta no se pisan el temporal', async () => {
+    // Con un temporal nombrado por la hora, dos guardados en el mismo
+    // milisegundo compartian archivo y uno fallaba o mezclaba contenidos.
+    const paths = Array.from({ length: 20 }, (_, index) => join(dir, `f${index}.txt`))
+    await Promise.all(paths.map((path) => writeFile(path, 'viejo\n', 'utf8')))
+
+    await Promise.all(
+      paths.map((path, index) => writeTextFile(path, `nuevo ${index}\n`, 'lf', 'utf8'))
+    )
+
+    for (const [index, path] of paths.entries()) {
+      expect(await readFile(path, 'utf8')).toBe(`nuevo ${index}\n`)
+    }
+    expect((await readdir(dir)).filter((name) => name.endsWith('.cotejo-tmp'))).toEqual([])
+  })
+})
+
 describe('writeTextFile: lo que el archivo era además de su contenido', () => {
   // En Windows el modo solo refleja el atributo de solo lectura; los permisos
   // de verdad son ACL, que esto no toca.
