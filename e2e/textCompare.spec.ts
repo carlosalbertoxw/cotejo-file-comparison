@@ -125,3 +125,68 @@ test('cerrar una pestana con cambios pregunta, y guardar y cerrar los escribe', 
   await expect(window.locator('.tab')).toHaveCount(0)
   await expect.poll(() => lines(right)).not.toEqual(rightBefore)
 })
+
+test('cambiar el archivo de un panel con cambios pregunta antes de perderlos', async () => {
+  const left = join(dir, 'izquierda.ts')
+  const right = join(dir, 'derecha.ts')
+  const other = join(dir, 'otro.ts')
+  await copyFile(join(FIXTURES, 'left/src/app.ts'), left)
+  await copyFile(join(FIXTURES, 'right/src/app.ts'), right)
+  await copyFile(join(FIXTURES, 'left/src/app.ts'), other)
+  const rightBefore = await lines(right)
+
+  app = await electron.launch({
+    args: ['.', left, right],
+    env: { ...process.env, COTEJO_USER_DATA: join(dir, 'perfil') }
+  })
+  const window = await app.firstWindow()
+
+  const blocks = window.locator('.merge-block')
+  await expect(blocks.first()).toBeVisible()
+  await blocks.first().locator('.merge-arrow').first().click()
+  const dirty = window.locator('.path-slot .dirty-dot')
+  await expect(dirty).toHaveCount(1)
+
+  const path = window.locator('.path-slot input').nth(1)
+  const dialog = window.locator('[role="dialog"]')
+  const buttons = dialog.locator('.dialog-actions button')
+
+  // Escribir en la ruta no carga nada hasta confirmar, y Escape lo deshace.
+  // Antes, esta sola tecla ya sustituia el panel por el disco.
+  await path.click()
+  await path.press('End')
+  await path.pressSequentially('x')
+  await expect(dirty).toHaveCount(1)
+  await path.press('Escape')
+  await expect(path).toHaveValue(right)
+  await expect(dirty).toHaveCount(1)
+
+  // Confirmar otra ruta pregunta; cancelar deja el panel y la ruta como estaban.
+  await path.fill(other)
+  await path.press('Enter')
+  await expect(dialog).toBeVisible()
+  await buttons.nth(0).click()
+  await expect(dialog).toBeHidden()
+  await expect(path).toHaveValue(right)
+  await expect(dirty).toHaveCount(1)
+
+  // «Guardar y seguir» escribe el archivo y luego carga el otro.
+  await path.fill(other)
+  await path.press('Enter')
+  await expect(dialog).toBeVisible()
+  await dialog.locator('button.primary').click()
+  await expect(path).toHaveValue(other)
+  await expect(dirty).toHaveCount(0)
+  await expect.poll(() => lines(right)).not.toEqual(rightBefore)
+
+  // «Recargar» con cambios tambien pregunta, y «Seguir sin guardar» relee el
+  // disco y los descarta.
+  const otherBefore = await lines(other)
+  await blocks.first().locator('.merge-arrow').first().click()
+  await expect(dirty).toHaveCount(1)
+  await window.locator('.toolbar button').last().click()
+  await expect(dialog).toBeVisible()
+  await buttons.nth(1).click()
+  await expect(dirty).toHaveCount(0)
+  expect(await lines(other)).toEqual(otherBefore)
+})

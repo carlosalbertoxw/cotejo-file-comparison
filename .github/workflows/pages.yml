@@ -73,7 +73,10 @@ jobs:
           cache: npm
           cache-dependency-path: sitio/package-lock.json
 
-      - run: npm ci
+      # Con npm 11.16, como la aplicacion: el 10 de Node 22 ignora el
+      # `allowScripts` de sitio/package.json. Lo que sale de aqui es la pagina
+      # de descargas, y un script de instalacion no aprobado no debe correr.
+      - run: npx --yes npm@11.16.0 ci
 
       - run: npm run build
         env:

@@ -6,6 +6,17 @@ estabas. Avisa también del texto escrito o pegado en un panel sin archivo, que 
 guardarse y se perdería igual. Cerrar la ventana o salir de la aplicación con trabajo pendiente
 pregunta lo mismo.
 
+## Cambiar de archivo con cambios sin guardar también pregunta
+
+Escribir en la ruta de un panel con cambios sin guardar los perdía a la primera tecla: cada letra
+volvía a cargar el panel desde el disco. Elegir otro archivo con «…» y «Recargar» también los
+tiraban sin avisar. Ahora la ruta se confirma con Intro o al salir del campo, y Escape deshace lo
+escrito. Si el panel tiene cambios, antes de cargar otro archivo Cotejo pregunta: guardar y
+seguir, seguir sin guardar o dejarlo como estaba.
+
+En la vista de carpetas, escribir una ruta ya no lanza una comparación a cada letra; la de
+`C:\` llegaba a recorrer el disco entero.
+
 ## Lo que se sobrescribe va a la papelera
 
 Copiar o mover encima de archivos que ya existen los sustituía sin vuelta atrás. Ahora los que

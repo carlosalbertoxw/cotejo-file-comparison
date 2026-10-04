@@ -30,6 +30,14 @@ interface Props {
   active: boolean
 }
 
+/** Cargar otro archivo, o releer el mismo, en paneles con trabajo sin guardar. */
+interface Replacing {
+  /** Los lados que perderian algo. */
+  sides: Side[]
+  kind: 'replace' | 'reload'
+  apply: () => void
+}
+
 /** Que hay seleccionado y en que panel; el lado decide hacia donde se transfiere. */
 interface Selection {
   side: Side
@@ -51,6 +59,8 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   /** Lado cuyo guardado choco con un cambio ajeno en el disco. */
   const [conflict, setConflict] = useState<Side | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  /** Un cambio de archivo esperando a que se decida que pasa con lo no guardado. */
+  const [replacing, setReplacing] = useState<Replacing | null>(null)
 
   const leftPane = useRef<DiffPaneHandle>(null)
   const rightPane = useRef<DiffPaneHandle>(null)
@@ -97,17 +107,6 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
   }, [tabId, left.dirty, right.dirty, scratch, updateTab])
 
   // ----------------------------------------------------------------- cargar
-
-  const pickSide = useCallback(
-    async (side: Side): Promise<void> => {
-      const path = await window.api.pickFile(
-        t(side === 'left' ? 'textDiff.pickLeftTitle' : 'textDiff.pickRightTitle')
-      )
-      if (!path) return
-      updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
-    },
-    [tabId, updateTab, t]
-  )
 
   // Las rutas viven en la pestana; estos efectos son quien las convierte en
   // contenido. Dependen solo de la ruta a proposito: recargar en cada cambio
@@ -173,6 +172,78 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
   // Cerrar la pestana con cambios ofrece guardar, y eso se decide fuera.
   useEffect(() => registerTabSaver(tabId, save), [tabId, save])
+
+  // ---------------------------------------------------- cambiar de archivo
+
+  /** Si sustituir lo que hay en el panel perderia algo. */
+  const hasWork = useCallback(
+    (side: Side): boolean => {
+      const file = sideOf(side)
+      return file.dirty || (file.payload === null && file.content !== '')
+    },
+    [sideOf]
+  )
+
+  /**
+   * Hace `apply`, que cambia lo cargado en `sides`, preguntando antes si en
+   * alguno hay trabajo sin guardar.
+   *
+   * Antes no se preguntaba: elegir otro archivo, escribir otra ruta o pulsar
+   * «Recargar» sustituian el panel por lo que hubiera en el disco, y los
+   * cambios se perdian sin aviso. Es la misma pregunta que al cerrar la
+   * pestana: guardar y seguir, seguir sin guardar o quedarse como estaba.
+   */
+  const guard = useCallback(
+    (sides: Side[], kind: Replacing['kind'], apply: () => void): void => {
+      const atRisk = sides.filter(hasWork)
+      if (atRisk.length === 0) apply()
+      else setReplacing({ sides: atRisk, kind, apply })
+    },
+    [hasWork]
+  )
+
+  /** Guarda los lados en riesgo que tienen archivo y, si todo llego al disco, sigue. */
+  const saveAndApply = useCallback(
+    async (pending: Replacing): Promise<void> => {
+      setReplacing(null)
+      for (const side of pending.sides) {
+        // Un panel sin archivo no tiene donde guardarse: lo suyo se pierde
+        // igual, y el dialogo ya lo ha dicho.
+        if (!sideOf(side).dirty) continue
+        // Un conflicto o un error ya se ensenan desde `saveSide`; con ellos
+        // no se sigue, que es justo cuando hay algo que no esta a salvo.
+        if (!(await saveSide(side))) return
+      }
+      pending.apply()
+    },
+    [sideOf, saveSide]
+  )
+
+  const setSidePath = useCallback(
+    (side: Side, path: string): void =>
+      guard([side], 'replace', () =>
+        updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
+      ),
+    [guard, tabId, updateTab]
+  )
+
+  const pickSide = useCallback(
+    async (side: Side): Promise<void> => {
+      const path = await window.api.pickFile(
+        t(side === 'left' ? 'textDiff.pickLeftTitle' : 'textDiff.pickRightTitle')
+      )
+      if (path) setSidePath(side, path)
+    },
+    [setSidePath, t]
+  )
+
+  /** Recargar solo toca los lados con ruta: uno sin archivo no tiene que releer. */
+  const requestReload = useCallback((): void => {
+    const sides: Side[] = []
+    if (leftPath) sides.push('left')
+    if (rightPath) sides.push('right')
+    guard(sides, 'reload', () => void reload())
+  }, [guard, leftPath, rightPath, reload])
 
   // El historial recuerda comparaciones que de verdad se abrieron, no rutas a
   // medio escribir: solo entra lo que se leyo del disco sin error.
@@ -316,9 +387,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         leftDirty={left.dirty}
         rightDirty={right.dirty}
         onPick={(side) => void pickSide(side)}
-        onSetPath={(side, path) =>
-          updateTab(tabId, side === 'left' ? { leftPath: path } : { rightPath: path })
-        }
+        onSetPath={setSidePath}
         onSave={(side) => void saveSide(side)}
       />
 
@@ -334,7 +403,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         onNext={goNext}
         onFind={() => findOf(focusedSide.current).show()}
         onTransferSelection={transferSelection}
-        onReload={() => void reload()}
+        onReload={requestReload}
       />
 
       {loadError && <div className="load-error">{loadError}</div>}
@@ -448,6 +517,42 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         {error && <span className="warn">{error}</span>}
         {pending && <span>{t('textDiff.comparing')}</span>}
       </div>
+
+      {replacing &&
+        (replacing.sides.some((side) => sideOf(side).dirty) ? (
+          <ConfirmDialog
+            title={t('unsaved.replaceTitle')}
+            message={
+              <p>
+                {t(replacing.kind === 'reload' ? 'unsaved.reloadDirty' : 'unsaved.replaceDirty')}
+              </p>
+            }
+            confirmLabel={t('unsaved.saveAndContinue')}
+            alternative={{
+              label: t('unsaved.discardAndContinue'),
+              onClick: () => {
+                setReplacing(null)
+                replacing.apply()
+              }
+            }}
+            onCancel={() => setReplacing(null)}
+            onConfirm={() => void saveAndApply(replacing)}
+          />
+        ) : (
+          // Solo texto suelto: no hay archivo donde guardarlo, asi que la
+          // unica salida, aparte de cancelar, es perderlo.
+          <ConfirmDialog
+            title={t('unsaved.replaceTitle')}
+            message={<p>{t('unsaved.replaceScratch')}</p>}
+            danger
+            confirmLabel={t('unsaved.discardAndContinue')}
+            onCancel={() => setReplacing(null)}
+            onConfirm={() => {
+              setReplacing(null)
+              replacing.apply()
+            }}
+          />
+        ))}
 
       {conflict && (
         <ConfirmDialog

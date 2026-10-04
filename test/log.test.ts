@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -45,6 +45,24 @@ describe('createLog', () => {
     expect(await readFile(join(dir, LOG_FILE), 'utf8')).toContain('de la segunda')
     expect(await readFile(join(dir, LOG_FILE), 'utf8')).not.toContain('de la primera')
     expect(await readFile(join(dir, OLD_LOG_FILE), 'utf8')).toContain('de la primera sesion')
+  })
+
+  it('si el registro anterior no se puede renombrar, la sesion empieza de cero', async () => {
+    // Una carpeta con algo dentro donde iria el viejo: rename falla en todos
+    // los sistemas, como fallaria con el archivo bloqueado por otro programa.
+    await mkdir(join(dir, OLD_LOG_FILE, 'ocupada'), { recursive: true })
+    await createLog(dir).error('x', 'de la primera sesion')
+    await createLog(dir).error('x', 'de la segunda')
+    const content = await readFile(join(dir, LOG_FILE), 'utf8')
+    expect(content).toContain('de la segunda')
+    expect(content).not.toContain('de la primera sesion')
+    // Y dentro de la sesion se sigue anadiendo, no vaciando.
+    const log = createLog(dir)
+    await log.error('x', 'tercera, uno')
+    await log.error('x', 'tercera, dos')
+    const lines = (await readFile(join(dir, LOG_FILE), 'utf8')).trimEnd().split('\n')
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toContain('tercera, uno')
   })
 
   it('una sesion sin errores no toca el registro de la ultima que fallo', async () => {

@@ -1,4 +1,4 @@
-import { appendFile, mkdir, rename } from 'node:fs/promises'
+import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /**
@@ -13,7 +13,8 @@ import { join } from 'node:path'
  * Un archivo por sesion. El primer error de una sesion pasa el registro que
  * hubiera a `cotejo.old.log` y empieza uno nuevo; una sesion sin errores no
  * toca nada, asi que el registro de la ultima que fallo sigue ahi despues de
- * reiniciar. Como mucho hay dos archivos.
+ * reiniciar. Como mucho hay dos archivos: si el registro anterior no se puede
+ * renombrar, la sesion lo vacia y empieza de cero en vez de anadirle.
  *
  * El tope se cuenta en memoria y no mirando el archivo: comprobar su tamano y
  * escribir despues son dos accesos, y entre medias el archivo puede cambiar o
@@ -44,11 +45,27 @@ export function createLog(dir: string, maxBytes = MAX_BYTES): Log {
   let written: number | null = null
   /** Ya se llego al tope y se aviso; hasta el proximo arranque no se escribe. */
   let full = false
+  /** Si ya llego algo al archivo en esta sesion. */
+  let started = false
+
+  /**
+   * Lo primero que se escribe en la sesion empieza el archivo de cero (`w`),
+   * y lo demas se anade. Si el rename de abajo funciono no hay nada que
+   * vaciar; si fallo —otro programa con el registro abierto, por ejemplo—,
+   * seguir anadiendo haria crecer el archivo hasta 1 MB mas en cada arranque
+   * con errores, sin tope. Se pierde lo de la sesion anterior, pero el espacio
+   * queda acotado.
+   */
+  async function put(text: string): Promise<void> {
+    await writeFile(file, text, { encoding: 'utf8', flag: started ? 'a' : 'w' })
+    started = true
+  }
 
   async function write(line: string): Promise<void> {
     if (written === null) {
       await mkdir(dir, { recursive: true })
-      // Si no hay registro anterior, rename falla y no pasa nada.
+      // Si no hay registro anterior, rename falla y no pasa nada; si falla
+      // con uno que si existe, lo resuelve `put`.
       await rename(file, join(dir, OLD_LOG_FILE)).catch(() => undefined)
       written = 0
     }
@@ -60,11 +77,11 @@ export function createLog(dir: string, maxBytes = MAX_BYTES): Log {
       full = true
       const notice = `${new Date().toISOString()} ERROR [registro] Lleno: no se anota nada mas `
         + 'hasta el proximo arranque\n'
-      await appendFile(file, notice, 'utf8')
+      await put(notice)
       return
     }
     written += bytes
-    await appendFile(file, line, 'utf8')
+    await put(line)
   }
 
   return {
