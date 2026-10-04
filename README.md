@@ -238,8 +238,10 @@ la aplicación no guarda nada propio.
 El registro de errores solo existe si algo ha fallado: una copia, un movimiento o un borrado que no
 se completó, un guardado que no llegó al disco, o la ventana que se cerró de golpe. Cada línea dice
 cuándo, qué operación, sobre qué ruta y con qué error del sistema; nunca el contenido de los
-archivos. Pasado 1 MB se renombra a `cotejo.old.log`, así que nunca ocupa más de 2 MB. No sale del
-equipo: es para adjuntarlo, si se quiere, al informar de un problema.
+archivos. Es uno por sesión: el primer error de cada arranque pasa el anterior a `cotejo.old.log` y
+empieza otro, y un arranque sin errores no toca nada, así que lo de la última vez que algo falló
+sigue ahí después de reiniciar. Cada sesión escribe como mucho 1 MB, así que entre los dos no pasan
+de 2 MB. No sale del equipo: es para adjuntarlo, si se quiere, al informar de un problema.
 
 Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
 que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la

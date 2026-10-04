@@ -39,14 +39,30 @@ describe('createLog', () => {
     expect(lines.at(-1)).toContain('fallo 49')
   })
 
-  it('al pasar del tope rota a un unico archivo viejo', async () => {
+  it('cada sesion con errores empieza un archivo y guarda el de la anterior', async () => {
+    await createLog(dir).error('x', 'de la primera sesion')
+    await createLog(dir).error('x', 'de la segunda')
+    expect(await readFile(join(dir, LOG_FILE), 'utf8')).toContain('de la segunda')
+    expect(await readFile(join(dir, LOG_FILE), 'utf8')).not.toContain('de la primera')
+    expect(await readFile(join(dir, OLD_LOG_FILE), 'utf8')).toContain('de la primera sesion')
+  })
+
+  it('una sesion sin errores no toca el registro de la ultima que fallo', async () => {
+    await createLog(dir).error('x', 'lo que fallo ayer')
+    createLog(dir)
+    expect(await readFile(join(dir, LOG_FILE), 'utf8')).toContain('lo que fallo ayer')
+    expect(existsSync(join(dir, OLD_LOG_FILE))).toBe(false)
+  })
+
+  it('al llegar al tope lo dice una vez y deja de escribir hasta el proximo arranque', async () => {
     const log = createLog(dir, 200)
     for (let i = 0; i < 10; i++) await log.error('x', `fallo numero ${i}`)
-    const current = await readFile(join(dir, LOG_FILE), 'utf8')
-    const old = await readFile(join(dir, OLD_LOG_FILE), 'utf8')
-    expect(Buffer.byteLength(current)).toBeLessThanOrEqual(200)
-    expect(current).toContain('fallo numero 9')
-    expect(old).not.toContain('fallo numero 9')
+    const lines = (await readFile(join(dir, LOG_FILE), 'utf8')).trimEnd().split('\n')
+    expect(lines.filter((line) => line.includes('[registro] Lleno'))).toHaveLength(1)
+    expect(lines.at(-1)).toContain('[registro] Lleno')
+    expect(lines.join('\n')).not.toContain('fallo numero 9')
+    // Lo de antes del aviso cabe en el tope.
+    expect(Buffer.byteLength(lines.slice(0, -1).join('\n') + '\n')).toBeLessThanOrEqual(200)
   })
 
   it('un registro que no se puede escribir no hace fallar a nadie', async () => {

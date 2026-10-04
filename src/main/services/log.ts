@@ -1,4 +1,4 @@
-import { mkdir, open, rename } from 'node:fs/promises'
+import { appendFile, mkdir, rename } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /**
@@ -10,8 +10,14 @@ import { join } from 'node:path'
  * archivo, solo su ruta. No sale del equipo: es un archivo de texto que el
  * usuario puede abrir, borrar o adjuntar a un issue si quiere.
  *
- * El archivo no existe hasta el primer error. Cuando pasa del tamano maximo se
- * renombra a `cotejo.old.log`, que pisa al anterior: como mucho hay dos.
+ * Un archivo por sesion. El primer error de una sesion pasa el registro que
+ * hubiera a `cotejo.old.log` y empieza uno nuevo; una sesion sin errores no
+ * toca nada, asi que el registro de la ultima que fallo sigue ahi despues de
+ * reiniciar. Como mucho hay dos archivos.
+ *
+ * El tope se cuenta en memoria y no mirando el archivo: comprobar su tamano y
+ * escribir despues son dos accesos, y entre medias el archivo puede cambiar o
+ * ser otro. Aqui no se mira nunca, solo se escribe.
  */
 
 export const LOG_FILE = 'cotejo.log'
@@ -32,39 +38,33 @@ function describeError(error: unknown): string {
 export function createLog(dir: string, maxBytes = MAX_BYTES): Log {
   const file = join(dir, LOG_FILE)
   // Las escrituras van en fila: dos errores a la vez no deben intercalarse ni
-  // rotar el archivo dos veces.
+  // empezar el archivo de la sesion dos veces.
   let queue: Promise<void> = Promise.resolve()
+  /** Bytes escritos en esta sesion; `null` mientras no haya habido ninguno. */
+  let written: number | null = null
+  /** Ya se llego al tope y se aviso; hasta el proximo arranque no se escribe. */
+  let full = false
 
-  /**
-   * Mide y escribe sobre el mismo descriptor. Mirar el tamano con `stat` por
-   * la ruta y abrirla despues para escribir son dos accesos distintos, y entre
-   * medias el archivo puede cambiar o ser otro: se mediria uno y se escribiria
-   * en otro.
-   */
   async function write(line: string): Promise<void> {
-    await mkdir(dir, { recursive: true })
-    const handle = await open(file, 'a')
-    let full: boolean
-    try {
-      const { size } = await handle.stat()
-      full = size > 0 && size + Buffer.byteLength(line) > maxBytes
-      if (!full) await handle.appendFile(line, 'utf8')
-    } finally {
-      await handle.close()
+    if (written === null) {
+      await mkdir(dir, { recursive: true })
+      // Si no hay registro anterior, rename falla y no pasa nada.
+      await rename(file, join(dir, OLD_LOG_FILE)).catch(() => undefined)
+      written = 0
     }
-    if (!full) return
+    if (full) return
 
-    // Rotar con el archivo ya cerrado, porque Windows no deja renombrar uno
-    // abierto. La linea va al archivo nuevo, que `wx` crea vacio: si alguien
-    // hubiera puesto algo con ese nombre entre medias, falla en vez de
-    // escribir en lo que no es nuestro.
-    await rename(file, join(dir, OLD_LOG_FILE))
-    const fresh = await open(file, 'wx')
-    try {
-      await fresh.appendFile(line, 'utf8')
-    } finally {
-      await fresh.close()
+    const bytes = Buffer.byteLength(line)
+    if (written + bytes > maxBytes) {
+      // Una ultima linea que lo diga, para que el silencio no parezca calma.
+      full = true
+      const notice = `${new Date().toISOString()} ERROR [registro] Lleno: no se anota nada mas `
+        + 'hasta el proximo arranque\n'
+      await appendFile(file, notice, 'utf8')
+      return
     }
+    written += bytes
+    await appendFile(file, line, 'utf8')
   }
 
   return {
