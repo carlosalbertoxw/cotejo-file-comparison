@@ -1,4 +1,4 @@
-import { appendFile, mkdir, rename, stat } from 'node:fs/promises'
+import { mkdir, open, rename } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /**
@@ -35,13 +35,36 @@ export function createLog(dir: string, maxBytes = MAX_BYTES): Log {
   // rotar el archivo dos veces.
   let queue: Promise<void> = Promise.resolve()
 
+  /**
+   * Mide y escribe sobre el mismo descriptor. Mirar el tamano con `stat` por
+   * la ruta y abrirla despues para escribir son dos accesos distintos, y entre
+   * medias el archivo puede cambiar o ser otro: se mediria uno y se escribiria
+   * en otro.
+   */
   async function write(line: string): Promise<void> {
     await mkdir(dir, { recursive: true })
-    const info = await stat(file).catch(() => null)
-    if (info && info.size + Buffer.byteLength(line) > maxBytes) {
-      await rename(file, join(dir, OLD_LOG_FILE))
+    const handle = await open(file, 'a')
+    let full: boolean
+    try {
+      const { size } = await handle.stat()
+      full = size > 0 && size + Buffer.byteLength(line) > maxBytes
+      if (!full) await handle.appendFile(line, 'utf8')
+    } finally {
+      await handle.close()
     }
-    await appendFile(file, line, 'utf8')
+    if (!full) return
+
+    // Rotar con el archivo ya cerrado, porque Windows no deja renombrar uno
+    // abierto. La linea va al archivo nuevo, que `wx` crea vacio: si alguien
+    // hubiera puesto algo con ese nombre entre medias, falla en vez de
+    // escribir en lo que no es nuestro.
+    await rename(file, join(dir, OLD_LOG_FILE))
+    const fresh = await open(file, 'wx')
+    try {
+      await fresh.appendFile(line, 'utf8')
+    } finally {
+      await fresh.close()
+    }
   }
 
   return {
