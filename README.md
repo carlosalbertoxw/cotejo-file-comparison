@@ -159,12 +159,17 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
   **preservando los finales de línea y el BOM originales**.
 - Opciones: ignorar espacios, mayúsculas o líneas en blanco, y ancho de tabulación.
 
-### Al cerrar
+### Al cerrar o cambiar de archivo
 
 **Cerrar una pestaña con cambios sin guardar pregunta antes**, tanto con su ✕ como con `Ctrl+W`
 (`⌘W` en macOS): se puede guardar y cerrar, cerrar sin guardar o seguir donde estabas. Cuenta
 también el texto escrito o pegado en un panel sin archivo, que no tiene dónde guardarse y se
 perdería igual. Cerrar la ventana o salir de la aplicación con trabajo pendiente pregunta lo mismo.
+
+**Cargar otro archivo en un panel con cambios también pregunta**, igual que cerrar: confirmar otra
+ruta, elegir otro archivo con «…» o pulsar **Recargar**. La ruta escrita a mano no se carga hasta
+pulsar `Intro` o salir del campo, y `Esc` deshace lo escrito; en la vista de carpetas, la
+comparación tampoco empieza hasta entonces.
 
 ### Al guardar
 
@@ -240,8 +245,10 @@ se completó, un guardado que no llegó al disco, o la ventana que se cerró de 
 cuándo, qué operación, sobre qué ruta y con qué error del sistema; nunca el contenido de los
 archivos. Es uno por sesión: el primer error de cada arranque pasa el anterior a `cotejo.old.log` y
 empieza otro, y un arranque sin errores no toca nada, así que lo de la última vez que algo falló
-sigue ahí después de reiniciar. Cada sesión escribe como mucho 1 MB, así que entre los dos no pasan
-de 2 MB. No sale del equipo: es para adjuntarlo, si se quiere, al informar de un problema.
+sigue ahí después de reiniciar. Si el anterior no se puede renombrar —porque otro programa lo tiene
+bloqueado, por ejemplo—, la sesión lo vacía y empieza de cero. Cada sesión escribe como mucho 1 MB,
+así que entre los dos nunca pasan de 2 MB. No sale del equipo: es para adjuntarlo, si se quiere, al
+informar de un problema.
 
 Una vez al día Cotejo pregunta a GitHub cuál es la última release publicada. Si hay una más nueva
 que la instalada, aparece una franja sobre la barra de pestañas con un enlace a la

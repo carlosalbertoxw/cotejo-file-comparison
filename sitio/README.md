@@ -15,8 +15,14 @@ de la raíz. Si Astro viviera ahí, acabaría dentro de la aplicación de escrit
 
 ## Desarrollo
 
+Con npm 11.16 o posterior, igual que la aplicación: es el que aplica `allowScripts`, la lista de
+dependencias que pueden ejecutar scripts al instalarse. Con `strict-allow-scripts` en
+[.npmrc](.npmrc), una que no esté en la lista hace fallar la instalación. Importa aunque esto sea una
+página estática, porque es desde donde se descarga la aplicación. Con un npm anterior:
+`npx --yes npm@11.16.0 ci`.
+
 ```bash
-npm install
+npm ci
 ```
 
 ```bash
