@@ -378,8 +378,11 @@ git mv changelog/proxima.md changelog/v0.2.0.md
 ```
 
 ```bash
-git tag v0.2.0 && git push origin v0.2.0
+git tag -a v0.2.0 -m "Cotejo v0.2.0" && git push origin v0.2.0
 ```
+
+Anotado, como todos los anteriores: guarda quién y cuándo lo creó, y `git describe` sin `--tags`
+solo ve los anotados. Rehacerlo después de empujarlo vuelve a lanzar el workflow de release.
 
 `.github/workflows/release.yml` construye entonces las tres plataformas en paralelo y deja una
 release en borrador con todos los instalables adjuntos. Es la vía práctica para macOS, porque el
