@@ -16,11 +16,10 @@ on:
       - 'sitio/**'
       - 'changelog/**'
       - '**/*.md'
+  # En los PR, siempre: el ruleset de main exige los dos `comprobar`, y con
+  # `paths-ignore` un PR de solo documentacion —o uno de Dependabot sobre
+  # sitio/— no los recibia nunca y se quedaba bloqueado sin remedio.
   pull_request:
-    paths-ignore:
-      - 'sitio/**'
-      - 'changelog/**'
-      - '**/*.md'
   workflow_dispatch:
 
 permissions:
