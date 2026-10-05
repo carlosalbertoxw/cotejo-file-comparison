@@ -85,6 +85,14 @@ Además:
 - Los mensajes de commit, en español y en imperativo («Guardar sin perder los permisos»). El
   cuerpo cuenta el motivo del cambio.
 
+## Herramientas de IA
+
+Se pueden usar, y en este proyecto se usan: buena parte de los commits llevan un trailer
+`Co-Authored-By` de un asistente. Lo que no cambia es quién responde del cambio: quien abre el PR
+lo ha leído entero, lo entiende, lo ha probado y puede contribuirlo bajo la licencia del proyecto,
+igual que si lo hubiera escrito a mano. Si un asistente ha escrito una parte importante, dilo en el
+PR o con el trailer.
+
 ## Licencia
 
 Al contribuir aceptas que tu aportación se publique bajo la [licencia MIT](LICENSE) del proyecto.

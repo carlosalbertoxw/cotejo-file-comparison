@@ -18,6 +18,28 @@ const trashItem = vi.fn(async (_path: string) => undefined)
 
 vi.mock('electron', () => ({ shell: { trashItem: (path: string) => trashItem(path) } }))
 
+/**
+ * `rename` de verdad salvo cuando una prueba quiere hacerlo fallar con un
+ * codigo concreto: los casos entre discos o con un archivo bloqueado no se
+ * pueden provocar en una carpeta temporal.
+ */
+const renameFailure: { code: string | null } = { code: null }
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return {
+    ...actual,
+    rename: async (from: string, to: string) => {
+      if (renameFailure.code) {
+        throw Object.assign(new Error(`${renameFailure.code}: rename`), {
+          code: renameFailure.code
+        })
+      }
+      return actual.rename(from, to)
+    }
+  }
+})
+
 const { planFileOp, runFileOp } = await import('../src/main/services/fileOpsService')
 
 let root: string
@@ -26,6 +48,7 @@ let right: string
 
 beforeEach(async () => {
   trashItem.mockClear()
+  renameFailure.code = null
   root = await mkdtemp(join(tmpdir(), 'cotejo-ops-'))
   left = join(root, 'left')
   right = join(root, 'right')
@@ -320,6 +343,58 @@ describe('runFileOp: mover', () => {
 
     expect(await exists(join(left, 'dir'))).toBe(false)
     expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
+  })
+
+  it('entre discos copia y borra el origen', async () => {
+    await write(left, 'dir/a.txt', 'x')
+    renameFailure.code = 'EXDEV'
+
+    const result = await runFileOp(request('move', [folder('dir')]))
+
+    expect(result.failed).toEqual([])
+    expect(await exists(join(left, 'dir'))).toBe(false)
+    expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
+  })
+
+  it('fusiona con una carpeta que ya existe, con el error que de el sistema real', async () => {
+    // Sin simular nada: POSIX contesta ENOTEMPTY y Windows EPERM, y los dos
+    // tienen que acabar en la fusion.
+    await write(left, 'dir/a.txt', 'x')
+    await write(right, 'dir/b.txt', 'y')
+
+    const result = await runFileOp(request('move', [folder('dir')]))
+
+    expect(result.failed).toEqual([])
+    expect(await exists(join(left, 'dir'))).toBe(false)
+    expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
+    expect(await readFile(join(right, 'dir/b.txt'), 'utf8')).toBe('y')
+  })
+
+  it('fusiona con una carpeta que ya existe en el destino', async () => {
+    await write(left, 'dir/a.txt', 'x')
+    await write(right, 'dir/b.txt', 'y')
+    renameFailure.code = 'EPERM'
+
+    const result = await runFileOp(request('move', [folder('dir')]))
+
+    expect(result.failed).toEqual([])
+    expect(await exists(join(left, 'dir'))).toBe(false)
+    expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
+    expect(await readFile(join(right, 'dir/b.txt'), 'utf8')).toBe('y')
+  })
+
+  it('con otro fallo no copia ni toca el origen', async () => {
+    // Un archivo bloqueado en Windows: `rename` falla con EPERM y el destino no
+    // existe, asi que no hay nada que fusionar.
+    await write(left, 'dir/a.txt', 'x')
+    renameFailure.code = 'EPERM'
+
+    const result = await runFileOp(request('move', [folder('dir')]))
+
+    expect(result.failed).toHaveLength(1)
+    expect(result.failed[0]?.message).toContain('EPERM')
+    expect(await readFile(join(left, 'dir/a.txt'), 'utf8')).toBe('x')
+    expect(await exists(join(right, 'dir'))).toBe(false)
   })
 })
 

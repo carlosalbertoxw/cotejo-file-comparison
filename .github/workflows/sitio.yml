@@ -1,0 +1,58 @@
+# Comprobaciones de los pull request que tocan el sitio de sitio/.
+#
+# El CI de la aplicacion ignora sitio/ y pages.yml solo construye al llegar a
+# main, asi que un PR del sitio —los semanales de Dependabot incluidos— se
+# fusionaba sin que nada lo compilara: una actualizacion que rompiera el build
+# se descubria al fallar el despliegue, con la pagina de descargas parada en
+# la version anterior.
+#
+# Va aparte de pages.yml y no como un disparo mas de este: su grupo de
+# concurrencia cancela lo que este en curso, y un PR podria cortar un
+# despliegue de main a medias.
+name: sitio
+
+on:
+  pull_request:
+    paths:
+      - 'sitio/**'
+      - '.github/workflows/sitio.yml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sitio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sitio
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: sitio/package-lock.json
+
+      # Con npm 11.16, por `allowScripts` (ver pages.yml).
+      - run: npx --yes npm@11.16.0 ci
+
+      # El CI de la aplicacion solo audita el lockfile de la raiz.
+      - name: Vulnerabilidades conocidas
+        run: npm audit --audit-level=high
+
+      - run: npm run check
+
+      # Lo mismo que hace pages.yml, sin publicar nada.
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ASTRO_TELEMETRY_DISABLED: '1'

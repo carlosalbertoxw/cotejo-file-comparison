@@ -2,7 +2,7 @@ import { ipcMain, type IpcMainInvokeEvent } from 'electron'
 import type { IpcChannel } from '@shared/ipc-channels'
 import { rendererUrl } from '../rendererUrl'
 import { logError } from '../services/log'
-import { isAppUrl } from './sender'
+import { isTrustedFrame } from './sender'
 
 /**
  * `ipcMain.handle` que solo atiende a nuestra pagina.
@@ -19,7 +19,7 @@ export function handle(
   listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
 ): void {
   ipcMain.handle(channel, (event, ...args) => {
-    if (!isTrustedSender(event)) {
+    if (!isTrustedFrame(event.senderFrame, rendererUrl())) {
       // Hoy no puede pasar; si pasa, es que algo ajeno ha llegado a hablar con
       // el proceso principal, y eso tiene que quedar escrito en algun sitio.
       const error = new Error(`Remitente no permitido en ${channel}: ${event.senderFrame?.url}`)
@@ -28,12 +28,4 @@ export function handle(
     }
     return listener(event, ...args)
   })
-}
-
-function isTrustedSender(event: IpcMainInvokeEvent): boolean {
-  const frame = event.senderFrame
-  // Sin marco (ya se destruyo o navego) no hay a quien responder; con padre,
-  // es un iframe dentro de la pagina, que nunca deberia hablar con el disco.
-  if (!frame || frame.parent !== null) return false
-  return isAppUrl(frame.url, rendererUrl())
 }
