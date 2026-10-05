@@ -7,7 +7,7 @@
  */
 
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
-import { access, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -15,7 +15,11 @@ let dir: string
 let app: ElectronApplication
 
 test.beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'cotejo-e2e-launch-'))
+  // Con la ruta real: en macOS la carpeta temporal cuelga de /var, que es un
+  // enlace a /private/var, y un proceso lanzado ahi ve su carpeta de trabajo
+  // ya resuelta. Sin esto la prueba esperaria /var/... y Cotejo abriria el
+  // mismo archivo escrito como /private/var/...
+  dir = await realpath(await mkdtemp(join(tmpdir(), 'cotejo-e2e-launch-')))
 })
 
 test.afterEach(async () => {
