@@ -184,7 +184,7 @@ export const pt: Catalog = {
       windows:
         'O Windows avisa na primeira vez que o editor é desconhecido, porque o aplicativo não é assinado: Mais informações → Executar assim mesmo.',
       macos:
-        'Sem assinatura da Apple, o macOS bloqueia na primeira vez com um aviso que parece de arquivo danificado. Abra com clique direito no aplicativo → Abrir, e a partir daí funciona normalmente.',
+        'Sem assinatura da Apple, o macOS bloqueia na primeira vez com um aviso que parece de arquivo danificado. Abra com clique direito no aplicativo → Abrir, e a partir daí funciona normalmente. Requer macOS 13 Ventura ou posterior.',
       linux:
         'O AppImage precisa de permissão de execução na primeira vez, com chmod +x, e depois abre com clique duplo.'
     },

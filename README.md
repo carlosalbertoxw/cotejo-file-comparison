@@ -9,13 +9,14 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
-## Novedades de la 0.6.0
+## Novedades de la 0.7.0
 
-Guardar ya **no cambia los permisos del archivo**: un script sigue siendo ejecutable y un archivo
-privado sigue siéndolo. «Acerca de» dice **dónde deja archivos Cotejo** en ese equipo y tiene una
-casilla para **apagar la comprobación diaria de versiones**, su única conexión a internet. El
-ejecutable está más cerrado, y cada descarga se puede **comprobar** con sumas SHA-256 y una
-atestación de GitHub. Están los detalles en [las notas de la versión](changelog/v0.6.0.md).
+Cerrar una pestaña, salir o cambiar de archivo con **cambios sin guardar pregunta antes** en vez de
+perderlos. Lo que se sobrescribe al copiar o mover **va a la papelera**, y el diálogo dice archivo
+por archivo qué se va a pisar, incluidos los que la tabla no muestra. Los fallos quedan anotados
+en un **registro de errores** local para poder informar de ellos. Pasa a Electron 44, que **deja
+fuera macOS 12**: en un Mac hace falta macOS 13 Ventura o posterior. Están los detalles en
+[las notas de la versión](changelog/v0.7.0.md).
 
 ## Instalación
 
@@ -42,7 +43,7 @@ doble clic.
 En macOS la aplicación **no está firmada**, porque firmarla exige una cuenta de pago de Apple.
 Gatekeeper la bloqueará la primera vez con un aviso que parece de archivo dañado; se abre con clic
 derecho sobre la app → Abrir, y a partir de ahí funciona con normalidad. Los atajos usan ⌘ en vez
-de Ctrl, como cualquier otra aplicación de macOS.
+de Ctrl, como cualquier otra aplicación de macOS. Hace falta macOS 13 Ventura o posterior.
 
 ### Comprobar la descarga
 
@@ -56,7 +57,7 @@ alguno de ellos afecta a la versión que tienes.
 La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
 
 ```bash
-gh attestation verify Cotejo.Setup.0.6.0.exe --repo carlosalbertoxw/cotejo-file-comparison
+gh attestation verify Cotejo.Setup.0.7.0.exe --repo carlosalbertoxw/cotejo-file-comparison
 ```
 
 Solo la huella, desde la carpeta de la descarga. En Linux:
@@ -74,7 +75,7 @@ grep arm64.dmg SHA256SUMS.txt | shasum -a 256 -c
 Y en Windows, comparando a ojo con la línea del archivo en `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash Cotejo.Setup.0.6.0.exe
+Get-FileHash Cotejo.Setup.0.7.0.exe
 ```
 
 ## Uso

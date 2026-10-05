@@ -192,7 +192,7 @@ export const es = {
       windows:
         'Windows avisa la primera vez de que el editor no es conocido, porque la aplicación no está firmada: Más información → Ejecutar de todas formas.',
       macos:
-        'Sin firma de Apple, macOS la bloquea la primera vez con un aviso que parece de archivo dañado. Se abre con clic derecho sobre la aplicación → Abrir, y a partir de ahí funciona con normalidad.',
+        'Sin firma de Apple, macOS la bloquea la primera vez con un aviso que parece de archivo dañado. Se abre con clic derecho sobre la aplicación → Abrir, y a partir de ahí funciona con normalidad. Hace falta macOS 13 Ventura o posterior.',
       linux:
         'Al AppImage hay que darle permiso de ejecución la primera vez, con chmod +x, y ya se abre con doble clic.'
     },
