@@ -1,0 +1,42 @@
+# Las pruebas E2E en macOS, una vez a la semana y a mano.
+#
+# El CI las corre en Linux y en Windows, y release.yml las salta en macOS para
+# no estrenarlas en mitad de una publicacion. Con eso, los .dmg salian sin que
+# nada hubiera arrancado nunca la aplicacion en un Mac. Esto lo hace aparte y
+# sin bloquear nada: si falla, se ve aqui y no en el momento de publicar. Cuando
+# lleve un tiempo en verde, toca quitar la excepcion de release.yml.
+name: e2e-macos
+
+on:
+  schedule:
+    - cron: '41 6 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # El mismo npm que en el CI, para que se aplique `allowScripts`.
+      - run: npx --yes npm@11.16.0 ci
+
+      - run: npm run build
+
+      - run: npm run test:e2e
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: e2e-macos
+          path: test-results/
+          if-no-files-found: ignore

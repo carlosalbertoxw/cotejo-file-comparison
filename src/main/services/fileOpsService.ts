@@ -215,10 +215,28 @@ async function applyOne(request: FileOpRequest, item: FileOpItem, kind: FileOpKi
   // move: rename es atomico dentro del mismo volumen, pero falla entre discos.
   try {
     await rename(source, target)
-  } catch {
+  } catch (error) {
+    if (!(await mustCopyToMove(error as NodeJS.ErrnoException, target))) throw error
     await cp(source, target, { recursive: true, force: true, preserveTimestamps: true })
     await rm(source, { recursive: true, force: true })
   }
+}
+
+/**
+ * Si un `rename` fallido se puede sustituir por copiar y borrar el origen.
+ *
+ * Solo en los dos casos en los que `rename` no puede hacerlo por diseño:
+ * entre volumenes (`EXDEV`) y al fusionar una carpeta con otra que ya existe en
+ * el destino, que POSIX rechaza con `ENOTEMPTY` o `EEXIST` y Windows con
+ * `EPERM`. Cualquier otro fallo se relanza. Antes se copiaba y borraba ante
+ * cualquiera, y en Windows un archivo abierto por otro programa hace fallar el
+ * `rename` con `EPERM`: se copiaba todo, el borrado se paraba en ese archivo y
+ * el origen quedaba a medio borrar, sin pasar por la papelera.
+ */
+async function mustCopyToMove(error: NodeJS.ErrnoException, target: string): Promise<boolean> {
+  if (error.code === 'EXDEV') return true
+  if (error.code !== 'ENOTEMPTY' && error.code !== 'EEXIST' && error.code !== 'EPERM') return false
+  return (await lstatOrNull(target))?.isDirectory() ?? false
 }
 
 export async function runFileOp(

@@ -1,3 +1,9 @@
+## macOS 12 deja de estar soportado
+
+Cotejo pasa a Electron 44, que trae las últimas correcciones de seguridad de Chromium y ya no
+funciona en macOS 12 Monterey. En un Mac hace falta macOS 13 Ventura o posterior; quien siga en
+Monterey puede quedarse con la 0.6.0. Windows y Linux no cambian.
+
 ## Cerrar con cambios sin guardar pregunta antes
 
 Cerrar una pestaña —con su ✕ o con `Ctrl+W`— la tiraba sin mirar si tenía cambios, aunque el ●
@@ -50,6 +56,9 @@ para abrir la carpeta, por si quieres adjuntarlo al informar de un problema. No 
 - `Ctrl+T` y `Ctrl+W` funcionan también con Bloq Mayús activado.
 - Preparar la copia de una carpeta que contiene un enlace simbólico ya no recorre lo que hay al
   otro lado del enlace, que podía ser el disco entero o la propia carpeta en bucle.
+- Mover una carpeta en Windows con un archivo de dentro abierto en otro programa ya no la deja a
+  medias: antes se copiaba entera al otro lado y el original se borraba hasta toparse con ese
+  archivo. Ahora el movimiento falla sin tocar nada y lo dice, y se puede repetir al cerrarlo.
 - El archivo temporal de cada guardado lleva ahora un nombre al azar (`.<código>.cotejo-tmp`), y
   dos guardados a la vez en la misma carpeta ya no pueden chocar.
 

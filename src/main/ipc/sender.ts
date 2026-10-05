@@ -20,3 +20,22 @@ export function isAppUrl(url: string, appUrl: string): boolean {
   }
   return actual.origin === expected.origin
 }
+
+/** Lo que importa del marco que manda un mensaje IPC. */
+export interface SenderFrame {
+  url: string
+  /** El marco padre; `null` en el marco principal de la ventana. */
+  parent: unknown
+}
+
+/**
+ * Si un marco puede hablar con el proceso principal: tiene que existir, ser el
+ * marco principal y tener cargada nuestra pagina.
+ *
+ * Sin marco (ya se destruyo o navego) no hay a quien responder; con padre, es
+ * un iframe dentro de la pagina, que nunca deberia hablar con el disco.
+ */
+export function isTrustedFrame(frame: SenderFrame | null | undefined, appUrl: string): boolean {
+  if (!frame || frame.parent !== null) return false
+  return isAppUrl(frame.url, appUrl)
+}

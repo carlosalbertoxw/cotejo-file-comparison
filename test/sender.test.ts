@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { isAppUrl } from '../src/main/ipc/sender'
+import { isAppUrl, isTrustedFrame } from '../src/main/ipc/sender'
 
 describe('isAppUrl en produccion (file:)', () => {
   const app = 'file:///C:/Programas/Cotejo/resources/app.asar/out/renderer/index.html'
@@ -41,5 +41,27 @@ describe('isAppUrl en desarrollo (servidor de Vite)', () => {
   it('rechaza lo que no es una URL', () => {
     expect(isAppUrl('', app)).toBe(false)
     expect(isAppUrl('no es una url', app)).toBe(false)
+  })
+})
+
+describe('isTrustedFrame', () => {
+  const app = 'file:///C:/Programas/Cotejo/resources/app.asar/out/renderer/index.html'
+
+  it('atiende al marco principal con nuestra pagina', () => {
+    expect(isTrustedFrame({ url: app, parent: null }, app)).toBe(true)
+  })
+
+  it('rechaza un marco que ya no existe', () => {
+    expect(isTrustedFrame(null, app)).toBe(false)
+    expect(isTrustedFrame(undefined, app)).toBe(false)
+  })
+
+  it('rechaza un iframe aunque cargue nuestra propia pagina', () => {
+    expect(isTrustedFrame({ url: app, parent: { url: app } }, app)).toBe(false)
+  })
+
+  it('rechaza el marco principal si navego a otro documento', () => {
+    expect(isTrustedFrame({ url: 'file:///C:/Users/ana/Descargas/pagina.html', parent: null }, app))
+      .toBe(false)
   })
 })
