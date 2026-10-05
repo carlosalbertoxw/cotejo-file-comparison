@@ -186,7 +186,7 @@ export const fr: Catalog = {
       windows:
         'Windows prévient la première fois que l’éditeur est inconnu, parce que l’application n’est pas signée : Informations complémentaires → Exécuter quand même.',
       macos:
-        'Sans signature Apple, macOS la bloque la première fois avec un avertissement qui ressemble à un fichier endommagé. Clic droit sur l’application → Ouvrir, et ensuite tout se passe normalement.',
+        'Sans signature Apple, macOS la bloque la première fois avec un avertissement qui ressemble à un fichier endommagé. Clic droit sur l’application → Ouvrir, et ensuite tout se passe normalement. macOS 13 Ventura ou ultérieur est requis.',
       linux:
         'L’AppImage a besoin du droit d’exécution la première fois, avec chmod +x, et s’ouvre ensuite d’un double-clic.'
     },

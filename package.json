@@ -1,6 +1,6 @@
 {
   "name": "cotejo",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Cotejo — compara archivos de texto y carpetas lado a lado",
   "main": "./out/main/index.js",
   "author": "Carlos Alberto",

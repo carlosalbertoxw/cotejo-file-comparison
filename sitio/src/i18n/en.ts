@@ -182,7 +182,7 @@ export const en: Catalog = {
       windows:
         'Windows warns the first time that the publisher is unknown, because the app is not signed: More info → Run anyway.',
       macos:
-        'Without an Apple signature, macOS blocks it the first time with a warning that looks like a damaged file. Right-click the app → Open, and from then on it behaves normally.',
+        'Without an Apple signature, macOS blocks it the first time with a warning that looks like a damaged file. Right-click the app → Open, and from then on it behaves normally. Requires macOS 13 Ventura or later.',
       linux:
         'The AppImage needs execute permission the first time, with chmod +x, and then it opens with a double click.'
     },
