@@ -17,10 +17,10 @@ on:
     paths-ignore:
       - 'changelog/**'
       - '**/*.md'
+  # En los PR, siempre: el ruleset de main exige `analizar
+  # (javascript-typescript)`, y con `paths-ignore` un PR de solo documentacion
+  # no lo recibia nunca y se quedaba bloqueado.
   pull_request:
-    paths-ignore:
-      - 'changelog/**'
-      - '**/*.md'
   # Una vez a la semana aunque no haya cambios: las consultas de CodeQL
   # mejoran y pueden encontrar algo nuevo en codigo viejo.
   schedule:
