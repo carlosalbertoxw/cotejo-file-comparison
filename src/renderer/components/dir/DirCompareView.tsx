@@ -21,6 +21,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog'
 import { DirTable, flattenTree, type FlatRow } from './DirTable'
 import { DirToolbar } from './DirToolbar'
 import { formatSize } from './format'
+import { operableRoots, type OperableRoots } from './operableRoots'
 import { walkTree } from './tree'
 
 interface Props {
@@ -33,6 +34,8 @@ interface PendingOp {
   from: Side
   items: FileOpItem[]
   plan: FileOpPlan
+  /** Las raices con las que se planifico: la operacion va exactamente ahi. */
+  roots: OperableRoots
 }
 
 const OP_TITLE_KEY = {
@@ -84,6 +87,9 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     requestIdRef.current = requestId
     setRunning(true)
     setMessage(null)
+    // Lo seleccionado es de la comparacion anterior, que puede ser de otras
+    // carpetas: no debe sobrevivir a la nueva.
+    setSelected(new Set())
     try {
       const result = await window.api.compareDirectories(requestId, {
         leftRoot: tab.leftPath,
@@ -142,6 +148,11 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     [response, expanded, onlyDifferences]
   )
 
+  const roots = useMemo(
+    () => operableRoots(response, tab?.leftPath ?? null, tab?.rightPath ?? null, running),
+    [response, tab?.leftPath, tab?.rightPath, running]
+  )
+
   const nodeByPath = useMemo(() => {
     const map = new Map<string, DirNode>()
     if (response) {
@@ -186,7 +197,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
 
   const requestOp = useCallback(
     async (kind: FileOpKind, from: Side, explicit?: FileOpItem[]): Promise<void> => {
-      if (!tab?.leftPath || !tab?.rightPath) return
+      if (!roots) return
 
       const items =
         explicit ??
@@ -208,21 +219,20 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         const plan = await window.api.planFileOp({
           operationId: 'plan',
           kind,
-          leftRoot: tab.leftPath,
-          rightRoot: tab.rightPath,
+          ...roots,
           items,
           filters: scanFiltersRef.current
         })
-        setPendingOp({ kind, from, items, plan })
+        setPendingOp({ kind, from, items, plan, roots })
       } catch (error) {
         setMessage(errorText(error))
       }
     },
-    [tab?.leftPath, tab?.rightPath, selected, nodeByPath, t]
+    [roots, selected, nodeByPath, t]
   )
 
   const confirmOp = useCallback(async (): Promise<void> => {
-    if (!pendingOp || !tab?.leftPath || !tab?.rightPath) return
+    if (!pendingOp) return
     const operationId = crypto.randomUUID()
     setPendingOp(null)
     setOpProgress({ done: 0, total: pendingOp.items.length })
@@ -236,8 +246,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       const result = await window.api.runFileOp({
         operationId,
         kind: pendingOp.kind,
-        leftRoot: tab.leftPath,
-        rightRoot: tab.rightPath,
+        ...pendingOp.roots,
         items: pendingOp.items
       })
       const failures = result.failed.length
@@ -257,7 +266,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
       setOpProgress(null)
       await runCompare()
     }
-  }, [pendingOp, tab?.leftPath, tab?.rightPath, runCompare, t])
+  }, [pendingOp, runCompare, t])
 
   /** Sincronizar: llevar a la derecha todo lo que falta o difiere en la izquierda. */
   const syncToRight = useCallback((): void => {
@@ -304,6 +313,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         onOnlyDifferencesChange={setOnlyDifferences}
         running={running}
         canCompare={Boolean(tab?.leftPath && tab?.rightPath)}
+        canOperate={roots !== null}
         hasSelection={selected.size > 0}
         onCompare={() => void runCompare()}
         onCancel={() => {
@@ -424,6 +434,23 @@ function OpSummary({ op }: { op: PendingOp }): React.JSX.Element {
 
   return (
     <div>
+      {op.kind === 'delete' ? (
+        <p className="op-roots">
+          {t('opSummary.inRoot', {
+            path: op.from === 'left' ? op.roots.leftRoot : op.roots.rightRoot
+          })}
+        </p>
+      ) : (
+        <p className="op-roots">
+          {t('opSummary.fromRoot', {
+            path: op.from === 'left' ? op.roots.leftRoot : op.roots.rightRoot
+          })}
+          <br />
+          {t('opSummary.toRoot', {
+            path: op.from === 'left' ? op.roots.rightRoot : op.roots.leftRoot
+          })}
+        </p>
+      )}
       <p>
         {t(scopeKey, {
           files: t('opSummary.fileCount', { count: plan.fileCount }),

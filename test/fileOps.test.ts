@@ -40,7 +40,9 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   }
 })
 
-const { planFileOp, runFileOp } = await import('../src/main/services/fileOpsService')
+const { planFileOp, runFileOp, withoutNested } = await import(
+  '../src/main/services/fileOpsService'
+)
 
 let root: string
 let left: string
@@ -150,14 +152,21 @@ describe('planFileOp', () => {
     await write(left, 'a.txt', 'x')
     const plan = await planFileOp(request('delete', [file('a.txt')]))
     expect(plan.overwrites).toEqual([])
-    expect(plan.affected).toEqual([join(left, 'a.txt')])
   })
 
-  it('un movimiento afecta al origen y al destino', async () => {
-    await write(left, 'a.txt', 'x')
-    const plan = await planFileOp(request('move', [file('a.txt')]))
-    expect(plan.affected).toContain(join(left, 'a.txt'))
-    expect(plan.affected).toContain(join(right, 'a.txt'))
+  it('no cuenta dos veces lo que va dentro de una carpeta tambien seleccionada', async () => {
+    await write(left, 'docs/a.txt', '12345')
+    await write(left, 'docs/b.txt', '123')
+    await write(right, 'docs/a.txt', 'viejo')
+
+    const plan = await planFileOp(request('copy', [folder('docs'), file('docs/a.txt')]))
+
+    // La operacion solo procesa `docs`; antes el dialogo sumaba ademas un
+    // archivo y los bytes de `a.txt` otra vez.
+    expect(plan.dirCount).toBe(1)
+    expect(plan.fileCount).toBe(0)
+    expect(plan.totalBytes).toBe(8)
+    expect(plan.overwrites).toEqual(['docs/a.txt'])
   })
 
   it('en una carpeta que existe en los dos lados, lista cada archivo que se pisa', async () => {
@@ -220,6 +229,83 @@ describe('planFileOp', () => {
     const plan = await planFileOp(request('copy', [file('fantasma.txt')]))
     expect(plan.fileCount).toBe(0)
     expect(plan.totalBytes).toBe(0)
+  })
+})
+
+describe('withoutNested', () => {
+  it('quita lo que cuelga de una carpeta seleccionada, y nada mas', () => {
+    const items = [folder('docs'), file('docs/a.txt'), file('docs-viejo/b.txt'), file('c.txt')]
+    expect(withoutNested(items).map((item) => item.relPath)).toEqual([
+      'docs',
+      'docs-viejo/b.txt',
+      'c.txt'
+    ])
+  })
+})
+
+/**
+ * Un enlace a una carpeta de fuera. En Windows, una union (`junction`), que se
+ * crea sin privilegios de administrador; en el resto el tipo se ignora.
+ */
+async function linkOutside(base: string, relPath: string): Promise<string> {
+  const outside = join(root, 'fuera')
+  await mkdir(outside, { recursive: true })
+  await symlink(outside, join(base, relPath), 'junction')
+  return outside
+}
+
+describe('confinamiento a traves de enlaces', () => {
+  it('no planifica un elemento que sale de la raiz por una carpeta enlazada', async () => {
+    const outside = await linkOutside(left, 'enlace')
+    await writeFile(join(outside, 'secreto.txt'), 'x', 'utf8')
+
+    const error = await planFileOp(request('delete', [file('enlace/secreto.txt')])).catch(
+      (e: Error) => e
+    )
+    expect(parseIpcError((error as Error).message)?.code).toBe('pathOutsideRoot')
+  })
+
+  it('no borra a traves de una carpeta enlazada', async () => {
+    const outside = await linkOutside(left, 'enlace')
+    await writeFile(join(outside, 'secreto.txt'), 'x', 'utf8')
+
+    const result = await runFileOp(request('delete', [file('enlace/secreto.txt')]))
+
+    expect(result.succeeded).toBe(0)
+    expect(parseIpcError(result.failed[0]?.message ?? '')?.code).toBe('pathOutsideRoot')
+    expect(trashItem).not.toHaveBeenCalled()
+  })
+
+  it('al fusionar, no pisa ni escribe en una subcarpeta del destino que es un enlace', async () => {
+    await write(left, 'docs/sub/a.txt', 'nuevo')
+    await mkdir(join(right, 'docs'), { recursive: true })
+    const outside = await linkOutside(right, 'docs/sub')
+    await writeFile(join(outside, 'a.txt'), 'de fuera', 'utf8')
+
+    const result = await runFileOp(request('copy', [folder('docs')]))
+
+    expect(result.succeeded).toBe(0)
+    expect(trashItem).not.toHaveBeenCalled()
+    expect(await readFile(join(outside, 'a.txt'), 'utf8')).toBe('de fuera')
+  })
+
+  it('borrar el propio enlace sigue permitido: va a la papelera como enlace', async () => {
+    await linkOutside(left, 'enlace')
+
+    const result = await runFileOp(request('delete', [file('enlace')]))
+
+    expect(result.succeeded).toBe(1)
+    expect(trashItem).toHaveBeenCalledWith(join(left, 'enlace'))
+  })
+
+  it('copia a una raiz que todavia no existe', async () => {
+    await write(left, 'a.txt', 'x')
+    await rm(right, { recursive: true })
+
+    const result = await runFileOp(request('copy', [file('a.txt')]))
+
+    expect(result.failed).toEqual([])
+    expect(await readFile(join(right, 'a.txt'), 'utf8')).toBe('x')
   })
 })
 

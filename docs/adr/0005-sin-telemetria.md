@@ -11,8 +11,8 @@ programa que no los necesita para funcionar.
 
 ## Decisión
 
-- Ni telemetría, ni informes de fallos automáticos, ni analítica. Tampoco en el sitio, que además
-  apaga la telemetría de Astro al construirse.
+- Ni telemetría, ni informes de fallos automáticos, ni analítica en la aplicación de escritorio.
+  La promesa es de la aplicación, que es la que abre los archivos, y no del sitio.
 - La única conexión es la consulta diaria a la API de releases de GitHub, a una URL fija, y se puede
   apagar en «Acerca de».
 - Para diagnosticar, un registro local de errores (`cotejo.log`) que no sale del equipo y que el
@@ -28,7 +28,13 @@ programa que no los necesita para funcionar.
 - Los fallos se conocen solo cuando alguien los reporta. «Acerca de» enseña la versión, el sistema
   y dónde está el registro, para que el reporte los pueda traer.
 - La promesa está escrita en el sitio («sin telemetría») y en el README. Cualquier conexión nueva
-  obliga a cambiar los dos y a sustituir este registro.
+  de la aplicación obliga a cambiar los dos y a sustituir este registro.
+- El sitio se sirve bajo el dominio personal, y lo que ese dominio haga con las visitas —cabeceras,
+  caché, estadísticas— se configura en Cloudflare para todo el dominio, fuera de este repositorio.
+  El build sí apaga la telemetría de Astro (`ASTRO_TELEMETRY_DISABLED`), que es del propio
+  proyecto. La CSP de cada página (`sitio/astro.config.mjs`) solo admite scripts propios: si algún
+  día se quiere que las estadísticas del dominio carguen en estas páginas, hay que añadir su origen
+  ahí.
 
 ## Dónde se aplica
 

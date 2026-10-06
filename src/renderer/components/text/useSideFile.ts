@@ -58,11 +58,22 @@ export function useSideFile(): SideFile {
     setState((previous) => ({ ...previous, content }))
   }, [])
 
+  /**
+   * La ultima lectura pedida. Las lecturas no terminan en orden: si se elige un
+   * archivo grande o en red y enseguida otro, el primero puede llegar despues y
+   * dejar en el panel un contenido que no es el de la ruta que se ve, y que se
+   * guardaria encima del primero.
+   */
+  const latestLoad = useRef(0)
+
   const load = useCallback(async (path: string): Promise<void> => {
+    const request = ++latestLoad.current
     try {
       const payload = await window.api.readTextFile(path)
+      if (request !== latestLoad.current) return
       setState({ payload, content: payload.content, error: null })
     } catch (error) {
+      if (request !== latestLoad.current) return
       setState({ payload: null, content: '', error: errorText(error) })
     }
   }, [])

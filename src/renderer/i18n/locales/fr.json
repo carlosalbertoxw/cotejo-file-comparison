@@ -123,7 +123,8 @@
     "ignored_one": "{{count}} ignorée",
     "ignored_other": "{{count}} ignorées",
     "lossyEncoding": "L’un des fichiers n’est pas en UTF-8 et des caractères ont été perdus à la lecture. La comparaison reste possible, mais ce côté ne peut être ni modifié ni enregistré.",
-    "conflictTitle": "Le fichier a changé sur le disque",
+    "conflictTitleLeft": "Le fichier de gauche a changé sur le disque",
+    "conflictTitleRight": "Le fichier de droite a changé sur le disque",
     "conflictMessage": "Quelque chose a modifié ce fichier depuis son ouverture. L’enregistrer écraserait ces modifications. Rechargez pour voir l’état actuel.",
     "conflictOverwrite": "Enregistrer quand même",
     "inlineSkipped": "Surlignage intra-ligne désactivé (fichier trop volumineux)",
@@ -226,6 +227,9 @@
     "typeConflict": "L'un est un fichier et l'autre un dossier"
   },
   "opSummary": {
+    "fromRoot": "Depuis : {{path}}",
+    "toRoot": "Vers : {{path}}",
+    "inRoot": "Dans : {{path}}",
     "fileCount_one": "{{count}} fichier",
     "fileCount_other": "{{count}} fichiers",
     "dirCount_one": "{{count}} dossier",

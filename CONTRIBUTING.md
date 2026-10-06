@@ -59,7 +59,7 @@ Además:
 - **Nada de rutas nuevas al disco sin validar.** Un canal IPC nuevo se registra con `handle`
   (`src/main/ipc/handle.ts`), que rechaza a cualquier remitente que no sea la propia página, y
   pasa sus argumentos por `src/main/ipc/validate.ts`; una operación sobre una carpeta, por
-  `safeJoin`. Ver
+  `confinedPath`, que aplica `safeJoin` y resuelve los enlaces. Ver
   [SECURITY.md](SECURITY.md).
 - **Textos en los cuatro idiomas.** Los catálogos están en `src/renderer/i18n/locales/`, con
   `es.json` como fuente de verdad, y un test exige que tengan las mismas claves. Cada frase va
