@@ -21,7 +21,8 @@ filtrar rutas, sino en que el renderer no se pueda comprometer:
 - `sandbox`, `contextIsolation` y sin Node en el renderer; solo ve `window.api`.
 - Cada canal comprueba que lo llama el marco principal de la propia página (`handle`).
 - Cada argumento se valida en forma y tamaño (`validate.ts`), y las rutas tienen que ser absolutas.
-- Las operaciones de carpetas no salen de sus dos raíces (`safeJoin`).
+- Las operaciones de carpetas no salen de sus dos raíces (`safeJoin`, y `assertInsideRoot` para
+  los enlaces).
 - Sin navegación, sin ventanas nuevas y con una CSP que solo deja scripts propios ([0001](0001-renderer-desde-file.md)).
 
 Cualquier forma de ejecutar código en el renderer se trata como vulnerabilidad grave.
@@ -41,5 +42,5 @@ Cualquier forma de ejecutar código en el renderer se trata como vulnerabilidad 
 ## Dónde se aplica
 
 - `src/main/ipc/handle.ts`, `src/main/ipc/sender.ts`, `src/main/ipc/validate.ts`.
-- `safeJoin` en `src/main/services/fileOpsService.ts`.
+- `safeJoin`, `assertInsideRoot` y `confinedPath` en `src/main/services/fileOpsService.ts`.
 - `src/preload/index.ts`.

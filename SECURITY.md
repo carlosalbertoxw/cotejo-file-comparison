@@ -74,7 +74,9 @@ vulnerabilidad y para revisar los cambios que tocan las fronteras de abajo.
    Node. Solo ve las funciones de `window.api` (`src/preload/index.ts`). El proceso principal
    solo atiende mensajes del marco principal de su propia página (`src/main/ipc/handle.ts`),
    valida la forma de cada uno (`src/main/ipc/validate.ts`) y confina las operaciones de
-   carpetas a sus raíces (`safeJoin` en `src/main/services/fileOpsService.ts`).
+   carpetas a sus raíces (`safeJoin` y `assertInsideRoot` en
+   `src/main/services/fileOpsService.ts`), por el texto de la ruta y por su ruta real, para que
+   un enlace simbólico o una unión no las saque de ahí.
 2. **Contenido de los archivos → renderer.** El texto de un archivo se muestra como texto, nunca
    como HTML. La CSP (`src/renderer/index.html`) solo permite scripts del propio paquete, y la
    ventana no navega a ningún sitio ni abre ventanas: los enlaces van al navegador del sistema, y

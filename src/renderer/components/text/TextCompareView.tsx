@@ -56,8 +56,13 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
 
   const [readOnly, setReadOnly] = useState(false)
   const [selection, setSelection] = useState<Selection | null>(null)
-  /** Lado cuyo guardado choco con un cambio ajeno en el disco. */
-  const [conflict, setConflict] = useState<Side | null>(null)
+  /**
+   * Lados cuyo guardado choco con un cambio ajeno en el disco, en el orden en
+   * que se intento. Es una cola y no un solo lado porque Ctrl+S guarda los dos:
+   * con conflicto en ambos, el segundo aviso tapaba al primero y ese lado se
+   * quedaba sin guardar sin que nada lo dijera.
+   */
+  const [conflicts, setConflicts] = useState<Side[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   /** Un cambio de archivo esperando a que se decida que pasa con lo no guardado. */
   const [replacing, setReplacing] = useState<Replacing | null>(null)
@@ -150,7 +155,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
     async (side: Side, force = false): Promise<boolean> => {
       const outcome = await sideOf(side).save(force)
       if (outcome.status === 'conflict') {
-        setConflict(side)
+        setConflicts((queue) => (queue.includes(side) ? queue : [...queue, side]))
         return false
       }
       if (outcome.status === 'error') {
@@ -554,16 +559,20 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
           />
         ))}
 
-      {conflict && (
+      {conflicts[0] && (
         <ConfirmDialog
-          title={t('textDiff.conflictTitle')}
+          // Un dialogo por lado: la clave lo vuelve a montar al pasar al siguiente.
+          key={conflicts[0]}
+          title={t(
+            conflicts[0] === 'left' ? 'textDiff.conflictTitleLeft' : 'textDiff.conflictTitleRight'
+          )}
           danger
           confirmLabel={t('textDiff.conflictOverwrite')}
           message={<p>{t('textDiff.conflictMessage')}</p>}
-          onCancel={() => setConflict(null)}
+          onCancel={() => setConflicts((queue) => queue.slice(1))}
           onConfirm={() => {
-            const side = conflict
-            setConflict(null)
+            const side = conflicts[0] as Side
+            setConflicts((queue) => queue.slice(1))
             void saveSide(side, true)
           }}
         />

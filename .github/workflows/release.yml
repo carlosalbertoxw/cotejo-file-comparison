@@ -26,6 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nada de este job hace `git push`: el token no tiene por que quedarse
+          # en .git/config al alcance de los scripts de las dependencias.
+          persist-credentials: false
 
       # workflow_dispatch corre sin tag, y ahi no hay nada que comprobar.
       - name: Comprobar las notas y la version
@@ -71,6 +75,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -147,6 +153,8 @@ jobs:
     steps:
       # El checkout es solo para leer las notas de la version.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

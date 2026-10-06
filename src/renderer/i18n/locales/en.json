@@ -123,7 +123,8 @@
     "ignored_one": "{{count}} ignored",
     "ignored_other": "{{count}} ignored",
     "lossyEncoding": "One of the files is not UTF-8 and characters were lost while reading it. You can still compare, but that side cannot be edited or saved.",
-    "conflictTitle": "The file changed on disk",
+    "conflictTitleLeft": "The left file changed on disk",
+    "conflictTitleRight": "The right file changed on disk",
     "conflictMessage": "Something modified this file after it was opened. Saving over it would discard those changes. Reload to see what is there now.",
     "conflictOverwrite": "Save anyway",
     "inlineSkipped": "Intra-line highlighting disabled (file too large)",
@@ -226,6 +227,9 @@
     "typeConflict": "One is a file and the other a folder"
   },
   "opSummary": {
+    "fromRoot": "From: {{path}}",
+    "toRoot": "To: {{path}}",
+    "inRoot": "In: {{path}}",
     "fileCount_one": "{{count}} file",
     "fileCount_other": "{{count}} files",
     "dirCount_one": "{{count}} folder",

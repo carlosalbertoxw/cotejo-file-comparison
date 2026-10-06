@@ -1,7 +1,7 @@
 import { shell } from 'electron'
-import { cp, lstat, mkdir, readdir, rename, rm } from 'node:fs/promises'
+import { cp, lstat, mkdir, readdir, realpath, rename, rm } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import {
   DEFAULT_FILTERS,
   type FileOpItem,
@@ -42,6 +42,71 @@ function safeJoin(root: string, relPath: string): string {
     throw ipcError('pathOutsideRoot', { path: relPath })
   }
   return full
+}
+
+/**
+ * La ruta real de `path`, con los enlaces resueltos, aunque todavia no exista.
+ *
+ * Lo que no existe —el destino de una copia, o la carpeta del otro lado si aun
+ * no se ha creado— no tiene ruta real: se resuelve su primer ancestro que si
+ * existe y se le anade el resto tal cual, que no puede contener enlaces porque
+ * no hay nada en el disco.
+ */
+async function realPathOf(path: string): Promise<string> {
+  try {
+    return await realpath(path)
+  } catch (error) {
+    const parent = dirname(path)
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || parent === path) throw error
+    return join(await realPathOf(parent), basename(path))
+  }
+}
+
+/**
+ * Que una ruta, ya pasada por `safeJoin`, siga dentro de su raiz en el disco.
+ *
+ * `safeJoin` mira el texto, y el texto no sabe de enlaces: si una carpeta del
+ * camino es un enlace simbolico o una union de Windows, `raiz/enlace/a.txt`
+ * pasa la comprobacion y acaba en cualquier otro sitio. El arbol de la tabla
+ * no los produce, porque el escaneo no entra en enlaces, pero el destino de una
+ * copia si los atraviesa: si al otro lado `docs` es un enlace a otra carpeta,
+ * fusionar `docs` sobrescribiria y mandaria a la papelera archivos de alli.
+ *
+ * Se juzga la carpeta que contiene la ruta y no la ruta misma: el elemento
+ * puede ser un enlace, que se copia o se borra como enlace sin seguirlo.
+ * `realRoot` llega ya resuelto para no repetir la llamada en cada archivo.
+ */
+async function assertInsideRoot(realRoot: string, full: string, relPath: string): Promise<void> {
+  const rel = relative(realRoot, await realPathOf(dirname(full)))
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw ipcError('pathOutsideRoot', { path: relPath })
+  }
+}
+
+/**
+ * `safeJoin` y `assertInsideRoot` juntos: la ruta de un elemento, confinada de
+ * verdad, y la raiz real contra la que se confinara lo que cuelga de el.
+ */
+async function confinedPath(
+  root: string,
+  relPath: string
+): Promise<{ full: string; realRoot: string }> {
+  const full = safeJoin(root, relPath)
+  const realRoot = await realPathOf(root)
+  await assertInsideRoot(realRoot, full, relPath)
+  return { full, realRoot }
+}
+
+/**
+ * Los elementos que no viajan ya dentro de una carpeta tambien seleccionada.
+ *
+ * Seleccionar `docs` y `docs/a.txt` es copiar `docs`: el archivo va dentro.
+ * Contarlo aparte hacia que el dialogo anunciara un archivo y unos bytes de
+ * mas que la operacion nunca procesa.
+ */
+export function withoutNested<T extends Pick<FileOpItem, 'relPath' | 'isDir'>>(items: T[]): T[] {
+  const dirs = items.filter((item) => item.isDir).map((item) => item.relPath)
+  return items.filter((item) => !dirs.some((dir) => item.relPath.startsWith(`${dir}/`)))
 }
 
 /** Lo que hay debajo de un elemento de la operacion, visto sin seguir enlaces. */
@@ -111,19 +176,25 @@ interface Overwrite {
  * Una carpeta que existe en los dos lados se fusiona: cada archivo de dentro
  * que ya este en el destino se sustituye. Por eso no basta con mirar el
  * elemento seleccionado, hay que bajar archivo por archivo.
+ *
+ * De paso confina cada destino (`assertInsideRoot`): una subcarpeta del otro
+ * lado puede ser un enlace aunque la carpeta seleccionada no lo sea, y escribir
+ * o mandar a la papelera a traves de ella saldria de la raiz.
  */
 async function overwritesOf(
   source: string,
   target: string,
   relPath: string,
+  realTargetRoot: string,
   isVisible: ReturnType<typeof createVisibility> = () => true
 ): Promise<{ overwrites: Overwrite[]; entries: WalkEntry[] }> {
   const overwrites: Overwrite[] = []
   const entries: WalkEntry[] = []
   for await (const entry of walk(source, relPath, isVisible)) {
     entries.push(entry)
-    if (entry.isDir) continue
     const destination = join(target, relative(source, entry.fullPath))
+    await assertInsideRoot(realTargetRoot, destination, entry.relPath)
+    if (entry.isDir) continue
     const existing = await lstatOrNull(destination)
     // Un archivo contra una carpeta no se pisa: `cp` falla y el fallo se
     // cuenta en el resultado, que es lo que tiene que pasar.
@@ -145,10 +216,9 @@ export async function planFileOp(request: FileOpRequest): Promise<FileOpPlan> {
   let totalBytes = 0
   const overwrites: string[] = []
   const unseen: string[] = []
-  const affected: string[] = []
 
-  for (const item of request.items) {
-    const source = safeJoin(rootFor(request, item.from), item.relPath)
+  for (const item of withoutNested(request.items)) {
+    const { full: source } = await confinedPath(rootFor(request, item.from), item.relPath)
     if (!(await lstatOrNull(source))) continue
 
     if (item.isDir) dirCount++
@@ -158,14 +228,17 @@ export async function planFileOp(request: FileOpRequest): Promise<FileOpPlan> {
     if (request.kind === 'delete') {
       entries = []
       for await (const entry of walk(source, item.relPath, isVisible)) entries.push(entry)
-      affected.push(source)
     } else {
-      const target = safeJoin(rootFor(request, otherSide(item.from)), item.relPath)
-      const found = await overwritesOf(source, target, item.relPath, isVisible)
+      const target = await confinedPath(rootFor(request, otherSide(item.from)), item.relPath)
+      const found = await overwritesOf(
+        source,
+        target.full,
+        item.relPath,
+        target.realRoot,
+        isVisible
+      )
       entries = found.entries
       overwrites.push(...found.overwrites.map((overwrite) => overwrite.relPath))
-      affected.push(target)
-      if (request.kind === 'move') affected.push(source)
     }
 
     for (const entry of entries) {
@@ -174,21 +247,18 @@ export async function planFileOp(request: FileOpRequest): Promise<FileOpPlan> {
     }
   }
 
-  // Si se seleccionan una carpeta y algo de dentro, lo de dentro saldria dos
-  // veces: la operacion solo lo procesa una, y el dialogo tiene que decir lo mismo.
   return {
     kind: request.kind,
     fileCount,
     dirCount,
     totalBytes,
-    overwrites: [...new Set(overwrites)],
-    unseen: [...new Set(unseen)],
-    affected
+    overwrites,
+    unseen
   }
 }
 
 async function applyOne(request: FileOpRequest, item: FileOpItem, kind: FileOpKind): Promise<void> {
-  const source = safeJoin(rootFor(request, item.from), item.relPath)
+  const { full: source } = await confinedPath(rootFor(request, item.from), item.relPath)
 
   if (kind === 'delete') {
     // shell.trashItem manda a la Papelera de reciclaje: el borrado es recuperable.
@@ -196,13 +266,16 @@ async function applyOne(request: FileOpRequest, item: FileOpItem, kind: FileOpKi
     return
   }
 
-  const target = safeJoin(rootFor(request, otherSide(item.from)), item.relPath)
+  const { full: target, realRoot: realTargetRoot } = await confinedPath(
+    rootFor(request, otherSide(item.from)),
+    item.relPath
+  )
 
   // Lo que se va a pisar va antes a la papelera, con la misma politica que el
   // borrado: una sobrescritura no se puede deshacer, y en una carpeta que se
   // fusiona puede tocar archivos que el usuario no tiene a la vista. Si la
   // papelera falla, el elemento falla entero y no se escribe nada encima.
-  const { overwrites } = await overwritesOf(source, target, item.relPath)
+  const { overwrites } = await overwritesOf(source, target, item.relPath, realTargetRoot)
   for (const overwrite of overwrites) await shell.trashItem(overwrite.target)
 
   await mkdir(dirname(target), { recursive: true })

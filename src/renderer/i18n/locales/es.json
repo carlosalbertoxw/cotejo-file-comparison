@@ -123,7 +123,8 @@
     "ignored_one": "{{count}} ignorada",
     "ignored_other": "{{count}} ignoradas",
     "lossyEncoding": "Uno de los archivos no está en UTF-8 y al leerlo se perdieron caracteres. Se puede comparar, pero ese lado no se edita ni se guarda.",
-    "conflictTitle": "El archivo cambió en el disco",
+    "conflictTitleLeft": "El archivo de la izquierda cambió en el disco",
+    "conflictTitleRight": "El archivo de la derecha cambió en el disco",
     "conflictMessage": "Algo modificó este archivo desde que se abrió. Guardar encima descartaría esos cambios. Recarga para ver lo que hay ahora.",
     "conflictOverwrite": "Guardar de todas formas",
     "inlineSkipped": "Resaltado intra-línea desactivado (archivo muy grande)",
@@ -226,6 +227,9 @@
     "typeConflict": "Uno es archivo y el otro carpeta"
   },
   "opSummary": {
+    "fromRoot": "Desde: {{path}}",
+    "toRoot": "Hacia: {{path}}",
+    "inRoot": "En: {{path}}",
     "fileCount_one": "{{count}} archivo",
     "fileCount_other": "{{count}} archivos",
     "dirCount_one": "{{count}} carpeta",

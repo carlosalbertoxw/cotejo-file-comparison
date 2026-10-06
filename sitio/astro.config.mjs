@@ -23,10 +23,16 @@ export default defineConfig({
   devToolbar: { enabled: false },
 
   // CSP en una <meta> de cada pagina, con los hashes de cada script y estilo
-  // que Astro mete en linea. Pages no deja poner cabeceras, asi que
-  // `frame-ancestors` —que en una <meta> no vale— queda fuera de alcance. Hoy
-  // no entra contenido de nadie, pero es la pagina desde la que se bajan
-  // instalables sin firma: mejor cerrada por si un dia entra algo dinamico.
+  // que Astro mete en linea. Hoy no entra contenido de nadie, pero es la
+  // pagina desde la que se bajan instalables sin firma: mejor cerrada por si
+  // un dia entra algo dinamico.
+  //
+  // Pages no deja poner cabeceras; las pone Cloudflare para todo el dominio,
+  // fuera de este repositorio: HSTS, `X-Frame-Options` y una CSP propia con
+  // `frame-ancestors`, que en una <meta> no vale. El navegador aplica las dos
+  // CSP a la vez, asi que manda la mas estricta: lo que el dominio permita y
+  // esta no —las estadisticas de Cloudflare, por ejemplo— no carga en estas
+  // paginas hasta que se anada aqui.
   security: {
     csp: {
       directives: [

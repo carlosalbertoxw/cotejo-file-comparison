@@ -123,7 +123,8 @@
     "ignored_one": "{{count}} ignorada",
     "ignored_other": "{{count}} ignoradas",
     "lossyEncoding": "Um dos arquivos não está em UTF-8 e caracteres se perderam na leitura. Dá para comparar, mas esse lado não pode ser editado nem salvo.",
-    "conflictTitle": "O arquivo mudou no disco",
+    "conflictTitleLeft": "O arquivo da esquerda mudou no disco",
+    "conflictTitleRight": "O arquivo da direita mudou no disco",
     "conflictMessage": "Algo modificou este arquivo depois que ele foi aberto. Salvar por cima descartaria essas mudanças. Recarregue para ver o que está lá agora.",
     "conflictOverwrite": "Salvar mesmo assim",
     "inlineSkipped": "Realce intralinha desativado (arquivo muito grande)",
@@ -226,6 +227,9 @@
     "typeConflict": "Um é arquivo e o outro é pasta"
   },
   "opSummary": {
+    "fromRoot": "De: {{path}}",
+    "toRoot": "Para: {{path}}",
+    "inRoot": "Em: {{path}}",
     "fileCount_one": "{{count}} arquivo",
     "fileCount_other": "{{count}} arquivos",
     "dirCount_one": "{{count}} pasta",

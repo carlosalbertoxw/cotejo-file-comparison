@@ -647,6 +647,12 @@ input[type='text'] {
   overflow: auto;
 }
 
+/* Las carpetas sobre las que se actua, enteras: una ruta larga parte en
+   cualquier punto antes que desbordar el dialogo. */
+.dialog-body .op-roots {
+  overflow-wrap: anywhere;
+}
+
 /* Rojo solo aqui: en Cotejo significa "esto destruye algo", nunca "esto cambio". */
 .dialog-body .danger {
   color: var(--danger);

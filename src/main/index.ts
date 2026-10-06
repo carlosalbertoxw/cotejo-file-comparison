@@ -179,6 +179,15 @@ if (!app.requestSingleInstanceLock()) {
     if (flushTimer) clearTimeout(flushTimer)
     flushTimer = setTimeout(() => {
       flushTimer = null
+      // En macOS la aplicacion sigue viva con todas las ventanas cerradas, y
+      // «Abrir con» desde Finder no emite `activate`: sin esto las rutas se
+      // quedaban en cola hasta pulsar el Dock. La ventana nueva las recoge en
+      // `ready-to-show`. Antes de `ready` no se crea nada: ahi las recoge la
+      // primera ventana.
+      if (app.isReady() && BrowserWindow.getAllWindows().length === 0) {
+        createWindow()
+        return
+      }
       deliverPaths(pendingPaths.splice(0, pendingPaths.length))
     }, 50)
   })

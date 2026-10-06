@@ -224,8 +224,6 @@ export interface FileOpPlan {
    * no mostraba: ocultos, excluidos por los filtros o enlaces simbolicos.
    */
   unseen: string[]
-  /** Rutas absolutas afectadas, para el re-escaneo incremental. */
-  affected: string[]
 }
 
 export interface FileOpProgress {

@@ -30,6 +30,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fuera de `comprobar` a proposito: el ruleset de main exige `comprobar` sin
+  # excepciones, y un aviso alto sin correccion publicada bloquearia todos los
+  # PR, incluido el que lo esquiva. Aqui sale en rojo y se ve, pero no impide
+  # fusionar; lo que no deja pasar es la release, que repite el audit antes de
+  # empaquetar (release.yml).
+  #
+  # Sin --omit=dev a proposito: Electron, React y CodeMirror estan en
+  # devDependencies porque van dentro del bundle, pero son justo lo que se
+  # distribuye. Basta con el lockfile, sin instalar nada.
+  auditar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Vulnerabilidades conocidas
+        run: npx --yes npm@11.16.0 audit --audit-level=high
+
   comprobar:
     strategy:
       fail-fast: false
@@ -40,6 +63,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nada de este job hace `git push`: el token no tiene por que quedarse
+          # en .git/config al alcance de los scripts de las dependencias.
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -50,13 +77,6 @@ jobs:
       # `allowScripts` ni `strict-allow-scripts` (.npmrc), y ejecutaria el
       # script de instalacion de cualquier dependencia sin preguntar.
       - run: npx --yes npm@11.16.0 ci
-
-      # Sin --omit=dev a proposito: Electron, React y CodeMirror estan en
-      # devDependencies porque van dentro del bundle, pero son justo lo que se
-      # distribuye. Solo en Linux, que la lista de avisos no cambia por sistema.
-      - name: Vulnerabilidades conocidas
-        if: runner.os == 'Linux'
-        run: npm audit --audit-level=high
 
       - run: npm run lint
 

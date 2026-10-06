@@ -213,9 +213,14 @@ comparación de esa fila.
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
 toque—, y **lo que se sobrescribe, también**: antes de copiar o mover encima de un archivo, el que
 había va a la papelera. Toda operación destructiva o que sobrescriba pide confirmación mostrando
-antes el número exacto de archivos, los bytes y la lista, archivo por archivo, de lo que se va a
-sobrescribir; si se copia una carpeta que existe en los dos lados, cada archivo de dentro que
-coincida, no solo el nombre de la carpeta.
+antes las carpetas sobre las que actúa, el número exacto de archivos, los bytes y la lista,
+archivo por archivo, de lo que se va a sobrescribir; si se copia una carpeta que existe en los dos
+lados, cada archivo de dentro que coincida, no solo el nombre de la carpeta.
+
+Mientras se compara, o si se ha escrito otra ruta y la tabla todavía es la de antes, copiar, mover
+y borrar se desactivan: actuarían sobre carpetas que no se están viendo. Tampoco se sale nunca de
+las dos carpetas comparadas a través de un enlace simbólico o una unión de Windows: si una
+subcarpeta del destino apunta a otro sitio, la operación falla en vez de escribir allí.
 
 Una carpeta viaja entera, con lo que la tabla no enseña: los archivos ocultos, los excluidos por
 los filtros y los enlaces simbólicos. Cuando hay algo así dentro de lo seleccionado, el diálogo lo
@@ -296,8 +301,10 @@ Todo eso corre en cada commit y en cada pull request —en Linux y en Windows—
 `.github/workflows/ci.yml`. El workflow de release solo se dispara
 con un tag, así que sin esto un fallo de tipos no aparecía hasta el momento de publicar.
 
-El mismo workflow pasa `npm audit` y falla si alguna dependencia tiene una vulnerabilidad conocida
-de severidad alta o crítica. Aparte, `.github/workflows/codeql.yml` analiza el código y los
+El mismo workflow pasa `npm audit`, en un job aparte (`auditar`), y sale en rojo si alguna
+dependencia tiene una vulnerabilidad conocida de severidad alta o crítica. No es uno de los checks
+que exige `main`: un aviso sin corrección publicada bloquearía todos los pull requests, incluido
+el que lo esquiva. Lo que sí para es la release, que repite el audit antes de empaquetar. Aparte, `.github/workflows/codeql.yml` analiza el código y los
 workflows con CodeQL en cada cambio y una vez a la semana; lo que encuentre aparece en la pestaña
 Security del repositorio. Las actualizaciones de dependencias y de acciones llegan como pull
 requests semanales de Dependabot.
@@ -382,7 +389,13 @@ git tag -a v0.2.0 -m "Cotejo v0.2.0" && git push origin v0.2.0
 ```
 
 Anotado, como todos los anteriores: guarda quién y cuándo lo creó, y `git describe` sin `--tags`
-solo ve los anotados. Rehacerlo después de empujarlo vuelve a lanzar el workflow de release.
+solo ve los anotados.
+
+Un tag `v*` empujado ya no se puede mover ni borrar: lo impide el ruleset «Proteger tags de
+versión» del repositorio, porque las sumas, la atestación y el aviso de actualización dependen de
+que `vX.Y.Z` siempre señale el mismo commit. Por eso hay que revisar la versión de `package.json` y
+el archivo de notas antes de empujarlo. Si sale mal, se publica el número siguiente; solo en un caso
+extremo se desactiva el ruleset un momento desde la configuración del repositorio.
 
 `.github/workflows/release.yml` construye entonces las tres plataformas en paralelo y deja una
 release en borrador con todos los instalables adjuntos. Es la vía práctica para macOS, porque el
@@ -485,7 +498,8 @@ programación dinámica sobre cientos de casos aleatorios.
 
 El proceso principal no confía en lo que le llega por IPC aunque hoy el único que llama sea un
 renderer propio: `src/main/ipc/validate.ts` comprueba la forma de cada mensaje antes de tocar el
-disco, y `safeJoin` impide que una ruta relativa se salga de la carpeta que se está comparando.
+disco, y `safeJoin` impide que una ruta relativa se salga de la carpeta que se está comparando,
+ni por su texto (`..`) ni a través de un enlace.
 
 ## Licencia
 
