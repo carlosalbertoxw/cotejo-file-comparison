@@ -1,6 +1,16 @@
-import { open, writeFile, rename, stat, lstat, unlink, chmod, chown } from 'node:fs/promises'
+import {
+  open,
+  writeFile,
+  rename,
+  stat,
+  lstat,
+  unlink,
+  chmod,
+  chown,
+  type FileHandle
+} from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
-import type { Stats } from 'node:fs'
+import { constants, type Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
 import { ipcError } from '@shared/ipc-errors'
@@ -139,12 +149,9 @@ export interface ExpectedState {
  * Devuelve `false` si el propietario no se puede conservar, que es lo normal
  * al editar un archivo ajeno con permiso de escritura por grupo.
  *
- * En Windows no hace nada: el modo solo refleja el atributo de solo lectura, y
- * los permisos de verdad son ACL que `chmod` no toca.
+ * Solo en POSIX: en Windows no se sustituye el archivo (`writeWithBackup`).
  */
 async function inheritOwnership(temporary: string, original: Stats): Promise<boolean> {
-  if (process.platform === 'win32') return true
-
   const created = await stat(temporary)
   if (created.uid !== original.uid || created.gid !== original.gid) {
     try {
@@ -159,20 +166,89 @@ async function inheritOwnership(temporary: string, original: Stats): Promise<boo
 }
 
 /**
+ * Nombre aleatorio junto al archivo. Se crea siempre con `wx`: dos guardados en
+ * el mismo milisegundo no comparten temporal, y si alguien ha dejado algo con
+ * ese nombre —un enlace plantado en una carpeta compartida, por ejemplo— la
+ * escritura falla en vez de seguirlo y truncar lo que haya al otro lado.
+ */
+function temporaryFor(path: string): string {
+  return join(dirname(path), `.${randomBytes(6).toString('hex')}${TEMP_SUFFIX}`)
+}
+
+/** Vacia el archivo abierto y escribe `data` desde el principio. Cierra siempre. */
+async function replaceContent(handle: FileHandle, data: string): Promise<void> {
+  try {
+    await handle.truncate(0)
+    await handle.writeFile(data, 'utf8')
+    await handle.sync()
+  } finally {
+    await handle.close()
+  }
+}
+
+/**
+ * Cambia el contenido sin cambiar el archivo: mismo objeto en el disco, asi que
+ * conserva todo lo demas —permisos, ACL, atributos, enlaces duros—.
+ *
+ * Con lectura y escritura sin truncar, y no con `w`: en Windows, abrir con `w`
+ * un archivo oculto o de sistema falla con `EPERM`, porque Node pide crearlo de
+ * nuevo y Windows no deja hacerlo sin repetir esos atributos. `O_CREAT` cubre
+ * el enlace simbolico roto, que no tiene archivo al otro lado: lo crea, como
+ * hacia `w`. Una sola apertura, y todo lo demas sobre el descriptor; abrir y,
+ * si falla, volver a escribir por la ruta dejaba un hueco entre medias.
+ */
+async function overwriteInPlace(path: string, data: string): Promise<void> {
+  await replaceContent(await open(path, constants.O_RDWR | constants.O_CREAT), data)
+}
+
+/**
+ * Guardar en Windows un archivo que ya existe.
+ *
+ * Sustituirlo con un `rename`, como en POSIX, deja en su sitio el temporal, que
+ * nace con la ACL heredada de la carpeta y sin los atributos del original: un
+ * archivo que el usuario restringio a si mismo pasaba a ser legible para todos
+ * los que leen esa carpeta, y uno oculto dejaba de estarlo. Windows no tiene
+ * un `chmod` que lo arregle despues, asi que se escribe en el propio archivo.
+ *
+ * Se pierde la atomicidad, y para no perder tambien el trabajo el contenido
+ * nuevo se escribe antes entero en un temporal. Si el archivo no se puede
+ * abrir —solo lectura, bloqueado por otro programa— no se ha tocado nada y el
+ * temporal sobra. Si falla a mitad de escribir, el temporal se queda: es la
+ * copia completa de lo que se queria guardar, y «Acerca de» explica que hacer
+ * con uno suelto.
+ */
+async function writeWithBackup(path: string, data: string): Promise<void> {
+  const backup = temporaryFor(path)
+  await writeFile(backup, data, { encoding: 'utf8', flag: 'wx' })
+  let handle: FileHandle
+  try {
+    handle = await open(path, 'r+')
+  } catch (error) {
+    await unlink(backup).catch(() => undefined)
+    throw error
+  }
+  await replaceContent(handle, data)
+  // Lo guardado ya esta en el disco; un temporal que no se deja borrar no lo
+  // convierte en un fallo.
+  await unlink(backup).catch(() => undefined)
+}
+
+/**
  * Escribe el archivo.
  *
- * Tres garantias que antes no habia:
+ * Tres garantias:
  *
  * 1. Si `expected` no cuadra con lo que hay en el disco, no se escribe nada.
  *    El archivo cambio desde que se abrio y guardar encima borraria el trabajo
  *    de quien lo tocara. El renderer decide si insistir.
- * 2. La escritura pasa por un temporal en la misma carpeta y un `rename`
- *    encima. `writeFile` trunca antes de escribir, asi que un corte a mitad
- *    dejaba el archivo a medias; con el rename, o esta el contenido viejo o
- *    esta el nuevo.
+ * 2. Un corte a mitad no deja el archivo a medias sin remedio. En POSIX la
+ *    escritura pasa por un temporal en la misma carpeta y un `rename` encima:
+ *    o esta el contenido viejo o esta el nuevo. En Windows se escribe en el
+ *    sitio, con el contenido nuevo guardado antes en un temporal
+ *    (`writeWithBackup`).
  * 3. El archivo que queda conserva el propietario y los permisos del que
- *    habia (`inheritOwnership`), y los enlaces duros siguen compartiendo
- *    contenido.
+ *    habia (`inheritOwnership` en POSIX; en Windows, la ACL y los atributos),
+ *    y los enlaces duros siguen compartiendo contenido.
  */
 export async function writeTextFile(
   path: string,
@@ -201,13 +277,11 @@ export async function writeTextFile(
   // contenido nuevo y a los demas con el viejo, sin que nada lo avise.
   const original = await lstat(path).catch(() => null)
   if (original && (original.isSymbolicLink() || original.nlink > 1)) {
-    await writeFile(path, data, 'utf8')
+    await overwriteInPlace(path, data)
+  } else if (original && process.platform === 'win32') {
+    await writeWithBackup(path, data)
   } else {
-    // Nombre aleatorio y creacion exclusiva (`wx`): dos guardados en el mismo
-    // milisegundo no comparten temporal, y si alguien ha dejado algo con ese
-    // nombre —un enlace plantado en una carpeta compartida, por ejemplo— la
-    // escritura falla en vez de seguirlo y truncar lo que haya al otro lado.
-    const temporary = join(dirname(path), `.${randomBytes(6).toString('hex')}${TEMP_SUFFIX}`)
+    const temporary = temporaryFor(path)
     let created = false
     try {
       await writeFile(temporary, data, { encoding: 'utf8', flag: 'wx' })
@@ -217,7 +291,8 @@ export async function writeTextFile(
         // quedaria a quien guarda. Se pierde la atomicidad, que es lo menos
         // malo de las dos cosas.
         await unlink(temporary)
-        await writeFile(path, data, 'utf8')
+        created = false
+        await overwriteInPlace(path, data)
       } else {
         await rename(temporary, path)
       }

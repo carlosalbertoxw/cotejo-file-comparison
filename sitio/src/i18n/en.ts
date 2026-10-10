@@ -109,7 +109,7 @@ export const en: Catalog = {
     },
     content: {
       name: 'Content',
-      what: 'sha256 hash read as a stream',
+      what: 'Byte by byte, stopping at the first difference',
       when: 'When the date cannot be trusted'
     },
     ops: {

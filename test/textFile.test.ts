@@ -1,5 +1,17 @@
-import { chmod, link, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import {
+  chmod,
+  link,
+  lstat,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile
+} from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { tmpdir, userInfo } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parseIpcError } from '../src/shared/ipc-errors'
@@ -265,8 +277,57 @@ describe('writeTextFile: el temporal', () => {
 
 describe('writeTextFile: lo que el archivo era además de su contenido', () => {
   // En Windows el modo solo refleja el atributo de solo lectura; los permisos
-  // de verdad son ACL, que esto no toca.
+  // de verdad son ACL, y se comprueban aparte con las herramientas del sistema.
   const posix = process.platform !== 'win32'
+  const windows = process.platform === 'win32'
+
+  /** Las letras de atributo que `attrib` pone delante de la ruta. */
+  function attributes(path: string): string {
+    const line = execFileSync('attrib', [path], { encoding: 'utf8' })
+    return line.slice(0, line.indexOf(path))
+  }
+
+  it.runIf(windows)('un archivo oculto sigue oculto después de guardarlo', async () => {
+    const path = join(dir, '.env')
+    await writeFile(path, 'CLAVE=vieja\n', 'utf8')
+    execFileSync('attrib', ['+h', path])
+
+    await writeTextFile(path, 'CLAVE=nueva\n', 'lf', 'utf8')
+
+    expect(await readFile(path, 'utf8')).toBe('CLAVE=nueva\n')
+    expect(attributes(path)).toContain('H')
+    expect(await readdir(dir)).toEqual(['.env'])
+  })
+
+  it.runIf(windows)('un archivo restringido no hereda la ACL de la carpeta', async () => {
+    const path = join(dir, 'privado.txt')
+    await writeFile(path, 'viejo\n', 'utf8')
+    // Sin herencia y con acceso solo para quien ejecuta la prueba.
+    execFileSync('icacls', [path, '/inheritance:r', '/grant:r', `${userInfo().username}:(F)`])
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect(await readFile(path, 'utf8')).toBe('nuevo\n')
+    // `(I)` marca las entradas heredadas: no tiene que aparecer ninguna.
+    expect(execFileSync('icacls', [path], { encoding: 'utf8' })).not.toContain('(I)')
+  })
+
+  it.runIf(windows)('un archivo de solo lectura no se guarda ni deja temporales', async () => {
+    const path = join(dir, 'fijo.txt')
+    await writeFile(path, 'viejo\n', 'utf8')
+    execFileSync('attrib', ['+r', path])
+
+    try {
+      await expect(writeTextFile(path, 'nuevo\n', 'lf', 'utf8')).rejects.toMatchObject({
+        code: 'EPERM'
+      })
+      expect(await readFile(path, 'utf8')).toBe('viejo\n')
+      expect(await readdir(dir)).toEqual(['fijo.txt'])
+    } finally {
+      // Si no, `rm` del afterEach no puede borrarlo.
+      execFileSync('attrib', ['-r', path])
+    }
+  })
 
   it.runIf(posix)('un script sigue siendo ejecutable después de guardarlo', async () => {
     const path = join(dir, 'deploy.sh')
@@ -299,5 +360,29 @@ describe('writeTextFile: lo que el archivo era además de su contenido', () => {
     expect(await readFile(other, 'utf8')).toBe('nuevo\n')
     expect((await stat(path)).nlink).toBe(2)
     expect((await readdir(dir)).sort()).toEqual(['a.txt', 'b.txt'])
+  })
+
+  // Crear enlaces simbolicos en Windows exige privilegios que el CI no tiene.
+  it.runIf(posix)('un enlace simbólico sigue siéndolo y se escribe su destino', async () => {
+    const target = join(dir, 'destino.txt')
+    const path = join(dir, 'enlace.txt')
+    await writeFile(target, 'contenido viejo y largo\n', 'utf8')
+    await symlink(target, path)
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect((await lstat(path)).isSymbolicLink()).toBe(true)
+    expect(await readFile(target, 'utf8')).toBe('nuevo\n')
+  })
+
+  it.runIf(posix)('un enlace simbólico roto crea el archivo al que apunta', async () => {
+    const target = join(dir, 'aun-no-existe.txt')
+    const path = join(dir, 'enlace.txt')
+    await symlink(target, path)
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect((await lstat(path)).isSymbolicLink()).toBe(true)
+    expect(await readFile(target, 'utf8')).toBe('nuevo\n')
   })
 })

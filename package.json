@@ -33,7 +33,6 @@
     "package:mac": "npm run dist:prepare && electron-builder --mac --config electron-builder.yml --publish never"
   },
   "dependencies": {
-    "@electron-toolkit/utils": "^4.0.0",
     "picomatch": "^4.0.7"
   },
   "devDependencies": {
@@ -75,5 +74,9 @@
     "esbuild": true,
     "fsevents": true,
     "electron-winstaller": false
+  },
+  "// overrides": "global-agent lo usa el @electron/get 3 que trae electron-builder, solo para el proxy al bajar Electron (ELECTRON_GET_USE_PROXY) y solo su bootstrap(). La 3 arrastra roarr -> sprintf-js (GHSA-hp3w-g68c-fv3c) y ninguna version de electron-builder la ha dejado; la 4 ya no depende de ellos y conserva bootstrap(). Quitar cuando electron-builder pase a @electron/get 4 o posterior.",
+  "overrides": {
+    "global-agent": "^4.1.3"
   }
 }

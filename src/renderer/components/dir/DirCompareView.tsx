@@ -78,7 +78,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     if (!tab?.leftPath || !tab?.rightPath) return
 
     // La comparacion anterior se descarta al llegar, pero si no se cancela
-    // sigue leyendo disco y hasheando hasta el final, compitiendo por la E/S
+    // sigue leyendo disco y comparando hasta el final, compitiendo por la E/S
     // con la que si importa.
     const previous = requestIdRef.current
     if (previous) void window.api.cancelCompare(previous)

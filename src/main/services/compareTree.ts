@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { CompareMode, DirNode, EntryStat, NodeStatus } from '@shared/types'
 import type { ScanIndex } from './scanner'
-import { hashFile, mapWithConcurrency } from './hasher'
+import { ComparisonCancelled, mapWithConcurrency, sameContent } from './contentCompare'
 
 /**
  * Tolerancia al comparar fechas en modo rapido. FAT32 guarda la fecha con
@@ -60,8 +60,8 @@ function compareStats(left: EntryStat, right: EntryStat, mode: CompareMode): Nod
 /**
  * Fusiona los dos indices planos en un unico arbol con el estado de cada entrada.
  *
- * En modo `content` los archivos con el mismo tamano se hashean en paralelo
- * despues de construir el arbol, y su estado se corrige en sitio.
+ * En modo `content` los archivos con el mismo tamano se comparan byte a byte
+ * en paralelo despues de construir el arbol, y su estado se corrige en sitio.
  */
 export async function compareTrees(
   leftRoot: string,
@@ -142,7 +142,7 @@ export async function compareTrees(
     parent?.children?.push(node)
   }
 
-  // 2. Modo contenido: hashear los pares con mismo tamano y corregir su estado.
+  // 2. Modo contenido: comparar los pares con mismo tamano y corregir su estado.
   if (mode === 'content') {
     const candidates: DirNode[] = []
     for (const node of nodes.values()) {
@@ -156,12 +156,16 @@ export async function compareTrees(
     await mapWithConcurrency(candidates, async (node) => {
       if (callbacks.isCancelled?.()) return
       try {
-        const [leftHash, rightHash] = await Promise.all([
-          hashFile(join(leftRoot, node.relPath)),
-          hashFile(join(rightRoot, node.relPath))
-        ])
-        if (leftHash !== rightHash) node.status = 'different'
+        const equal = await sameContent(
+          join(leftRoot, node.relPath),
+          join(rightRoot, node.relPath),
+          () => callbacks.isCancelled?.() ?? false
+        )
+        if (!equal) node.status = 'different'
       } catch (error) {
+        // Cancelado a mitad del par: se queda como los que no se llegaron a
+        // leer, sin contarlo como fallo.
+        if (error instanceof ComparisonCancelled) return
         errors.push({ relPath: node.relPath, message: (error as Error).message })
         node.status = 'different'
       } finally {

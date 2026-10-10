@@ -110,7 +110,7 @@ export const pt: Catalog = {
     },
     content: {
       name: 'Conteúdo',
-      what: 'Hash sha256 lido em streaming',
+      what: 'Byte a byte, parando na primeira diferença',
       when: 'Quando não dá para confiar na data'
     },
     ops: {

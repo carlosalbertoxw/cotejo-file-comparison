@@ -1,7 +1,6 @@
 import { app, dialog, nativeTheme, session, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { IPC } from '@shared/ipc-channels'
 import { registerFsHandlers } from './ipc/fs'
 import { registerDirCompareHandlers } from './ipc/dirCompare'
@@ -10,12 +9,14 @@ import { clearCloseGuard, closeGuardFor, registerAppHandlers } from './ipc/app'
 import { rendererUrl } from './rendererUrl'
 import { pathsFromArgv } from './argv'
 import { initLog, logError } from './services/log'
+import { isDev } from './env'
+import { guardWindowShortcuts } from './shortcuts'
 
 /**
  * En desarrollo argv incluye el ejecutable de Electron y el directorio del
  * proyecto, asi que hay que saltarselos.
  */
-const ARGV_SKIP = is.dev ? 2 : 1
+const ARGV_SKIP = isDev ? 2 : 1
 
 /**
  * macOS no pasa las rutas por argv: entrega un `open-file` por cada archivo,
@@ -43,7 +44,7 @@ function deliverPaths(paths: string[]): void {
  * bundle .app en macOS y la entrada .desktop en Linux.
  */
 function devIcon(): { icon: string } | undefined {
-  if (!is.dev) return undefined
+  if (!isDev) return undefined
   const icon = join(__dirname, '../../build/icon.png')
   return existsSync(icon) ? { icon } : undefined
 }
@@ -69,7 +70,12 @@ function createWindow(): BrowserWindow {
       // ipcRenderer y webUtils, que es exactamente lo que usa.
       sandbox: true,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // Desde las herramientas de desarrollo, `window.api` lee y escribe
+      // cualquier archivo con dos lineas en la consola. Quien las abre ya es el
+      // usuario, pero tambien es quien pega ahi lo que le dicen en un foro. El
+      // menu por defecto las sigue ofreciendo; sin esto, no abre nada.
+      devTools: isDev
     }
   })
 
@@ -193,7 +199,11 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   void app.whenReady().then(() => {
-    electronApp.setAppUserModelId('com.carlos.cotejo')
+    // Agrupa la ventana y las notificaciones en la barra de tareas de Windows.
+    // Sin empaquetar se usa el ejecutable de Electron, que es el que corre.
+    if (process.platform === 'win32') {
+      app.setAppUserModelId(isDev ? process.execPath : 'com.carlos.cotejo')
+    }
 
     initLog(app.getPath('logs'))
     // Un renderer que se cae —casi siempre por memoria, con archivos enormes—
@@ -215,9 +225,7 @@ if (!app.requestSingleInstanceLock()) {
     )
     session.defaultSession.setPermissionCheckHandler(() => false)
 
-    app.on('browser-window-created', (_, window) => {
-      optimizer.watchWindowShortcuts(window)
-    })
+    app.on('browser-window-created', (_, window) => guardWindowShortcuts(window))
 
     registerFsHandlers()
     registerDirCompareHandlers()

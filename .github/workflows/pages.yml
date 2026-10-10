@@ -82,6 +82,13 @@ jobs:
       # de descargas, y un script de instalacion no aprobado no debe correr.
       - run: npx --yes npm@11.16.0 ci
 
+      # El mismo umbral que sitio.yml en los PR y release.yml en los
+      # instalables. Aqui hacia falta aparte: un aviso publicado despues del
+      # ultimo PR del sitio no lo veia nadie, y la pagina de descargas se seguia
+      # construyendo con el paquete afectado.
+      - name: Vulnerabilidades conocidas
+        run: npm audit --audit-level=high
+
       - run: npm run build
         env:
           # Evita el limite de peticiones anonimas a la API de GitHub, que se
