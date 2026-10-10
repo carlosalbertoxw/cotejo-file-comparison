@@ -177,9 +177,12 @@ comparación tampoco empieza hasta entonces.
 - **Si el archivo cambió en el disco** desde que se abrió, no se escribe nada: Cotejo lo dice y
   ofrece guardar de todas formas o recargar. Guardar a ciegas borraría el trabajo de quien lo
   tocara mientras tanto.
-- La escritura pasa por un archivo temporal y un cambio de nombre encima, así que **un corte a
-  mitad no deja el archivo a medias**: o está el contenido viejo, o está el nuevo. Los enlaces
-  simbólicos se escriben en su sitio, para no sustituirlos por un archivo normal.
+- **Un corte a mitad no hace perder lo que se guardaba.** En Linux y macOS la escritura pasa por
+  un archivo temporal y un cambio de nombre encima: o está el contenido viejo, o está el nuevo.
+  En Windows se escribe en el propio archivo, porque sustituirlo le quitaría los permisos
+  propios (la ACL) y el atributo de oculto; antes se deja el contenido nuevo entero en un
+  temporal, que se borra al terminar. Los enlaces simbólicos y los archivos con varios enlaces
+  duros se escriben en su sitio en todos los sistemas, para no romperlos.
 - **Un archivo que no sea UTF-8 válido se abre en solo lectura.** Se puede comparar, pero no
   editar: al decodificarlo se pierden los bytes que no encajan, y guardarlo escribiría rombos de
   sustitución donde había eñes. Es el caso de los `.txt` heredados en Windows-1252.
@@ -195,7 +198,7 @@ Tres modos, de más rápido a más fiable:
 | --- | --- | --- |
 | Rápido | Tamaño + fecha (2 s de tolerancia) | Uso diario |
 | Solo tamaño | Solo el tamaño | Barridos muy grandes |
-| Contenido | Hash sha256 en streaming | Cuando no te puedes fiar de la fecha |
+| Contenido | Byte a byte, parando en la primera diferencia | Cuando no te puedes fiar de la fecha |
 
 Los dos árboles se muestran enfrentados, cada uno con sus nombres, tamaños y fechas, y alineados
 fila a fila. Donde una entrada existe solo en un lado, el otro deja el mismo hueco rayado que una
@@ -240,7 +243,7 @@ La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equ
 | --- | --- |
 | Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
 | La copia descomprimida del `.exe` portable o del AppImage | Una carpeta temporal del sistema, que desaparece al cerrar. Solo sale si se está usando una de las versiones sin instalar. |
-| El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), hasta que lo sustituye. Si aparece uno suelto es que el guardado se cortó a mitad, y se puede borrar. |
+| El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), mientras dura el guardado. Si aparece uno suelto es que el guardado se cortó a mitad: tiene entero lo que se estaba guardando, así que si el archivo quedó incompleto se puede recuperar de ahí; si no, se puede borrar. |
 | El registro de errores, `cotejo.log` | `logs` dentro de la carpeta de datos en Windows y Linux, `~/Library/Logs/cotejo` en macOS. Tiene botón para abrirla. |
 
 Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas cuatro rutas
@@ -478,7 +481,7 @@ src/
   shared/      Tipos, canales IPC, códigos de error, enlaces y rutas: lo que comparten los tres procesos
   main/
     ipc/       Adaptadores finos sobre los servicios, con la validación de lo que cruza el puente
-    services/  Todo el acceso a disco: escaneo, hashing, lectura/escritura, papelera, registro de errores
+    services/  Todo el acceso a disco: escaneo, comparación de contenido, lectura/escritura, papelera, registro de errores
     argv.ts    Rutas recibidas por la línea de comandos, resueltas contra la carpeta desde la que se lanzó
   preload/     contextBridge -> window.api (contextIsolation y sandbox activados)
   renderer/

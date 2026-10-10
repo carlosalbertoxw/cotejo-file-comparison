@@ -110,7 +110,7 @@ export const fr: Catalog = {
     },
     content: {
       name: 'Contenu',
-      what: 'Hachage sha256 lu en flux',
+      what: 'Octet par octet, en s’arrêtant à la première différence',
       when: 'Quand on ne peut pas se fier à la date'
     },
     ops: {

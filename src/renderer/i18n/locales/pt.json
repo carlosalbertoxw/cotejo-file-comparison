@@ -64,7 +64,7 @@
       "portable": "Portátil descompactado",
       "portableHint": "Cópia temporária do executável portátil; removida ao fechar.",
       "save": "Ao salvar",
-      "saveHint": "Um arquivo temporário “.<código>{{suffix}}” é gravado ao lado do arquivo e depois o substitui.",
+      "saveHint": "Um arquivo temporário “.<código>{{suffix}}” com o que está sendo salvo é gravado antes ao lado do arquivo e desaparece ao terminar.",
       "show": "Mostrar pasta"
     }
   },
@@ -161,10 +161,10 @@
     "mode": "Modo",
     "modeQuick": "Rápido (tamanho + data)",
     "modeSize": "Só tamanho",
-    "modeContent": "Conteúdo (hash)",
+    "modeContent": "Conteúdo",
     "modeHelpQuick": "Compara tamanho e data de modificação. Rápido, mas confia na data.",
     "modeHelpSize": "Compara apenas o tamanho. O mais rápido e o menos confiável.",
-    "modeHelpContent": "Lê e faz o hash dos dois arquivos. O único modo que nunca erra.",
+    "modeHelpContent": "Lê os dois arquivos e os compara byte a byte. O único modo que nunca erra.",
     "onlyDifferences": "Só diferenças",
     "filters": "Filtros",
     "copyRight": "Copiar ▶",

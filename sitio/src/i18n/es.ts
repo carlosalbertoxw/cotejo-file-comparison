@@ -117,7 +117,7 @@ export const es = {
     },
     content: {
       name: 'Contenido',
-      what: 'Hash sha256 leído en streaming',
+      what: 'Byte a byte, parando en la primera diferencia',
       when: 'Cuando no te puedes fiar de la fecha'
     },
     ops: {

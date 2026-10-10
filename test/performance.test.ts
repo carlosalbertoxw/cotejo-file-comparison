@@ -14,10 +14,15 @@
  * Los objetivos estan en el README (Desarrollo → Rendimiento).
  */
 
-import { describe, expect, it } from 'vitest'
-import { DEFAULT_DIFF_OPTIONS, type EntryStat } from '@shared/types'
+import { describe, expect, it, vi } from 'vitest'
+import { DEFAULT_DIFF_OPTIONS, type EntryStat, type FileOpItem } from '@shared/types'
 import { computeDiff } from '@renderer/diff/align'
 import { compareTrees } from '../src/main/services/compareTree'
+
+// `fileOpsService` importa `shell`, que fuera de Electron no existe; aqui no se usa.
+vi.mock('electron', () => ({ shell: {} }))
+
+const { withoutNested } = await import('../src/main/services/fileOpsService')
 
 async function timed<T>(run: () => Promise<T> | T): Promise<number> {
   const start = performance.now()
@@ -71,5 +76,24 @@ describe('presupuestos de rendimiento', () => {
     })
     expect(rows).toBeGreaterThanOrEqual(50_000)
     expect(elapsed).toBeLessThan(5_000)
+  }, 30_000)
+
+  it('descarta lo anidado de 100 000 elementos con 10 000 carpetas en menos de 2 s', async () => {
+    // El tope de elementos de una operacion (`MAX_ITEMS` en validate.ts), con
+    // una carpeta seleccionada de cada diez: recorrer las carpetas por cada
+    // elemento eran mil millones de comparaciones.
+    const items: FileOpItem[] = []
+    for (let d = 0; d < 10_000; d++) {
+      items.push({ relPath: `d${d}`, isDir: true, from: 'left' })
+      for (let f = 0; f < 9; f++) {
+        items.push({ relPath: `d${d}/s/f${f}.txt`, isDir: false, from: 'left' })
+      }
+    }
+    let kept = 0
+    const elapsed = await timed(() => {
+      kept = withoutNested(items).length
+    })
+    expect(kept).toBe(10_000)
+    expect(elapsed).toBeLessThan(2_000)
   }, 30_000)
 })

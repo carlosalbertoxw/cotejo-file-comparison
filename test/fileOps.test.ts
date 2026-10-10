@@ -40,7 +40,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   }
 })
 
-const { planFileOp, runFileOp, withoutNested } = await import(
+const { hasAncestorIn, planFileOp, runFileOp, withoutNested } = await import(
   '../src/main/services/fileOpsService'
 )
 
@@ -240,6 +240,27 @@ describe('withoutNested', () => {
       'docs-viejo/b.txt',
       'c.txt'
     ])
+  })
+
+  it('quita lo que cuelga varios niveles por debajo', () => {
+    const items = [folder('a'), file('a/b/c/d.txt'), folder('a/b'), file('ab/e.txt')]
+    expect(withoutNested(items).map((item) => item.relPath)).toEqual(['a', 'ab/e.txt'])
+  })
+})
+
+describe('hasAncestorIn', () => {
+  const dirs = new Set(['docs', 'src/main'])
+
+  it('encuentra el ancestro a cualquier profundidad', () => {
+    expect(hasAncestorIn('docs/a.txt', dirs)).toBe(true)
+    expect(hasAncestorIn('src/main/ipc/fs.ts', dirs)).toBe(true)
+  })
+
+  it('no confunde un prefijo del nombre con una carpeta, ni una ruta consigo misma', () => {
+    expect(hasAncestorIn('docs-viejo/a.txt', dirs)).toBe(false)
+    expect(hasAncestorIn('src/mainly.ts', dirs)).toBe(false)
+    expect(hasAncestorIn('docs', dirs)).toBe(false)
+    expect(hasAncestorIn('src', dirs)).toBe(false)
   })
 })
 

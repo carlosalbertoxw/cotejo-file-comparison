@@ -105,8 +105,22 @@ async function confinedPath(
  * mas que la operacion nunca procesa.
  */
 export function withoutNested<T extends Pick<FileOpItem, 'relPath' | 'isDir'>>(items: T[]): T[] {
-  const dirs = items.filter((item) => item.isDir).map((item) => item.relPath)
-  return items.filter((item) => !dirs.some((dir) => item.relPath.startsWith(`${dir}/`)))
+  const dirs = new Set(items.filter((item) => item.isDir).map((item) => item.relPath))
+  return items.filter((item) => !hasAncestorIn(item.relPath, dirs))
+}
+
+/**
+ * Si alguna carpeta que contiene a `relPath` esta en `dirs`.
+ *
+ * Se preguntan los ancestros al conjunto, uno por nivel, en vez de recorrer el
+ * conjunto por cada elemento: con miles de carpetas seleccionadas eso era
+ * cuadratico, y corre en el proceso principal, que es el que pinta la ventana.
+ */
+export function hasAncestorIn(relPath: string, dirs: ReadonlySet<string>): boolean {
+  for (let slash = relPath.indexOf('/'); slash !== -1; slash = relPath.indexOf('/', slash + 1)) {
+    if (dirs.has(relPath.slice(0, slash))) return true
+  }
+  return false
 }
 
 /** Lo que hay debajo de un elemento de la operacion, visto sin seguir enlaces. */
@@ -334,7 +348,7 @@ export async function runFileOp(
       break
     }
     // Si ya se proceso una carpeta ancestro, este elemento ya viajo con ella.
-    if ([...done].some((prefix) => item.relPath.startsWith(`${prefix}/`))) continue
+    if (hasAncestorIn(item.relPath, done)) continue
 
     try {
       await applyOne(request, item, request.kind)

@@ -1,6 +1,6 @@
 # 0004. Todo lo que se borra o se sobrescribe pasa por la papelera
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada; el guardado en Windows lo cambia [0006](0006-guardar-en-windows-en-el-sitio.md)
 - **Fecha:** 2026-10-04
 
 ## Contexto
@@ -18,7 +18,8 @@ perder un archivo que el usuario no pidió perder (SECURITY.md).
 - Antes de ejecutar nada, un plan dice exactamente qué se va a sobrescribir y qué viaja sin verse en
   la tabla, y eso es lo que muestra el diálogo de confirmación.
 - Guardar un archivo de texto es atómico (temporal y `rename`), conserva propietario y permisos, y
-  se niega si el archivo cambió en el disco desde que se abrió.
+  se niega si el archivo cambió en el disco desde que se abrió. En Windows, ver
+  [0006](0006-guardar-en-windows-en-el-sitio.md).
 
 ## Alternativas descartadas
 

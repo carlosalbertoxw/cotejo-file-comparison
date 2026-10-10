@@ -64,7 +64,7 @@
       "portable": "Portable extracted to",
       "portableHint": "Temporary copy of the portable executable; removed on exit.",
       "save": "When saving",
-      "saveHint": "A temporary “.<code>{{suffix}}” file is written next to the file and then replaces it.",
+      "saveHint": "A temporary “.<code>{{suffix}}” file with what is being saved is written next to the file first, and disappears when the save finishes.",
       "show": "Show folder"
     }
   },
@@ -161,10 +161,10 @@
     "mode": "Mode",
     "modeQuick": "Quick (size + date)",
     "modeSize": "Size only",
-    "modeContent": "Content (hash)",
+    "modeContent": "Content",
     "modeHelpQuick": "Compares size and modification date. Fast, but it trusts the date.",
     "modeHelpSize": "Compares size only. The fastest and the least reliable.",
-    "modeHelpContent": "Reads and hashes both files. The only mode that is never wrong.",
+    "modeHelpContent": "Reads both files and compares them byte by byte. The only mode that is never wrong.",
     "onlyDifferences": "Differences only",
     "filters": "Filters",
     "copyRight": "Copy ▶",
