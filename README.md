@@ -9,14 +9,14 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
-## Novedades de la 0.7.0
+## Novedades de la 0.8.0
 
-Cerrar una pestaña, salir o cambiar de archivo con **cambios sin guardar pregunta antes** en vez de
-perderlos. Lo que se sobrescribe al copiar o mover **va a la papelera**, y el diálogo dice archivo
-por archivo qué se va a pisar, incluidos los que la tabla no muestra. Los fallos quedan anotados
-en un **registro de errores** local para poder informar de ellos. Pasa a Electron 44, que **deja
-fuera macOS 12**: en un Mac hace falta macOS 13 Ventura o posterior. Están los detalles en
-[las notas de la versión](changelog/v0.7.0.md).
+Copiar, mover y borrar **dicen en qué carpetas actúan**, con la ruta completa en el diálogo, y se
+desactivan mientras se compara o si la tabla es de una comparación anterior. **Guardar en Windows
+respeta los permisos y los atributos** del archivo: uno restringido ya no pasa a tener los de la
+carpeta, y uno oculto sigue oculto. La comparación de carpetas **por contenido** deja de leer en
+la primera diferencia y se puede cancelar a mitad de un archivo grande. Están los detalles en
+[las notas de la versión](changelog/v0.8.0.md).
 
 ## Instalación
 
@@ -57,7 +57,7 @@ alguno de ellos afecta a la versión que tienes.
 La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
 
 ```bash
-gh attestation verify Cotejo.Setup.0.7.0.exe --repo carlosalbertoxw/cotejo-file-comparison
+gh attestation verify Cotejo.Setup.0.8.0.exe --repo carlosalbertoxw/cotejo-file-comparison
 ```
 
 Solo la huella, desde la carpeta de la descarga. En Linux:
@@ -75,7 +75,7 @@ grep arm64.dmg SHA256SUMS.txt | shasum -a 256 -c
 Y en Windows, comparando a ojo con la línea del archivo en `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash Cotejo.Setup.0.7.0.exe
+Get-FileHash Cotejo.Setup.0.8.0.exe
 ```
 
 ## Uso
