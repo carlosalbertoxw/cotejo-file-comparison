@@ -22,8 +22,8 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@types/node": "^22.20.5",
-    "astro": "^7.3.5",
-    "typescript": "^5.9.0"
+    "astro": "^7.3.7",
+    "typescript": "^6.0.3"
   },
   "// allowScripts": "Las mismas reglas que la aplicacion (ver package.json de la raiz): con strict-allow-scripts en .npmrc, una dependencia con script de instalacion que no este aqui hace fallar npm ci. Importa igual aunque el job de build no tenga permisos de escritura: lo que construye es la pagina de descargas, y un script comprometido podria cambiar sus enlaces. esbuild instala su binario; fsevents se compila en macOS para vigilar archivos con astro dev.",
   "allowScripts": {
