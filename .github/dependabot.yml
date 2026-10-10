@@ -33,6 +33,10 @@ updates:
       # la 6, aun en beta. Quitar al subir a electron-vite 6.
       - dependency-name: vite
         versions: ['>=8']
+      # La 6 del plugin de React pide Vite 8, que esta bloqueado por la misma
+      # razon: `npm ci` falla con ERESOLVE. Quitar junto con la de vite.
+      - dependency-name: '@vitejs/plugin-react'
+        versions: ['>=6']
 
   # El sitio es un proyecto npm aparte, con su propio lockfile.
   - package-ecosystem: npm
