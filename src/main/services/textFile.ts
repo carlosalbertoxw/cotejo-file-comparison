@@ -10,7 +10,7 @@ import {
   type FileHandle
 } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
-import type { Stats } from 'node:fs'
+import { constants, type Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Eol, TextFilePayload } from '@shared/types'
 import { ipcError } from '@shared/ipc-errors'
@@ -190,21 +190,15 @@ async function replaceContent(handle: FileHandle, data: string): Promise<void> {
  * Cambia el contenido sin cambiar el archivo: mismo objeto en el disco, asi que
  * conserva todo lo demas —permisos, ACL, atributos, enlaces duros—.
  *
- * Con `r+` y no con `w`: en Windows, abrir con `w` un archivo oculto o de
- * sistema falla con `EPERM`, porque Node pide crearlo de nuevo y Windows no
- * deja hacerlo sin repetir esos atributos.
+ * Con lectura y escritura sin truncar, y no con `w`: en Windows, abrir con `w`
+ * un archivo oculto o de sistema falla con `EPERM`, porque Node pide crearlo de
+ * nuevo y Windows no deja hacerlo sin repetir esos atributos. `O_CREAT` cubre
+ * el enlace simbolico roto, que no tiene archivo al otro lado: lo crea, como
+ * hacia `w`. Una sola apertura, y todo lo demas sobre el descriptor; abrir y,
+ * si falla, volver a escribir por la ruta dejaba un hueco entre medias.
  */
 async function overwriteInPlace(path: string, data: string): Promise<void> {
-  let handle: FileHandle
-  try {
-    handle = await open(path, 'r+')
-  } catch (error) {
-    // Un enlace simbolico roto: no hay archivo que abrir, y escribir lo crea.
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-    await writeFile(path, data, 'utf8')
-    return
-  }
-  await replaceContent(handle, data)
+  await replaceContent(await open(path, constants.O_RDWR | constants.O_CREAT), data)
 }
 
 /**

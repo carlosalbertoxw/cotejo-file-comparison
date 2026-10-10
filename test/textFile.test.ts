@@ -1,4 +1,15 @@
-import { chmod, link, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  link,
+  lstat,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  symlink,
+  writeFile
+} from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { tmpdir, userInfo } from 'node:os'
 import { join } from 'node:path'
@@ -349,5 +360,29 @@ describe('writeTextFile: lo que el archivo era además de su contenido', () => {
     expect(await readFile(other, 'utf8')).toBe('nuevo\n')
     expect((await stat(path)).nlink).toBe(2)
     expect((await readdir(dir)).sort()).toEqual(['a.txt', 'b.txt'])
+  })
+
+  // Crear enlaces simbolicos en Windows exige privilegios que el CI no tiene.
+  it.runIf(posix)('un enlace simbólico sigue siéndolo y se escribe su destino', async () => {
+    const target = join(dir, 'destino.txt')
+    const path = join(dir, 'enlace.txt')
+    await writeFile(target, 'contenido viejo y largo\n', 'utf8')
+    await symlink(target, path)
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect((await lstat(path)).isSymbolicLink()).toBe(true)
+    expect(await readFile(target, 'utf8')).toBe('nuevo\n')
+  })
+
+  it.runIf(posix)('un enlace simbólico roto crea el archivo al que apunta', async () => {
+    const target = join(dir, 'aun-no-existe.txt')
+    const path = join(dir, 'enlace.txt')
+    await symlink(target, path)
+
+    await writeTextFile(path, 'nuevo\n', 'lf', 'utf8')
+
+    expect((await lstat(path)).isSymbolicLink()).toBe(true)
+    expect(await readFile(target, 'utf8')).toBe('nuevo\n')
   })
 })
