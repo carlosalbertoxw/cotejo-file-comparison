@@ -28,8 +28,13 @@ permissions:
   contents: read
 
 # Un despliegue a la vez; si llegan dos seguidos, gana el ultimo.
+#
+# El disparo por release va en un grupo aparte. Solo relanza este workflow
+# sobre main (job `relanzar`), y ese run nuevo caia en el mismo grupo: si
+# arrancaba antes de que `relanzar` terminase, lo cancelaba, y cada release
+# dejaba un run «cancelled» aunque el despliegue fuese bien (v0.8.0).
 concurrency:
-  group: pages
+  group: ${{ github.event_name == 'release' && 'pages-relanzar' || 'pages' }}
   cancel-in-progress: true
 
 jobs:
