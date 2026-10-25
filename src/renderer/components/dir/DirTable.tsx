@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DirNode, Side } from '@shared/types'
-import { formatDate, formatSize, isDifference, STATUS_GLYPH, STATUS_LABEL_KEY } from './format'
+import { formatDate, formatSize, STATUS_GLYPH, STATUS_LABEL_KEY } from './format'
+import { isDifference } from './tree'
+import { hasPrimaryModifier } from '../../platform'
 
 export const ROW_HEIGHT = 20
 
@@ -39,16 +41,26 @@ interface Props {
   expanded: Set<string>
   selected: Set<string>
   onToggleExpand: (relPath: string) => void
-  onSelect: (relPath: string, additive: boolean) => void
+  /** La tabla decide la seleccion nueva entera: sola, alternando o por rango. */
+  onSelectionChange: (selected: Set<string>) => void
   onOpen: (node: DirNode) => void
 }
+
+/**
+ * Como cambia la seleccion al pinchar o moverse, igual que en un explorador:
+ * - `single`: solo esa fila.
+ * - `toggle` (Ctrl o ⌘): la añade o la quita, sin tocar las demas.
+ * - `range` (Mayus): todas las filas entre el ancla y esta. Con Ctrl ademas,
+ *   se suman a lo que ya estaba seleccionado.
+ */
+type SelectMode = 'single' | 'toggle' | 'range'
 
 export function DirTable({
   rows,
   expanded,
   selected,
   onToggleExpand,
-  onSelect,
+  onSelectionChange,
   onOpen
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
@@ -57,6 +69,39 @@ export function DirTable({
   const [height, setHeight] = useState(0)
   /** Fila que tiene el foco del teclado. -1 mientras no se ha usado. */
   const [focused, setFocused] = useState(-1)
+  /**
+   * Fila desde la que se extiende un rango con Mayus. Se guarda por ruta y no
+   * por indice: desplegar o plegar una carpeta mueve los indices de debajo.
+   */
+  const anchorRef = useRef<string | null>(null)
+
+  const selectAt = (index: number, mode: SelectMode, keep = false): void => {
+    const row = rows[index]
+    if (!row) return
+    const relPath = row.node.relPath
+
+    if (mode === 'range') {
+      const anchor = rows.findIndex((item) => item.node.relPath === anchorRef.current)
+      const from = anchor === -1 ? index : anchor
+      if (anchor === -1) anchorRef.current = relPath
+      const next = keep ? new Set(selected) : new Set<string>()
+      for (let i = Math.min(from, index); i <= Math.max(from, index); i++) {
+        next.add((rows[i] as FlatRow).node.relPath)
+      }
+      onSelectionChange(next)
+      return
+    }
+
+    anchorRef.current = relPath
+    if (mode === 'single') {
+      onSelectionChange(new Set([relPath]))
+      return
+    }
+    const next = new Set(selected)
+    if (next.has(relPath)) next.delete(relPath)
+    else next.add(relPath)
+    onSelectionChange(next)
+  }
 
   useEffect(() => {
     const element = scrollerRef.current
@@ -93,31 +138,50 @@ export function DirTable({
     if (rows.length === 0) return
     const current = focused < 0 ? 0 : focused
     const row = rows[current]
+    const page = Math.max(1, Math.floor(height / ROW_HEIGHT) - 1)
+
+    /** Mover el foco; con Mayus, ademas, extender la seleccion hasta alli. */
+    const moveTo = (index: number): void => {
+      event.preventDefault()
+      const target = Math.max(0, Math.min(rows.length - 1, index))
+      focusRow(target)
+      if (!event.shiftKey) return
+      // Sin ancla todavia, el rango empieza donde estaba el foco.
+      if (!rows.some((item) => item.node.relPath === anchorRef.current)) {
+        anchorRef.current = rows[current]?.node.relPath ?? null
+      }
+      selectAt(target, 'range', hasPrimaryModifier(event.nativeEvent))
+    }
+
+    if (hasPrimaryModifier(event.nativeEvent) && event.key.toLowerCase() === 'a') {
+      event.preventDefault()
+      onSelectionChange(new Set(rows.map((item) => item.node.relPath)))
+      return
+    }
 
     switch (event.key) {
       case 'ArrowDown':
-        event.preventDefault()
-        focusRow(focused < 0 ? 0 : focused + 1)
+        moveTo(focused < 0 ? 0 : focused + 1)
         return
       case 'ArrowUp':
-        event.preventDefault()
-        focusRow(focused < 0 ? 0 : focused - 1)
+        moveTo(focused < 0 ? 0 : focused - 1)
         return
       case 'Home':
-        event.preventDefault()
-        focusRow(0)
+        moveTo(0)
         return
       case 'End':
-        event.preventDefault()
-        focusRow(rows.length - 1)
+        moveTo(rows.length - 1)
         return
       case 'PageDown':
-        event.preventDefault()
-        focusRow(current + Math.max(1, Math.floor(height / ROW_HEIGHT) - 1))
+        moveTo(current + page)
         return
       case 'PageUp':
+        moveTo(current - page)
+        return
+      case 'Escape':
+        if (selected.size === 0) return
         event.preventDefault()
-        focusRow(current - Math.max(1, Math.floor(height / ROW_HEIGHT) - 1))
+        onSelectionChange(new Set())
         return
       case 'ArrowRight':
         if (!row?.node.isDir) return
@@ -133,7 +197,7 @@ export function DirTable({
       case ' ':
         if (!row) return
         event.preventDefault()
-        onSelect(row.node.relPath, true)
+        selectAt(current, event.shiftKey ? 'range' : 'toggle', true)
         return
       case 'Enter':
         if (!row) return
@@ -212,7 +276,14 @@ export function DirTable({
         style={{ top: index * ROW_HEIGHT }}
         onMouseDown={(event) => {
           setFocused(index)
-          onSelect(node.relPath, event.ctrlKey || event.metaKey)
+          const toggle = event.ctrlKey || event.metaKey
+          if (event.shiftKey) {
+            // Sin esto, Mayus+clic ademas selecciona el texto de las filas.
+            event.preventDefault()
+            selectAt(index, 'range', toggle)
+          } else {
+            selectAt(index, toggle ? 'toggle' : 'single')
+          }
         }}
         onDoubleClick={() => (canExpand ? onToggleExpand(node.relPath) : onOpen(node))}
       >

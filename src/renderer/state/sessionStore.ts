@@ -71,10 +71,11 @@ export function titleFor(left: string | null, right: string | null): string {
 
 interface SessionState {
   tabs: Tab[]
+  /** `null` es la pestana de inicio, que siempre esta y no se cierra. */
   activeId: string | null
   openTab: (kind: TabKind, leftPath?: string | null, rightPath?: string | null) => string
   closeTab: (id: string) => void
-  setActive: (id: string) => void
+  setActive: (id: string | null) => void
   updateTab: (id: string, patch: Partial<Omit<Tab, 'id'>>) => void
 }
 

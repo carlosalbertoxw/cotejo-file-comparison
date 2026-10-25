@@ -1,3 +1,4 @@
+import { ChangeSet, type Text } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 
 export interface LineRange {
@@ -70,8 +71,7 @@ export function computeMergeChange(
   return { from, to: Math.max(from, to), insert }
 }
 
-function linesText(view: EditorView, range: LineRange): string[] {
-  const doc = view.state.doc
+function linesText(doc: Text, range: LineRange): string[] {
   const out: string[] = []
   for (let line = range.start; line < range.end && line < doc.lines; line++) {
     out.push(doc.line(line + 1).text)
@@ -79,27 +79,62 @@ function linesText(view: EditorView, range: LineRange): string[] {
   return out
 }
 
+/** Un tramo del origen y el tramo del destino que sustituye. */
+export interface LineTransfer {
+  source: LineRange
+  target: LineRange
+}
+
 /**
- * Copia un rango de lineas del panel origen sobre el rango correspondiente del
- * panel destino.
+ * Todos los tramos a la vez, como un solo cambio sobre el documento destino.
+ *
+ * Se aplican de abajo arriba, cada uno calculado sobre el resultado del
+ * anterior: asi lo de arriba no se descoloca por lo que crece o encoge debajo,
+ * y `computeMergeChange` sigue viendo un documento de verdad para decidir sus
+ * saltos de linea. Dos inserciones en el mismo punto quedan en el orden del
+ * origen. Al final se componen en un unico `ChangeSet` relativo al original.
+ */
+export function transferChanges(
+  source: Text,
+  target: Text,
+  transfers: LineTransfer[]
+): ChangeSet {
+  const ordered = [...transfers].sort(
+    (a, b) => b.target.start - a.target.start || b.source.start - a.source.start
+  )
+  let doc = target
+  let changes = ChangeSet.empty(target.length)
+  for (const transfer of ordered) {
+    const current = doc
+    const view: DocView = {
+      length: current.length,
+      lines: current.lines,
+      lineStart: (line) => current.line(line + 1).from
+    }
+    const step = ChangeSet.of(
+      computeMergeChange(linesText(source, transfer.source), view, transfer.target),
+      current.length
+    )
+    changes = changes.compose(step)
+    doc = step.apply(current)
+  }
+  return changes
+}
+
+/**
+ * Copia tramos de lineas del panel origen sobre los tramos correspondientes
+ * del panel destino.
  *
  * Se aplica como una transaccion normal de CodeMirror, no como una reescritura
- * del documento, para que el merge entre en el historial y Ctrl+Z lo deshaga
- * como cualquier otra edicion.
+ * del documento, para que el merge entre en el historial y un solo Ctrl+Z lo
+ * deshaga entero, como cualquier otra edicion.
  */
 export function replaceLines(
   source: EditorView,
   target: EditorView,
-  sourceRange: LineRange,
-  targetRange: LineRange
+  transfers: LineTransfer[]
 ): void {
-  const doc = target.state.doc
-  const view: DocView = {
-    length: doc.length,
-    lines: doc.lines,
-    lineStart: (line) => doc.line(line + 1).from
-  }
-
-  const change = computeMergeChange(linesText(source, sourceRange), view, targetRange)
-  target.dispatch({ changes: change, scrollIntoView: false })
+  if (transfers.length === 0) return
+  const changes = transferChanges(source.state.doc, target.state.doc, transfers)
+  target.dispatch({ changes, scrollIntoView: false })
 }

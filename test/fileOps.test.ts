@@ -1,4 +1,14 @@
-import { mkdtemp, mkdir, readFile, writeFile, rm, stat, symlink } from 'node:fs/promises'
+import {
+  mkdtemp,
+  mkdir,
+  readdir,
+  readFile,
+  writeFile,
+  rm,
+  stat,
+  symlink,
+  utimes
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -131,11 +141,26 @@ describe('planFileOp', () => {
     await write(left, 'a.txt', '12345')
     await write(left, 'dir/b.txt', '123')
 
-    const plan = await planFileOp(request('copy', [file('a.txt'), folder('dir')]))
+    const plan = await planFileOp(
+      request('copy', [file('a.txt'), folder('dir'), file('dir/b.txt')])
+    )
 
-    expect(plan.fileCount).toBe(1)
+    expect(plan.fileCount).toBe(2)
     expect(plan.dirCount).toBe(1)
     expect(plan.totalBytes).toBe(8)
+  })
+
+  it('al copiar, una carpeta no arrastra lo que no se pide: no hay nada sin ver', async () => {
+    await write(left, 'src/a.ts', '12345')
+    await write(left, 'src/.env', 'CLAVE=izquierda')
+    await write(right, 'src/.env', 'CLAVE=derecha')
+
+    const plan = await planFileOp(request('copy', [folder('src'), file('src/a.ts')]))
+
+    expect(plan.fileCount).toBe(1)
+    expect(plan.totalBytes).toBe(5)
+    expect(plan.overwrites).toEqual([])
+    expect(plan.unseen).toEqual([])
   })
 
   it('avisa de los destinos que ya existen', async () => {
@@ -159,14 +184,13 @@ describe('planFileOp', () => {
     await write(left, 'docs/b.txt', '123')
     await write(right, 'docs/a.txt', 'viejo')
 
-    const plan = await planFileOp(request('copy', [folder('docs'), file('docs/a.txt')]))
+    const plan = await planFileOp(request('delete', [folder('docs'), file('docs/a.txt')]))
 
-    // La operacion solo procesa `docs`; antes el dialogo sumaba ademas un
+    // El borrado solo procesa `docs`; antes el dialogo sumaba ademas un
     // archivo y los bytes de `a.txt` otra vez.
     expect(plan.dirCount).toBe(1)
     expect(plan.fileCount).toBe(0)
     expect(plan.totalBytes).toBe(8)
-    expect(plan.overwrites).toEqual(['docs/a.txt'])
   })
 
   it('en una carpeta que existe en los dos lados, lista cada archivo que se pisa', async () => {
@@ -176,24 +200,30 @@ describe('planFileOp', () => {
     await write(right, 'src/a.ts', 'viejo')
     await write(right, 'src/sub/b.ts', 'viejo')
 
-    const plan = await planFileOp(request('copy', [folder('src')]))
+    const plan = await planFileOp(
+      request('copy', [
+        folder('src'),
+        file('src/a.ts'),
+        folder('src/sub'),
+        file('src/sub/b.ts'),
+        file('src/solo-aqui.ts')
+      ])
+    )
 
     // Antes salia solo «src», y el dialogo no decia que archivos iban a perderse.
     expect(plan.overwrites.sort()).toEqual(['src/a.ts', 'src/sub/b.ts'])
   })
 
-  it('avisa de los ocultos y excluidos que viajan dentro de la carpeta', async () => {
+  it('al borrar, avisa de los ocultos y excluidos que van dentro de la carpeta', async () => {
     await write(left, 'src/a.ts', 'x')
     await write(left, 'src/.env', 'CLAVE=izquierda')
     await write(left, 'src/node_modules/m/index.js', 'x')
-    await write(right, 'src/.env', 'CLAVE=derecha')
 
     const plan = await planFileOp({
-      ...request('copy', [folder('src')]),
+      ...request('delete', [folder('src')]),
       filters: { exclude: ['**/node_modules/**'], include: [], includeHidden: false }
     })
 
-    expect(plan.overwrites).toEqual(['src/.env'])
     expect(plan.unseen.sort()).toEqual(['src/.env', 'src/node_modules/m/index.js'])
   })
 
@@ -201,7 +231,7 @@ describe('planFileOp', () => {
     await write(left, 'src/.env', 'x')
 
     const plan = await planFileOp({
-      ...request('copy', [folder('src')]),
+      ...request('delete', [folder('src')]),
       filters: { exclude: [], include: [], includeHidden: true }
     })
 
@@ -210,7 +240,7 @@ describe('planFileOp', () => {
 
   it('un archivo seleccionado se ve aunque sea oculto: viene de la tabla', async () => {
     await write(left, '.gitignore', 'x')
-    const plan = await planFileOp(request('copy', [file('.gitignore')]))
+    const plan = await planFileOp(request('delete', [file('.gitignore')]))
     expect(plan.unseen).toEqual([])
   })
 
@@ -219,7 +249,7 @@ describe('planFileOp', () => {
     // Un enlace a su propia carpeta padre: seguirlo acababa en ELOOP.
     await symlink('..', join(left, 'dir/bucle'))
 
-    const plan = await planFileOp(request('copy', [folder('dir')]))
+    const plan = await planFileOp(request('delete', [folder('dir')]))
 
     expect(plan.totalBytes).toBeLessThan(100)
     expect(plan.unseen).toEqual(['dir/bucle'])
@@ -303,9 +333,12 @@ describe('confinamiento a traves de enlaces', () => {
     const outside = await linkOutside(right, 'docs/sub')
     await writeFile(join(outside, 'a.txt'), 'de fuera', 'utf8')
 
-    const result = await runFileOp(request('copy', [folder('docs')]))
+    const result = await runFileOp(
+      request('copy', [folder('docs'), folder('docs/sub'), file('docs/sub/a.txt')])
+    )
 
-    expect(result.succeeded).toBe(0)
+    expect(result.failed.map((failure) => failure.relPath)).toEqual(['docs/sub/a.txt'])
+    expect(parseIpcError(result.failed[0]?.message ?? '')?.code).toBe('pathOutsideRoot')
     expect(trashItem).not.toHaveBeenCalled()
     expect(await readFile(join(outside, 'a.txt'), 'utf8')).toBe('de fuera')
   })
@@ -368,7 +401,7 @@ describe('runFileOp: copiar', () => {
     await write(right, 'src/.env', 'derecha')
     await write(right, 'src/solo-derecha.ts', 'se queda')
 
-    await runFileOp(request('copy', [folder('src')]))
+    await runFileOp(request('copy', [folder('src'), file('src/a.ts'), file('src/.env')]))
 
     const trashed = trashItem.mock.calls.map(([path]) => path).sort()
     expect(trashed).toEqual([join(right, 'src/.env'), join(right, 'src/a.ts')].sort())
@@ -395,24 +428,56 @@ describe('runFileOp: copiar', () => {
     expect(await readFile(join(right, 'muy/hondo/a.txt'), 'utf8')).toBe('x')
   })
 
-  it('copia una carpeta con todo su contenido', async () => {
+  it('de una carpeta copia lo que se pide y nada mas', async () => {
     await write(left, 'dir/a.txt', '1')
+    await write(left, 'dir/.oculto', 'no listado')
     await write(left, 'dir/sub/b.txt', '2')
 
-    await runFileOp(request('copy', [folder('dir')]))
-
-    expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('1')
-    expect(await readFile(join(right, 'dir/sub/b.txt'), 'utf8')).toBe('2')
-  })
-
-  it('no vuelve a copiar lo que ya viajo dentro de su carpeta', async () => {
-    await write(left, 'dir/a.txt', '1')
-
-    // La carpeta y su hijo, seleccionados los dos: el hijo ya va dentro.
     const result = await runFileOp(request('copy', [folder('dir'), file('dir/a.txt')]))
 
-    expect(result.succeeded).toBe(1)
+    expect(result.succeeded).toBe(2)
     expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('1')
+    expect(await exists(join(right, 'dir/.oculto'))).toBe(false)
+    expect(await exists(join(right, 'dir/sub'))).toBe(false)
+  })
+
+  it('crea una carpeta vacia si se pide', async () => {
+    await mkdir(join(left, 'vacia'))
+
+    const result = await runFileOp(request('copy', [folder('vacia')]))
+
+    expect(result.failed).toEqual([])
+    expect((await stat(join(right, 'vacia'))).isDirectory()).toBe(true)
+  })
+
+  it('no deja temporales en el destino', async () => {
+    await write(left, 'dir/a.txt', '1')
+    await write(left, 'dir/b.txt', '2')
+
+    await runFileOp(request('copy', [folder('dir'), file('dir/a.txt'), file('dir/b.txt')]))
+
+    expect((await readdir(join(right, 'dir'))).sort()).toEqual(['a.txt', 'b.txt'])
+  })
+
+  it('conserva la fecha de modificacion', async () => {
+    await write(left, 'a.txt', 'x')
+    const old = new Date('2020-01-02T03:04:05Z')
+    await utimes(join(left, 'a.txt'), old, old)
+
+    await runFileOp(request('copy', [file('a.txt')]))
+
+    expect((await stat(join(right, 'a.txt'))).mtimeMs).toBe(old.getTime())
+  })
+
+  it('un archivo que choca con una carpeta del destino falla sin copiar nada', async () => {
+    await write(left, 'dir/a.txt', 'x')
+    await mkdir(join(right, 'dir/a.txt'), { recursive: true })
+
+    const result = await runFileOp(request('copy', [file('dir/a.txt')]))
+
+    expect(result.failed).toHaveLength(1)
+    expect(await readdir(join(right, 'dir'))).toEqual(['a.txt'])
+    expect((await stat(join(right, 'dir/a.txt'))).isDirectory()).toBe(true)
   })
 
   it('copia tambien de derecha a izquierda', async () => {
@@ -443,20 +508,32 @@ describe('runFileOp: mover', () => {
     expect(trashItem).toHaveBeenCalledWith(join(right, 'a.txt'))
   })
 
-  it('mueve una carpeta entera', async () => {
+  it('mueve una carpeta con lo que se pide, y la quita del origen si queda vacia', async () => {
     await write(left, 'dir/a.txt', 'x')
 
-    await runFileOp(request('move', [folder('dir')]))
+    await runFileOp(request('move', [folder('dir'), file('dir/a.txt')]))
 
     expect(await exists(join(left, 'dir'))).toBe(false)
     expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
+  })
+
+  it('deja en el origen lo que no se pidio, y la carpeta con ello', async () => {
+    await write(left, 'dir/a.txt', 'x')
+    await write(left, 'dir/.oculto', 'se queda')
+
+    const result = await runFileOp(request('move', [folder('dir'), file('dir/a.txt')]))
+
+    expect(result.failed).toEqual([])
+    expect(await exists(join(left, 'dir/a.txt'))).toBe(false)
+    expect(await readFile(join(left, 'dir/.oculto'), 'utf8')).toBe('se queda')
+    expect(await exists(join(right, 'dir/.oculto'))).toBe(false)
   })
 
   it('entre discos copia y borra el origen', async () => {
     await write(left, 'dir/a.txt', 'x')
     renameFailure.code = 'EXDEV'
 
-    const result = await runFileOp(request('move', [folder('dir')]))
+    const result = await runFileOp(request('move', [folder('dir'), file('dir/a.txt')]))
 
     expect(result.failed).toEqual([])
     expect(await exists(join(left, 'dir'))).toBe(false)
@@ -469,20 +546,7 @@ describe('runFileOp: mover', () => {
     await write(left, 'dir/a.txt', 'x')
     await write(right, 'dir/b.txt', 'y')
 
-    const result = await runFileOp(request('move', [folder('dir')]))
-
-    expect(result.failed).toEqual([])
-    expect(await exists(join(left, 'dir'))).toBe(false)
-    expect(await readFile(join(right, 'dir/a.txt'), 'utf8')).toBe('x')
-    expect(await readFile(join(right, 'dir/b.txt'), 'utf8')).toBe('y')
-  })
-
-  it('fusiona con una carpeta que ya existe en el destino', async () => {
-    await write(left, 'dir/a.txt', 'x')
-    await write(right, 'dir/b.txt', 'y')
-    renameFailure.code = 'EPERM'
-
-    const result = await runFileOp(request('move', [folder('dir')]))
+    const result = await runFileOp(request('move', [folder('dir'), file('dir/a.txt')]))
 
     expect(result.failed).toEqual([])
     expect(await exists(join(left, 'dir'))).toBe(false)
@@ -496,11 +560,12 @@ describe('runFileOp: mover', () => {
     await write(left, 'dir/a.txt', 'x')
     renameFailure.code = 'EPERM'
 
-    const result = await runFileOp(request('move', [folder('dir')]))
+    const result = await runFileOp(request('move', [file('dir/a.txt')]))
 
     expect(result.failed).toHaveLength(1)
     expect(result.failed[0]?.message).toContain('EPERM')
     expect(await readFile(join(left, 'dir/a.txt'), 'utf8')).toBe('x')
+    // La carpeta que se creo para alojarlo tampoco se queda.
     expect(await exists(join(right, 'dir'))).toBe(false)
   })
 })
@@ -552,15 +617,69 @@ describe('runFileOp: fallos y cancelacion', () => {
     expect(await exists(join(right, 'a.txt'))).toBe(false)
   })
 
-  it('informa del progreso elemento a elemento', async () => {
-    await write(left, 'a.txt', '1')
-    await write(left, 'b.txt', '2')
-    const seen: number[] = []
+  it('cancelar a mitad deshace lo preparado y no cambia nada', async () => {
+    await write(left, 'sub/a.txt', 'nuevo')
+    await write(left, 'sub/b.txt', 'nuevo')
+    await write(left, 'c.txt', 'nuevo')
+    await write(right, 'c.txt', 'viejo')
+    let calls = 0
 
-    await runFileOp(request('copy', [file('a.txt'), file('b.txt')]), {
-      onProgress: (done) => seen.push(done)
+    // Se pregunta una vez por elemento al resolver (4), otra por elemento al
+    // preparar y otra por cada trozo copiado: `sub` (5), `c.txt` (6, 7),
+    // `sub/a.txt` (8, 9). La decima llega al ir a empezar `sub/b.txt`, con lo
+    // demas ya copiado a sus temporales y la carpeta `sub` creada.
+    const result = await runFileOp(
+      request('copy', [file('c.txt'), folder('sub'), file('sub/a.txt'), file('sub/b.txt')]),
+      { isCancelled: () => ++calls >= 10 }
+    )
+
+    expect(result).toEqual({ succeeded: 0, failed: [], cancelled: true })
+    expect(trashItem).not.toHaveBeenCalled()
+    // Ni temporales, ni la carpeta creada, y lo que habia sigue igual.
+    expect(await readdir(right)).toEqual(['c.txt'])
+    expect(await readFile(join(right, 'c.txt'), 'utf8')).toBe('viejo')
+  })
+
+  it('cancelar a mitad de un archivo grande lo corta y no deja el temporal', async () => {
+    await writeFile(join(left, 'grande.bin'), Buffer.alloc(8 * 1024 * 1024, 1))
+    let calls = 0
+
+    const result = await runFileOp(request('copy', [file('grande.bin')]), {
+      // Una al resolver, otra al empezar a prepararlo y una por trozo: se
+      // cancela en el tercer trozo de los ciento y pico que tiene.
+      isCancelled: () => ++calls > 4
     })
 
-    expect(seen).toEqual([1, 2])
+    expect(result.cancelled).toBe(true)
+    expect(await readdir(right)).toEqual([])
+  })
+
+  it('cancelar un movimiento deja cada archivo en su origen', async () => {
+    await write(left, 'dir/a.txt', 'x')
+    let calls = 0
+
+    // Dos al resolver, y la cuarta al ir a preparar `dir/a.txt`, con `dir` ya
+    // creada en el destino.
+    const result = await runFileOp(request('move', [folder('dir'), file('dir/a.txt')]), {
+      isCancelled: () => ++calls >= 4
+    })
+
+    expect(result.cancelled).toBe(true)
+    expect(await readFile(join(left, 'dir/a.txt'), 'utf8')).toBe('x')
+    expect(await readdir(right)).toEqual([])
+  })
+
+  it('informa del avance en bytes al preparar y en elementos al confirmar', async () => {
+    await write(left, 'a.txt', '1234')
+    await write(left, 'b.txt', '')
+    const seen: { phase: string; done: number; total: number }[] = []
+
+    await runFileOp(request('copy', [file('a.txt'), file('b.txt')]), {
+      onProgress: ({ phase, done, total }) => seen.push({ phase, done, total })
+    })
+
+    // 4 bytes, mas uno por archivo para que los vacios tambien cuenten.
+    expect(seen).toContainEqual({ phase: 'staging', done: 6, total: 6 })
+    expect(seen.at(-1)).toEqual({ phase: 'committing', done: 2, total: 2 })
   })
 })

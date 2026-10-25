@@ -1,10 +1,11 @@
 import { useEffect, useImperativeHandle, useRef } from 'react'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
-import { EditorView, keymap, drawSelection } from '@codemirror/view'
+import { EditorView, keymap, drawSelection, rectangularSelection } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { alignmentField, setAlignment, type SideAlignment } from './alignment'
 import { searchHighlightField } from './searchHighlight'
 import type { LineRange } from './merge'
+import { lineSelectionsOf } from './selectionMerge'
 
 export interface DiffPaneHandle {
   readonly view: EditorView | null
@@ -19,24 +20,8 @@ interface Props {
   tabSize: number
   onChange: (value: string) => void
   onScroll: (scrollTop: number, scrollLeft: number) => void
-  onSelectionChange: (selection: LineRange | null) => void
-}
-
-/**
- * Lineas [start, end) que toca la seleccion, o null si no hay seleccion.
- *
- * La transferencia trabaja con lineas enteras, asi que una seleccion parcial
- * arrastra la linea entera. La que termina justo al empezar una linea no la
- * incluye: es lo que se ve subrayado y lo que espera quien selecciona de arriba
- * abajo con el raton.
- */
-function lineSelectionOf(state: EditorState): LineRange | null {
-  const range = state.selection.main
-  if (range.empty) return null
-  const start = state.doc.lineAt(range.from).number - 1
-  const last = state.doc.lineAt(range.to)
-  const end = range.to === last.from && last.number - 1 > start ? last.number - 1 : last.number
-  return { start, end }
+  /** Los tramos de lineas seleccionados, en orden; vacio si no hay seleccion. */
+  onSelectionChange: (selection: LineRange[]) => void
 }
 
 /**
@@ -83,6 +68,9 @@ export function DiffPane({
     const extensions: Extension[] = [
       history(),
       drawSelection(),
+      // Varias selecciones a la vez, para transferirlas juntas.
+      EditorState.allowMultipleSelections.of(true),
+      rectangularSelection(),
       // Sin resaltado de linea activa: su fondo taparia el color del diff.
       keymap.of([...defaultKeymap, ...historyKeymap]),
       alignmentField,
@@ -91,7 +79,7 @@ export function DiffPane({
       EditorView.updateListener.of((update) => {
         if (update.docChanged) onChangeRef.current(update.state.doc.toString())
         if (update.docChanged || update.selectionSet) {
-          onSelectionRef.current(lineSelectionOf(update.state))
+          onSelectionRef.current(lineSelectionsOf(update.state))
         }
       }),
       EditorView.domEventHandlers({

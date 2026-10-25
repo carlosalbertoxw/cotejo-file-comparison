@@ -6,6 +6,7 @@ const UNITS = ['B', 'KB', 'MB', 'GB', 'TB']
 // Un formatter por idioma: crearlos es caro y la tabla los usa por cada fila.
 const numberFormats = new Map<string, Intl.NumberFormat>()
 const dateFormats = new Map<string, Intl.DateTimeFormat>()
+const percentFormats = new Map<string, Intl.NumberFormat>()
 
 function numberFormat(fractionDigits: number): Intl.NumberFormat {
   const key = `${i18n.language}:${fractionDigits}`
@@ -29,6 +30,17 @@ export function formatSize(bytes: number): string {
     unit++
   }
   return `${numberFormat(unit === 0 ? 0 : 1).format(value)} ${UNITS[unit]}`
+}
+
+/** Un avance entre 0 y 1, sin decimales y con el signo como lo escribe cada idioma. */
+export function formatPercent(fraction: number): string {
+  let format = percentFormats.get(i18n.language)
+  if (!format) {
+    format = new Intl.NumberFormat(i18n.language, { style: 'percent', maximumFractionDigits: 0 })
+    percentFormats.set(i18n.language, format)
+  }
+  // Hacia abajo: un 99,6 % no se redondea a un 100 % que aun no ha llegado.
+  return format.format(Math.floor(Math.min(1, Math.max(0, fraction)) * 100) / 100)
 }
 
 export function formatDate(mtimeMs: number): string {
@@ -61,7 +73,3 @@ export const STATUS_LABEL_KEY = {
   rightOnly: 'status.rightOnly',
   typeConflict: 'status.typeConflict'
 } as const satisfies Record<NodeStatus, string>
-
-export function isDifference(status: NodeStatus): boolean {
-  return status !== 'same' && status !== 'dirSame'
-}

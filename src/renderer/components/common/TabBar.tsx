@@ -18,6 +18,16 @@ export function TabBar({ onShowAbout, onClose }: Props): React.JSX.Element {
 
   return (
     <div className="tab-bar">
+      {/* Inicio no se cierra: siempre hay a donde volver para abrir otra
+          comparacion o tirar del historial. */}
+      <div
+        className={`tab tab-home${tabs.some((tab) => tab.id === activeId) ? '' : ' active'}`}
+        onMouseDown={() => setActive(null)}
+        title={t('tabs.homeTooltip')}
+      >
+        <span aria-hidden="true">⌂</span>
+        <span className="tab-title">{t('tabs.home')}</span>
+      </div>
       {tabs.map((tab) => (
         <div
           key={tab.id}

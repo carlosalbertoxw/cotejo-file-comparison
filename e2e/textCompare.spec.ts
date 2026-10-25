@@ -114,7 +114,8 @@ test('cerrar una pestana con cambios pregunta, y guardar y cerrar los escribe', 
   await expect(dialog).toBeVisible()
   await dialog.locator('.dialog-actions button').first().click()
   await expect(dialog).toBeHidden()
-  await expect(window.locator('.tab')).toHaveCount(1)
+  // La de inicio no cuenta: esta siempre y no se cierra.
+  await expect(window.locator('.tab:not(.tab-home)')).toHaveCount(1)
   expect(await lines(right)).toEqual(rightBefore)
 
   // Guardar y cerrar escribe el archivo y luego cierra.
@@ -122,7 +123,8 @@ test('cerrar una pestana con cambios pregunta, y guardar y cerrar los escribe', 
   await expect(dialog).toBeVisible()
   await dialog.locator('button.primary').click()
 
-  await expect(window.locator('.tab')).toHaveCount(0)
+  await expect(window.locator('.tab:not(.tab-home)')).toHaveCount(0)
+  await expect(window.locator('.tab-home.active')).toBeVisible()
   await expect.poll(() => lines(right)).not.toEqual(rightBefore)
 })
 

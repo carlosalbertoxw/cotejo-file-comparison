@@ -62,11 +62,11 @@ async function launch(): Promise<ReturnType<ElectronApplication['firstWindow']>>
   return app.firstWindow()
 }
 
-test('sincronizar a la derecha avisa de lo oculto y lo lleva todo al disco', async () => {
+test('sincronizar a la derecha lleva al disco lo listado, y solo eso', async () => {
   await write(left, 'solo-izquierda.txt', 'uno')
   await write(left, 'docs/nuevo.md', 'dos')
-  // Oculto, dentro de una carpeta que viaja entera: la tabla no lo muestra con
-  // los filtros por defecto, y el dialogo tiene que decirlo.
+  // Oculto, dentro de una carpeta que solo esta a la izquierda: la tabla no lo
+  // muestra con los filtros por defecto, asi que no viaja con la carpeta.
   await write(left, 'docs/.oculto', 'tres')
   await write(right, 'solo-derecha.txt', 'se queda')
 
@@ -77,12 +77,13 @@ test('sincronizar a la derecha avisa de lo oculto y lo lleva todo al disco', asy
 
   const dialog = window.locator('[role="dialog"]')
   await expect(dialog).toBeVisible()
-  await expect(dialog.locator('li', { hasText: 'docs/.oculto' })).toBeVisible()
+  await expect(dialog.locator('li', { hasText: 'docs/.oculto' })).toHaveCount(0)
   await dialog.locator('button.primary').click()
 
   await expect.poll(() => exists(join(right, 'solo-izquierda.txt'))).toBe(true)
   expect(await readFile(join(right, 'docs/nuevo.md'), 'utf8')).toBe('dos')
-  expect(await readFile(join(right, 'docs/.oculto'), 'utf8')).toBe('tres')
+  expect(await exists(join(right, 'docs/.oculto'))).toBe(false)
+  expect(await readFile(join(left, 'docs/.oculto'), 'utf8')).toBe('tres')
   // Sincronizar copia lo que falta; no borra lo que solo estaba en el destino.
   expect(await readFile(join(right, 'solo-derecha.txt'), 'utf8')).toBe('se queda')
   // Ni toca el origen.

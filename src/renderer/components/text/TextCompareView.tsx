@@ -41,7 +41,8 @@ interface Replacing {
 /** Que hay seleccionado y en que panel; el lado decide hacia donde se transfiere. */
 interface Selection {
   side: Side
-  range: LineRange
+  /** Uno o varios tramos de lineas, en orden y sin solapes. */
+  ranges: LineRange[]
 }
 
 export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
@@ -343,7 +344,7 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
         ? { start: block.rightStart, end: block.rightEnd }
         : { start: block.leftStart, end: block.leftEnd }
 
-      replaceLines(sourceView, targetView, sourceRange, targetRange)
+      replaceLines(sourceView, targetView, [{ source: sourceRange, target: targetRange }])
     },
     [canEdit]
   )
@@ -354,14 +355,17 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
    * mismo panel que la tenia: al pinchar en el otro lado, CodeMirror no manda
    * nada por el primero y la seleccion seguiria en pie.
    */
-  const handleSelection = useCallback((side: Side, range: LineRange | null): void => {
+  const handleSelection = useCallback((side: Side, ranges: LineRange[]): void => {
     setSelection((previous) => {
-      if (range) return { side, range }
+      if (ranges.length > 0) return { side, ranges }
       return previous?.side === side ? null : previous
     })
   }, [])
 
-  /** Transfiere lo seleccionado al otro lado, sobre las lineas enfrentadas. */
+  /**
+   * Transfiere lo seleccionado al otro lado, cada tramo sobre sus lineas
+   * enfrentadas, todo en un solo cambio que un Ctrl+Z deshace entero.
+   */
   const transferSelection = useCallback((): void => {
     if (!selection || !result) return
     if (!canEdit(selection.side === 'left' ? 'right' : 'left')) return
@@ -370,9 +374,17 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
     const targetView = fromLeft ? rightPane.current?.view : leftPane.current?.view
     if (!sourceView || !targetView) return
 
-    const targetRange = mapLineRange(result.rows, selection.side, selection.range)
-    replaceLines(sourceView, targetView, selection.range, targetRange)
+    replaceLines(
+      sourceView,
+      targetView,
+      selection.ranges.map((range) => ({
+        source: range,
+        target: mapLineRange(result.rows, selection.side, range)
+      }))
+    )
   }, [selection, result, canEdit])
+
+  const selectedLines = selection?.ranges.reduce((sum, r) => sum + r.end - r.start, 0) ?? 0
 
   // ---------------------------------------------------------------- render
 
@@ -514,8 +526,10 @@ export function TextCompareView({ tabId, active }: Props): React.JSX.Element {
               selection.side === 'left'
                 ? 'textDiff.selectedLinesLeft'
                 : 'textDiff.selectedLinesRight',
-              { count: selection.range.end - selection.range.start }
+              { count: selectedLines }
             )}
+            {selection.ranges.length > 1 &&
+              ` ${t('textDiff.selectedRanges', { count: selection.ranges.length })}`}
           </span>
         )}
         {result?.inlineSkipped && <span className="warn">{t('textDiff.inlineSkipped')}</span>}

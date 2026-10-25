@@ -7,6 +7,7 @@ import type {
   FileOpItem,
   FileOpKind,
   FileOpPlan,
+  FileOpProgress,
   ScanFilters,
   Side
 } from '@shared/types'
@@ -20,7 +21,8 @@ import { PathBar } from '../common/PathBar'
 import { ConfirmDialog } from '../common/ConfirmDialog'
 import { DirTable, flattenTree, type FlatRow } from './DirTable'
 import { DirToolbar } from './DirToolbar'
-import { formatSize } from './format'
+import { formatPercent, formatSize } from './format'
+import { listedItems } from './listedItems'
 import { operableRoots, type OperableRoots } from './operableRoots'
 import { walkTree } from './tree'
 
@@ -36,6 +38,15 @@ interface PendingOp {
   plan: FileOpPlan
   /** Las raices con las que se planifico: la operacion va exactamente ahi. */
   roots: OperableRoots
+}
+
+/** Una operacion de archivo en marcha, con lo ultimo que conto de si misma. */
+interface RunningOp {
+  operationId: string
+  kind: FileOpKind
+  progress: FileOpProgress | null
+  /** Se pidio cancelar y aun no ha contestado. */
+  cancelling: boolean
 }
 
 const OP_TITLE_KEY = {
@@ -63,7 +74,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [pendingOp, setPendingOp] = useState<PendingOp | null>(null)
-  const [opProgress, setOpProgress] = useState<{ done: number; total: number } | null>(null)
+  const [runningOp, setRunningOp] = useState<RunningOp | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   const requestIdRef = useRef<string | null>(null)
@@ -170,16 +181,6 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     })
   }, [])
 
-  const select = useCallback((relPath: string, additive: boolean): void => {
-    setSelected((previous) => {
-      if (!additive) return new Set([relPath])
-      const next = new Set(previous)
-      if (next.has(relPath)) next.delete(relPath)
-      else next.add(relPath)
-      return next
-    })
-  }, [])
-
   const openInTextTab = useCallback(
     (node: DirNode): void => {
       if (node.isDir || !tab?.leftPath || !tab?.rightPath) return
@@ -199,13 +200,18 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
     async (kind: FileOpKind, from: Side, explicit?: FileOpItem[]): Promise<void> => {
       if (!roots) return
 
+      const nodes = [...selected]
+        .map((relPath) => nodeByPath.get(relPath))
+        .filter((node): node is DirNode => node !== undefined)
+      // Borrar manda cada elemento entero a la papelera; copiar y mover llevan
+      // solo lo que la tabla lista dentro de lo seleccionado.
       const items =
         explicit ??
-        [...selected]
-          .map((relPath) => nodeByPath.get(relPath))
-          .filter((node): node is DirNode => node !== undefined)
-          .filter((node) => (from === 'left' ? node.left !== null : node.right !== null))
-          .map((node) => ({ relPath: node.relPath, isDir: node.isDir, from }))
+        (kind === 'delete'
+          ? nodes
+              .filter((node) => node[from] !== null)
+              .map((node) => ({ relPath: node.relPath, isDir: node.isDir, from }))
+          : listedItems(nodes, from, onlyDifferences))
 
       if (items.length === 0) {
         setMessage(t('dirCompare.nothingSelected'))
@@ -228,20 +234,23 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         setMessage(errorText(error))
       }
     },
-    [roots, selected, nodeByPath, t]
+    [roots, selected, nodeByPath, onlyDifferences, t]
   )
 
   const confirmOp = useCallback(async (): Promise<void> => {
     if (!pendingOp) return
     const operationId = crypto.randomUUID()
     setPendingOp(null)
-    setOpProgress({ done: 0, total: pendingOp.items.length })
+    setRunningOp({ operationId, kind: pendingOp.kind, progress: null, cancelling: false })
 
     const stop = window.api.onFileOpProgress((update) => {
       if (update.operationId !== operationId) return
-      setOpProgress({ done: update.done, total: update.total })
+      setRunningOp((current) =>
+        current?.operationId === operationId ? { ...current, progress: update } : current
+      )
     })
 
+    let outcome: string
     try {
       const result = await window.api.runFileOp({
         operationId,
@@ -250,37 +259,44 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         items: pendingOp.items
       })
       const failures = result.failed.length
-      setMessage(
-        failures === 0
+      // Solo copiar y mover ofrecen cancelar, y cancelados no cambian nada.
+      outcome = result.cancelled
+        ? t('dirCompare.opCancelled')
+        : failures === 0
           ? t('dirCompare.processed', { count: result.succeeded })
           : t('dirCompare.processedWithErrors', {
               succeeded: result.succeeded,
               failed: failures,
               message: errorText(result.failed[0]?.message ?? '')
             })
-      )
     } catch (error) {
-      setMessage(errorText(error))
+      outcome = errorText(error)
     } finally {
       stop()
-      setOpProgress(null)
-      await runCompare()
+      setRunningOp(null)
     }
+    await runCompare()
+    // Despues de volver a comparar, que al empezar limpia la barra de estado:
+    // antes el resultado se borraba en cuanto salia y nunca llegaba a verse.
+    setMessage(outcome)
   }, [pendingOp, runCompare, t])
+
+  const cancelOp = useCallback((): void => {
+    if (!runningOp) return
+    setRunningOp({ ...runningOp, cancelling: true })
+    void window.api.cancelFileOp(runningOp.operationId)
+  }, [runningOp])
 
   /** Sincronizar: llevar a la derecha todo lo que falta o difiere en la izquierda. */
   const syncToRight = useCallback((): void => {
     if (!response) return
     const items: FileOpItem[] = []
-    // Una carpeta que solo esta a la izquierda viaja entera, asi que no hay
-    // que bajar a mirar su contenido: por eso el recorrido se poda ahi.
-    for (const node of walkTree(response.root, (child) => child.status !== 'leftOnly')) {
-      if (node.isDir) {
-        if (node.status === 'leftOnly') items.push({ relPath: node.relPath, isDir: true, from: 'left' })
-        continue
-      }
-      if (node.status === 'leftOnly' || node.status === 'different') {
-        items.push({ relPath: node.relPath, isDir: false, from: 'left' })
+    // Una carpeta que solo esta a la izquierda se crea, y su contenido va
+    // elemento a elemento como el de cualquier copia: solo lo que el escaneo
+    // listo, sin los ocultos ni lo excluido por los filtros.
+    for (const node of walkTree(response.root)) {
+      if (node.status === 'leftOnly' || (!node.isDir && node.status === 'different')) {
+        items.push({ relPath: node.relPath, isDir: node.isDir, from: 'left' })
       }
     }
     void requestOp('copy', 'left', items)
@@ -312,8 +328,8 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         onlyDifferences={onlyDifferences}
         onOnlyDifferencesChange={setOnlyDifferences}
         running={running}
-        canCompare={Boolean(tab?.leftPath && tab?.rightPath)}
-        canOperate={roots !== null}
+        canCompare={Boolean(tab?.leftPath && tab?.rightPath) && runningOp === null}
+        canOperate={roots !== null && runningOp === null}
         hasSelection={selected.size > 0}
         onCompare={() => void runCompare()}
         onCancel={() => {
@@ -345,20 +361,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         </div>
       )}
 
-      {opProgress && (
-        <div className="progress-line">
-          <span>{t('dirCompare.processing')}</span>
-          <div className="track">
-            <div
-              className="fill"
-              style={{ width: `${(opProgress.done / Math.max(1, opProgress.total)) * 100}%` }}
-            />
-          </div>
-          <span>
-            {opProgress.done} / {opProgress.total}
-          </span>
-        </div>
-      )}
+      {runningOp && <OpProgressLine op={runningOp} onCancel={cancelOp} />}
 
       {response ? (
         <DirTable
@@ -366,7 +369,7 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
           expanded={expanded}
           selected={selected}
           onToggleExpand={toggleExpand}
-          onSelect={select}
+          onSelectionChange={setSelected}
           onOpen={openInTextTab}
         />
       ) : (
@@ -413,6 +416,50 @@ export function DirCompareView({ tabId, active }: Props): React.JSX.Element {
         />
       )}
     </>
+  )
+}
+
+const PHASE_LABEL_KEY = {
+  copy: 'dirCompare.opCopying',
+  move: 'dirCompare.opMoving',
+  delete: 'dirCompare.opTrashing'
+} as const satisfies Record<FileOpKind, string>
+
+function OpProgressLine({
+  op,
+  onCancel
+}: {
+  op: RunningOp
+  onCancel: () => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const { progress } = op
+  const fraction = progress && progress.total > 0 ? progress.done / progress.total : 0
+  const finishing = op.kind !== 'delete' && progress?.phase === 'committing'
+  // Solo copiar y mover se pueden cancelar, y solo mientras preparan: lo que
+  // ya fue a la papelera no se puede devolver, y pararse a mitad de colocar
+  // los archivos dejaria la operacion a medias.
+  const cancellable = op.kind !== 'delete' && !finishing
+
+  return (
+    <div className="progress-line">
+      <span>{t(finishing ? 'dirCompare.opFinishing' : PHASE_LABEL_KEY[op.kind])}</span>
+      <div className="track">
+        <div className="fill" style={{ width: `${fraction * 100}%` }} />
+      </div>
+      <span className="percent">{formatPercent(fraction)}</span>
+      {progress?.currentPath && <span className="path">{progress.currentPath}</span>}
+      {op.kind !== 'delete' && (
+        <button
+          className="op-cancel"
+          disabled={!cancellable || op.cancelling}
+          title={t(cancellable ? 'dirCompare.opCancelTooltip' : 'dirCompare.opFinishingTooltip')}
+          onClick={onCancel}
+        >
+          {t(op.cancelling ? 'dirCompare.opCancelling' : 'dirCompare.cancel')}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -472,6 +519,8 @@ function OpSummary({ op }: { op: PendingOp }): React.JSX.Element {
       ) : (
         <p>{t('opSummary.noOverwrites')}</p>
       )}
+
+      {op.kind !== 'delete' && <p>{t('opSummary.onlyListedNotice')}</p>}
 
       {plan.unseen.length > 0 && (
         <>
