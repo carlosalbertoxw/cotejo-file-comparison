@@ -109,16 +109,24 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       # La E2E sobre lo que se acaba de construir (`package` deja el bundle en
-      # out/), con el mismo arreglo del sandbox que en el CI. En macOS no: el
-      # CI nunca la ha corrido ahi, y estrenarla en mitad de una release solo
-      # anadiria una forma nueva de fallar.
+      # out/), con los mismos arreglos que en el CI (ver ci.yml): el sandbox,
+      # el binario de Electron bajado antes y TMPDIR fuera de /tmp, que en el
+      # runner de Ubuntu es un tmpfs sin papelera. En macOS no: el CI nunca la
+      # ha corrido ahi, y estrenarla en mitad de una release solo anadiria una
+      # forma nueva de fallar.
       - name: Permitir el sandbox de Chromium
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      - name: Bajar el binario de Electron
+        if: runner.os != 'macOS'
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npx electron --version
+
       - name: Pruebas E2E
         if: runner.os != 'macOS'
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
+        env:
+          TMPDIR: ${{ runner.temp }}
 
       # Inventario de las versiones exactas que van dentro (SBOM CycloneDX):
       # ante un aviso sobre una dependencia o sobre un Electron concreto, dice
