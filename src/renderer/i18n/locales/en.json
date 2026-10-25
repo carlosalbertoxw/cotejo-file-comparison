@@ -67,6 +67,8 @@
       "logsHint": "Only when something fails: which operation, on which path and with what error. Never the contents of your files. It never leaves your computer; attach it if you report a problem.",
       "save": "When saving",
       "saveHint": "A temporary “.<code>{{suffix}}” file with what is being saved is written next to the file first, and disappears when the save finishes.",
+      "transfer": "When copying or moving",
+      "transferHint": "Each file is first copied to a hidden temporary “.cotejo-<code>.tmp” next to its destination, and moved into place at the end. A leftover one means the operation was cut short: it can be deleted.",
       "show": "Show folder"
     }
   },

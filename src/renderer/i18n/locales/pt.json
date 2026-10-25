@@ -67,6 +67,8 @@
       "logsHint": "Só quando algo falha: qual operação, em qual caminho e com qual erro. Nunca o conteúdo dos arquivos. Não sai do seu computador; anexe-o se relatar um problema.",
       "save": "Ao salvar",
       "saveHint": "Um arquivo temporário “.<código>{{suffix}}” com o que está sendo salvo é gravado antes ao lado do arquivo e desaparece ao terminar.",
+      "transfer": "Ao copiar ou mover",
+      "transferHint": "Cada arquivo é copiado antes para um temporário oculto “.cotejo-<código>.tmp” ao lado do destino, e vai para o lugar ao terminar. Se sobrar um, a operação foi interrompida: pode ser apagado.",
       "show": "Mostrar pasta"
     }
   },

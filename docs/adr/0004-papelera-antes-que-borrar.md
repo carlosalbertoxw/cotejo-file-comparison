@@ -1,6 +1,6 @@
 # 0004. Todo lo que se borra o se sobrescribe pasa por la papelera
 
-- **Estado:** Aceptada; el guardado en Windows lo cambia [0006](0006-guardar-en-windows-en-el-sitio.md)
+- **Estado:** Aceptada; el guardado en Windows lo cambia [0006](0006-guardar-en-windows-en-el-sitio.md), y lo que viaja al copiar o mover, [0007](0007-copiar-y-mover-lo-listado-en-dos-fases.md)
 - **Fecha:** 2026-10-04
 
 ## Contexto
@@ -37,5 +37,5 @@ perder un archivo que el usuario no pidió perder (SECURITY.md).
 
 ## Dónde se aplica
 
-- `src/main/services/fileOpsService.ts` (`applyOne`, `planFileOp`).
+- `src/main/services/fileOpsService.ts` (`planFileOp`, `runDelete`, `commitTransfer`).
 - `src/main/services/textFile.ts` (`writeTextFile`).

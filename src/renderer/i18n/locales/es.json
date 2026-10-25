@@ -67,6 +67,8 @@
       "logsHint": "Solo si algo falla: qué operación, sobre qué ruta y con qué error. Nunca el contenido de los archivos. No sale del equipo; adjúntalo si informas de un problema.",
       "save": "Al guardar",
       "saveHint": "Junto al archivo se escribe antes un temporal «.<código>{{suffix}}» con lo que se guarda, y desaparece al terminar.",
+      "transfer": "Al copiar o mover",
+      "transferHint": "Cada archivo se copia antes a un temporal oculto «.cotejo-<código>.tmp» junto a su destino, y pasa a su sitio al terminar. Si aparece uno suelto es que la operación se cortó: se puede borrar.",
       "show": "Mostrar carpeta"
     }
   },

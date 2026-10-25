@@ -9,14 +9,14 @@ operar sobre los archivos desde la vista de carpetas.
 Electron + React + TypeScript. El motor de comparación, la alineación y todo el aspecto visual son
 propios; CodeMirror 6 se usa solo como área de texto editable dentro de cada panel.
 
-## Novedades de la 0.8.0
+## Novedades de la 0.9.0
 
-Copiar, mover y borrar **dicen en qué carpetas actúan**, con la ruta completa en el diálogo, y se
-desactivan mientras se compara o si la tabla es de una comparación anterior. **Guardar en Windows
-respeta los permisos y los atributos** del archivo: uno restringido ya no pasa a tener los de la
-carpeta, y uno oculto sigue oculto. La comparación de carpetas **por contenido** deja de leer en
-la primera diferencia y se puede cancelar a mitad de un archivo grande. Están los detalles en
-[las notas de la versión](changelog/v0.8.0.md).
+Las versiones sin instalar de Windows y Linux **vienen ya en una carpeta**, en un `.zip` o un
+`.tar.gz`, en vez de descomprimirse cada vez que se abren. Copiar y mover **llevan solo lo que lista
+la tabla**, enseñan el **porcentaje de avance** y se pueden **cancelar sin que cambie nada**. Se
+pueden **seleccionar varias filas** con Mayús y Ctrl, y varios tramos de texto para transferirlos
+juntos. La pestaña **Inicio** está siempre. Están los detalles en
+[las notas de la versión](changelog/v0.9.0.md).
 
 ## Instalación
 
@@ -62,7 +62,7 @@ alguno de ellos afecta a la versión que tienes.
 La comprobación completa, con la [CLI de GitHub](https://cli.github.com/):
 
 ```bash
-gh attestation verify Cotejo.Setup.0.8.0.exe --repo carlosalbertoxw/cotejo-file-comparison
+gh attestation verify Cotejo.Setup.0.9.0.exe --repo carlosalbertoxw/cotejo-file-comparison
 ```
 
 Solo la huella, desde la carpeta de la descarga. En Linux:
@@ -80,7 +80,7 @@ grep arm64.dmg SHA256SUMS.txt | shasum -a 256 -c
 Y en Windows, comparando a ojo con la línea del archivo en `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash Cotejo.Setup.0.8.0.exe
+Get-FileHash Cotejo.Setup.0.9.0.exe
 ```
 
 ## Uso
@@ -110,10 +110,9 @@ ya existe y la trae al frente, en vez de levantar otra aplicación con su propia
 
 La pantalla de bienvenida es la pestaña **Inicio**, fija a la izquierda de las demás: siempre está
 y no se cierra, así que se vuelve a ella sin cerrar nada. Recuerda las **últimas comparaciones**
-que se llegaron a abrir, con sus
-rutas, para repetirlas de un clic. Se guardan solo las rutas, así que al abrir una se relee del
-disco. Cada entrada se puede quitar por separado, o borrar la lista entera. Repetir una comparación
-que ya está abierta salta a su pestaña en vez de duplicarla.
+que se llegaron a abrir, con sus rutas, para repetirlas de un clic. Se guardan solo las rutas, así
+que al abrir una se relee del disco. Cada entrada se puede quitar por separado, o borrar la lista
+entera. Repetir una comparación que ya está abierta salta a su pestaña en vez de duplicarla.
 
 ## Idiomas
 
@@ -264,10 +263,11 @@ La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equ
 | El propio programa | La carpeta de instalación, la que se descomprimió en la versión sin instalar, o el `.app` en macOS. Tiene botón para abrirla. |
 | Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
 | El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), mientras dura el guardado. Si aparece uno suelto es que el guardado se cortó a mitad: tiene entero lo que se estaba guardando, así que si el archivo quedó incompleto se puede recuperar de ahí; si no, se puede borrar. |
+| El temporal de cada copia o movimiento | Junto al destino de cada archivo, como `.cotejo-<código>.tmp` (ocho caracteres hexadecimales al azar), mientras dura la operación. Si aparece uno suelto es que la aplicación se cerró de golpe a mitad: se puede borrar, porque el original sigue donde estaba. |
 | El registro de errores, `cotejo.log` | `logs` dentro de la carpeta de datos en Windows y Linux, `~/Library/Logs/cotejo` en macOS. Tiene botón para abrirla. |
 
-Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esas cuatro rutas
-la aplicación no guarda nada propio.
+Borrar la carpeta de datos devuelve Cotejo al estado del primer arranque. Fuera de esos sitios la
+aplicación no guarda nada propio.
 
 El registro de errores solo existe si algo ha fallado: una copia, un movimiento o un borrado que no
 se completó, un guardado que no llegó al disco, o la ventana que se cerró de golpe. Cada línea dice
@@ -313,8 +313,10 @@ npm run typecheck
 npm test
 ```
 
-Y la prueba de extremo a extremo, que arranca la aplicación construida con un perfil desechable,
-abre dos archivos, copia un bloque y guarda:
+Y las pruebas de extremo a extremo (`e2e/`), que arrancan la aplicación construida con un perfil
+desechable y hacen lo que haría alguien con ella: copiar un bloque y guardar, cerrar una pestaña
+con cambios, sincronizar y borrar en una comparación de carpetas, abrir rutas desde la línea de
+comandos y mirar «Acerca de»:
 
 ```bash
 npm run build && npm run test:e2e
@@ -373,7 +375,7 @@ npm run package:mac
 ```
 
 Todo aterriza en `release/`. Las carpetas `*-unpacked/` que aparecen ahí no son entregables: son la
-aplicación montada que los instaladores empaquetan dentro.
+aplicación montada que los instaladores y las versiones sin instalar empaquetan dentro.
 
 **Cada script solo funciona en su propio sistema**, con una excepción y un rodeo. Windows genera
 el instalador y el `.zip` sin más; el `.zip` lo arma [scripts/portable-zip.mjs](scripts/portable-zip.mjs)
@@ -498,7 +500,7 @@ funciona en español y se rompe en cuanto cambia el orden de las palabras en otr
 build/         Icono (SVG como fuente de verdad)
 changelog/     Notas de cada versión, una por tag; son el cuerpo de la release
 docs/adr/      Decisiones de arquitectura: qué se decidió, frente a qué y por qué
-scripts/       Utilidades de build: icono y avisos de terceros
+scripts/       Utilidades de build: icono, avisos de terceros y el .zip sin instalar de Windows
 sitio/         Página pública (Astro), publicada en GitHub Pages; proyecto npm aparte
 src/
   shared/      Tipos, canales IPC, códigos de error, enlaces y rutas: lo que comparten los tres procesos
