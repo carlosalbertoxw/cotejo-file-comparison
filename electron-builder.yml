@@ -6,6 +6,8 @@ directories:
 files:
   - out/**/*
   - package.json
+# El .zip sin instalar de Windows, con su carpeta dentro (ver el script).
+afterAllArtifactBuild: ./scripts/portable-zip.mjs
 # Interruptores grabados en el propio ejecutable de Electron. Sin ellos, el
 # binario de Cotejo arranca como Node puro con ELECTRON_RUN_AS_NODE, acepta
 # codigo por NODE_OPTIONS o --inspect, y carga lo que haya en una carpeta
@@ -60,19 +62,19 @@ fileAssociations:
     role: Editor
     rank: Alternate
 win:
+  # La version sin instalar es la carpeta de la aplicacion ya lista, en
+  # «Cotejo X.Y.Z portable.zip», que arma scripts/portable-zip.mjs a partir de
+  # win-unpacked. Antes era el target `portable`: un .exe que en cada arranque
+  # se descomprimia entero en una carpeta temporal, tardaba en abrir y dejaba
+  # restos si se cerraba mal.
   target:
     - nsis
-    - portable
   # electron-builder genera el .ico multi-resolucion a partir de este PNG.
   icon: build/icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Cotejo
-portable:
-  # Sin "portable" en el nombre los dos .exe solo se distinguen por la palabra
-  # "Setup", que es poco para elegir cual descargar.
-  artifactName: ${productName} ${version} portable.${ext}
 
 mac:
   # Las dos arquitecturas: el runner de CI es Apple Silicon, y sin declarar x64
@@ -95,10 +97,16 @@ dmg:
   artifactName: ${productName} ${version} ${arch}.${ext}
 
 linux:
+  # Como en Windows, la version sin instalar es la carpeta ya lista, en un
+  # .tar.gz, que conserva los permisos de ejecucion. Sustituye al AppImage,
+  # que se monta o se descomprime cada vez que se abre.
   target:
-    - AppImage
     - deb
     - rpm
+    - tar.gz
+  # El nombre del .tar.gz, como el .zip de Windows. deb y rpm llevan el suyo
+  # de siempre en su seccion para no heredarlo.
+  artifactName: ${productName} ${version} portable.${ext}
   icon: build/icon.png
   category: Development
   synopsis: Compara archivos de texto y carpetas lado a lado
@@ -106,6 +114,7 @@ linux:
   maintainer: Carlos Alberto <carlosalbertoxw@gmail.com>
   # Sin esto los escritorios no asocian la ventana abierta con su lanzador.
   syncDesktopName: true
-appImage:
-  # El equivalente al portable de Windows: un unico ejecutable sin instalar.
-  artifactName: ${productName} ${version} portable.${ext}
+deb:
+  artifactName: ${name}_${version}_${arch}.${ext}
+rpm:
+  artifactName: ${name}-${version}.${arch}.${ext}

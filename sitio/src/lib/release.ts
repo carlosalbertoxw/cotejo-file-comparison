@@ -19,13 +19,17 @@ export type PlatformId = 'windows' | 'macos' | 'linux'
 /** Cada variante que se ofrece. Es la clave con la que se busca su texto. */
 export type DownloadKey =
   | 'windowsInstaller'
-  | 'windowsPortable'
+  | 'windowsZip'
   | 'macArm64Dmg'
   | 'macIntelDmg'
   | 'macArm64Zip'
   | 'macIntelZip'
   | 'linuxDeb'
   | 'linuxRpm'
+  | 'linuxTarGz'
+  // Las versiones sin instalar hasta la 0.8.0, que se descomprimian al abrirse.
+  // Siguen aqui mientras la ultima release publicada sea una de esas.
+  | 'windowsPortable'
   | 'linuxAppImage'
 
 export interface Download {
@@ -76,8 +80,8 @@ interface Classified {
  * Traduce el nombre de un artefacto de electron-builder a la variante que
  * representa, o null si no es algo que ofrecer.
  *
- * Los nombres los fija `electron-builder.yml`: «Cotejo Setup 0.3.0.exe»,
- * «Cotejo 0.3.0 portable.exe», «Cotejo 0.3.0 arm64.dmg», etc. Se clasifica por
+ * Los nombres los fija `electron-builder.yml`: «Cotejo Setup 0.9.0.exe»,
+ * «Cotejo 0.9.0 portable.zip», «Cotejo 0.9.0 arm64.dmg», etc. Se clasifica por
  * extensión y por las palabras que ese archivo de configuración garantiza, no
  * por la versión, para que siga funcionando cuando cambie.
  */
@@ -101,6 +105,11 @@ export function classifyAsset(name: string): Classified | null {
       : { key: 'macIntelDmg', platform: 'macos', primary: false, order: 1 }
   }
 
+  // La carpeta de Windows sin instalar. Los .zip de macOS no llevan «portable».
+  if (lower.endsWith('.zip') && lower.includes('portable')) {
+    return { key: 'windowsZip', platform: 'windows', primary: false, order: 1 }
+  }
+
   if (lower.endsWith('.zip')) {
     return arm64
       ? { key: 'macArm64Zip', platform: 'macos', primary: false, order: 2 }
@@ -113,6 +122,10 @@ export function classifyAsset(name: string): Classified | null {
 
   if (lower.endsWith('.rpm')) {
     return { key: 'linuxRpm', platform: 'linux', primary: false, order: 1 }
+  }
+
+  if (lower.endsWith('.tar.gz')) {
+    return { key: 'linuxTarGz', platform: 'linux', primary: false, order: 2 }
   }
 
   if (lower.endsWith('.appimage')) {

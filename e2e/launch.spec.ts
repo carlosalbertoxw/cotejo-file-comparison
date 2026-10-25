@@ -9,7 +9,7 @@
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test'
 import { access, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 let dir: string
 let app: ElectronApplication
@@ -63,4 +63,9 @@ test('«Acerca de» dice donde queda el registro de errores, y la carpeta existe
 
   // El boton de mostrarla necesita que exista aunque nada haya fallado aun.
   await expect.poll(() => access(logs).then(() => true, () => false)).toBe(true)
+
+  // Y donde esta el propio programa: en la version sin instalar, la carpeta
+  // que se descomprimio. Aqui, la del Electron de desarrollo.
+  const exe = await app.evaluate(() => process.execPath)
+  await expect(window.locator('.about-path', { hasText: dirname(exe) })).toBeVisible()
 })

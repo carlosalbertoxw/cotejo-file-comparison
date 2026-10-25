@@ -30,15 +30,20 @@ misma aplicación dentro.
 
 | Sistema | Instala | Sin instalar |
 | --- | --- | --- |
-| Windows | `Cotejo.Setup.<versión>.exe` | `Cotejo.<versión>.portable.exe` |
-| Linux | `.deb` (Debian, Ubuntu) o `.rpm` (Fedora, RHEL) | `Cotejo.<versión>.portable.AppImage` |
+| Windows | `Cotejo.Setup.<versión>.exe` | `Cotejo.<versión>.portable.zip` |
+| Linux | `.deb` (Debian, Ubuntu) o `.rpm` (Fedora, RHEL) | `Cotejo.<versión>.portable.tar.gz` |
 | macOS | `Cotejo.<versión>.arm64.dmg` (Apple Silicon) o `x64.dmg` (Intel) | `.zip` con la app dentro |
 
 Los nombres llevan puntos donde electron-builder pone espacios: GitHub los cambia al publicarlos, y
 así es como se descargan.
 
-Al AppImage hay que darle permiso de ejecución la primera vez, con `chmod +x`, y ya se abre con
-doble clic.
+Las versiones sin instalar de Windows y Linux son la aplicación **ya lista en una carpeta**,
+comprimida: se descomprime donde se quiera —el escritorio, un pendrive— y se abre `Cotejo.exe` en
+Windows o `cotejo` en Linux. No vuelven a descomprimirse cada vez que se abren, como hacían el
+`.exe` portable y el AppImage hasta la 0.8.0, así que arrancan igual de rápido que la instalada.
+La configuración y el historial no van dentro de esa carpeta, sino en la de datos de siempre (ver
+[Acerca de y actualizaciones](#acerca-de-y-actualizaciones)), así que sobreviven a cambiar de
+versión o a mover la carpeta.
 
 En macOS la aplicación **no está firmada**, porque firmarla exige una cuenta de pago de Apple.
 Gatekeeper la bloqueará la primera vez con un aviso que parece de archivo dañado; se abre con clic
@@ -256,8 +261,8 @@ La misma ficha dice **dónde deja archivos Cotejo**, con la ruta real de ese equ
 
 | Qué | Dónde |
 | --- | --- |
+| El propio programa | La carpeta de instalación, la que se descomprimió en la versión sin instalar, o el `.app` en macOS. Tiene botón para abrirla. |
 | Preferencias, pestañas abiertas, historial, última comprobación de versiones y caché de Chromium | La carpeta de datos: `%APPDATA%\cotejo` en Windows, `~/Library/Application Support/cotejo` en macOS, `~/.config/cotejo` en Linux. Tiene botón para abrirla. |
-| La copia descomprimida del `.exe` portable o del AppImage | Una carpeta temporal del sistema, que desaparece al cerrar. Solo sale si se está usando una de las versiones sin instalar. |
 | El temporal de cada guardado | Junto al propio archivo, como `.<código>.cotejo-tmp` (doce caracteres hexadecimales al azar), mientras dura el guardado. Si aparece uno suelto es que el guardado se cortó a mitad: tiene entero lo que se estaba guardando, así que si el archivo quedó incompleto se puede recuperar de ahí; si no, se puede borrar. |
 | El registro de errores, `cotejo.log` | `logs` dentro de la carpeta de datos en Windows y Linux, `~/Library/Logs/cotejo` en macOS. Tiene botón para abrirla. |
 
@@ -371,9 +376,12 @@ Todo aterriza en `release/`. Las carpetas `*-unpacked/` que aparecen ahí no son
 aplicación montada que los instaladores empaquetan dentro.
 
 **Cada script solo funciona en su propio sistema**, con una excepción y un rodeo. Windows genera
-sus dos `.exe` sin más. macOS **exige un Mac**: el `.dmg` usa herramientas del propio sistema y no
-hay forma de generarlo desde otro sitio, por eso existe el workflow de CI. Y Linux desde Windows
-falla al crear los symlinks del AppImage, así que se construye en el contenedor oficial:
+el instalador y el `.zip` sin más; el `.zip` lo arma [scripts/portable-zip.mjs](scripts/portable-zip.mjs)
+para que lleve la carpeta dentro, porque el de electron-builder deja los archivos sueltos. macOS
+**exige un Mac**: el `.dmg` usa herramientas del propio sistema y no hay forma de generarlo desde
+otro sitio, por eso existe el workflow de CI. Y Linux desde Windows no puede: el `.deb` y el `.rpm`
+necesitan `fpm`, y el `.tar.gz` saldría sin el permiso de ejecución, que NTFS no guarda. Así que se
+construye en el contenedor oficial:
 
 ```bash
 docker run --rm -v "${PWD}:/project" -v cotejo-node-modules:/project/node_modules -w /project electronuserland/builder:22-05.26@sha256:b76a82a6c6a8a1dea1abbc93e394f54316744824b64e6a50d959f1e3ba8951a9 bash -c "npx --yes npm@11.16.0 ci && npm run package:linux"

@@ -186,6 +186,9 @@ export const pt: Catalog = {
       macos:
         'Sem assinatura da Apple, o macOS bloqueia na primeira vez com um aviso que parece de arquivo danificado. Abra com clique direito no aplicativo → Abrir, e a partir daí funciona normalmente. Requer macOS 13 Ventura ou posterior.',
       linux:
+        'A versão sem instalar é uma pasta em um .tar.gz: descompacte e abra o executável cotejo que está dentro.',
+      // Releases hasta la 0.8.0, que traian AppImage.
+      linuxAppImage:
         'O AppImage precisa de permissão de execução na primeira vez, com chmod +x, e depois abre com clique duplo.'
     },
     items: {
@@ -193,6 +196,11 @@ export const pt: Catalog = {
         label: 'Instalador',
         detail: 'Instala e cria o atalho. O de sempre.'
       },
+      windowsZip: {
+        label: 'Portátil (.zip)',
+        detail: 'O aplicativo em uma pasta pronta para usar: descompacte e abra o Cotejo.exe.'
+      },
+      // Releases hasta la 0.8.0: un .exe que se descomprimia al abrirse.
       windowsPortable: {
         label: 'Portátil',
         detail: 'Um único .exe que roda sem instalar nada.'
@@ -221,6 +229,11 @@ export const pt: Catalog = {
         label: 'Fedora / RHEL (.rpm)',
         detail: 'Instala pelo gerenciador de pacotes do sistema.'
       },
+      linuxTarGz: {
+        label: 'Portátil (.tar.gz)',
+        detail: 'O aplicativo em uma pasta pronta para usar: descompacte e abra o cotejo.'
+      },
+      // Releases hasta la 0.8.0.
       linuxAppImage: {
         label: 'AppImage',
         detail: 'Um arquivo só. Dê chmod +x e abra.'

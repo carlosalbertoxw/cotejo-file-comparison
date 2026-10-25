@@ -108,6 +108,14 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
             <section className="about-files" aria-label={t('about.files.title')}>
               <h4>{t('about.files.title')}</h4>
               <dl>
+                <dt>{t('about.files.program')}</dt>
+                <dd>
+                  <code className="about-path">{info.paths.program}</code>
+                  <button onClick={() => void window.api.showItemInFolder(info.paths.program)}>
+                    {t('about.files.show')}
+                  </button>
+                  <span className="about-hint">{t('about.files.programHint')}</span>
+                </dd>
                 <dt>{t('about.files.userData')}</dt>
                 <dd>
                   <code className="about-path">{info.paths.userData}</code>
@@ -126,15 +134,6 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
                   </button>
                   <span className="about-hint">{t('about.files.logsHint')}</span>
                 </dd>
-                {info.paths.portableExtract && (
-                  <>
-                    <dt>{t('about.files.portable')}</dt>
-                    <dd>
-                      <code className="about-path">{info.paths.portableExtract}</code>
-                      <span className="about-hint">{t('about.files.portableHint')}</span>
-                    </dd>
-                  </>
-                )}
                 <dt>{t('about.files.save')}</dt>
                 <dd>
                   <span className="about-hint">

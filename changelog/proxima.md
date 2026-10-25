@@ -1,3 +1,15 @@
+## Las versiones sin instalar ya vienen en una carpeta
+
+**Si usabas el `.exe` portable de Windows o el AppImage de Linux, descarga ahora el
+`Cotejo.<versión>.portable.zip` o el `Cotejo.<versión>.portable.tar.gz`.** Son la aplicación ya
+lista en una carpeta: se descomprime una vez donde quieras y se abre `Cotejo.exe` o `cotejo`. Antes
+el portable se descomprimía entero en una carpeta temporal cada vez que se abría, así que tardaba
+más en arrancar. Tu configuración y tu historial no cambian de sitio y se conservan.
+
+En **Acerca de → Archivos del programa** hay una fila nueva, **Programa**, que dice dónde está
+Cotejo —en la versión sin instalar, la carpeta que descomprimiste— con un botón para abrirla. Ya no
+aparece la de la copia temporal del portable, que deja de existir.
+
 ## Copiar y mover llevan solo lo que ves en la lista
 
 Al copiar o mover una carpeta ya no viaja todo lo que hay dentro, sino exactamente lo que la

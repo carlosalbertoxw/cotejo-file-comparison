@@ -59,12 +59,12 @@
     "close": "Fermer",
     "files": {
       "title": "Fichiers du programme",
+      "program": "Programme",
+      "programHint": "L’emplacement de Cotejo. Pour la version sans installation, c’est le dossier que vous avez décompressé : vous pouvez le déplacer ou le supprimer en entier, et les réglages, qui ne sont pas dedans, sont conservés.",
       "userData": "Configuration et cache",
       "userDataHint": "Préférences, onglets ouverts, historique et cache du navigateur intégré.",
       "logs": "Journal des erreurs",
       "logsHint": "Seulement en cas d’échec : quelle opération, sur quel chemin et avec quelle erreur. Jamais le contenu des fichiers. Il ne quitte pas votre ordinateur ; joignez-le si vous signalez un problème.",
-      "portable": "Portable décompressé",
-      "portableHint": "Copie temporaire de l’exécutable portable ; supprimée à la fermeture.",
       "save": "À l’enregistrement",
       "saveHint": "Un fichier temporaire « .<code>{{suffix}} » contenant ce qui est enregistré est d’abord écrit à côté du fichier, puis disparaît à la fin.",
       "show": "Afficher le dossier"

@@ -59,12 +59,12 @@
     "close": "Cerrar",
     "files": {
       "title": "Archivos del programa",
+      "program": "Programa",
+      "programHint": "Dónde está Cotejo. En la versión sin instalar es la carpeta que descomprimiste: se puede mover o borrar entera, y la configuración, que no va dentro, se conserva.",
       "userData": "Configuración y caché",
       "userDataHint": "Preferencias, pestañas abiertas, historial y caché del navegador interno.",
       "logs": "Registro de errores",
       "logsHint": "Solo si algo falla: qué operación, sobre qué ruta y con qué error. Nunca el contenido de los archivos. No sale del equipo; adjúntalo si informas de un problema.",
-      "portable": "Portable descomprimido",
-      "portableHint": "Copia temporal del ejecutable portable; se borra al cerrar.",
       "save": "Al guardar",
       "saveHint": "Junto al archivo se escribe antes un temporal «.<código>{{suffix}}» con lo que se guarda, y desaparece al terminar.",
       "show": "Mostrar carpeta"

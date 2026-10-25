@@ -59,12 +59,12 @@
     "close": "Fechar",
     "files": {
       "title": "Arquivos do programa",
+      "program": "Programa",
+      "programHint": "Onde está o Cotejo. Na versão sem instalar, é a pasta que você descompactou: dá para mover ou apagar inteira, e as configurações, que não ficam dentro dela, são mantidas.",
       "userData": "Configuração e cache",
       "userDataHint": "Preferências, abas abertas, histórico e cache do navegador interno.",
       "logs": "Registro de erros",
       "logsHint": "Só quando algo falha: qual operação, em qual caminho e com qual erro. Nunca o conteúdo dos arquivos. Não sai do seu computador; anexe-o se relatar um problema.",
-      "portable": "Portátil descompactado",
-      "portableHint": "Cópia temporária do executável portátil; removida ao fechar.",
       "save": "Ao salvar",
       "saveHint": "Um arquivo temporário “.<código>{{suffix}}” com o que está sendo salvo é gravado antes ao lado do arquivo e desaparece ao terminar.",
       "show": "Mostrar pasta"
