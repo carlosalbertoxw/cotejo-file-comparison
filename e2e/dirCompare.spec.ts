@@ -107,7 +107,13 @@ test('borrar un archivo lo quita de su sitio y solo de su lado', async () => {
   // es el primario.
   await dialog.locator('.dialog-actions button').last().click()
 
-  await expect.poll(() => exists(join(left, 'borrame.txt'))).toBe(false)
+  // Mientras siga ahi, lo que se compara es la barra de estado: si la papelera
+  // falla, el error que da el sistema sale en el informe y no un simple
+  // «true».
+  const status = window.locator('.status-bar')
+  await expect
+    .poll(async () => ((await exists(join(left, 'borrame.txt'))) ? status.innerText() : 'borrado'))
+    .toBe('borrado')
   expect(await exists(join(left, 'quedate.txt'))).toBe(true)
   expect(await readFile(join(right, 'borrame.txt'), 'utf8')).toBe('otro lado')
 })
