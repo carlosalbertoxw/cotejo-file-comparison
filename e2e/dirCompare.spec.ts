@@ -116,9 +116,9 @@ test('borrar un archivo lo quita de su sitio y solo de su lado', async () => {
       () => false
     )
   if (!gone) {
-    // La barra de estado no dice por que: la comparacion de despues la limpia.
     // Se repite la llamada a la papelera desde el proceso principal para que
-    // el error del sistema salga en el informe.
+    // el error del sistema salga en el informe. Asi se vio que en el runner de
+    // Ubuntu /tmp es un tmpfs, donde Linux no tiene papelera (ver ci.yml).
     const direct = await app.evaluate(
       async ({ shell }, path) =>
         shell.trashItem(path).then(

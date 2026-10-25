@@ -99,37 +99,24 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      # En Linux, `shell.trashItem` de Electron llama a `gio trash`, que viene
-      # en libglib2.0-bin. Cualquier escritorio lo trae, pero la imagen del
-      # runner no tiene por que: sin el, la E2E de borrar falla sin mas. Se
-      # dice en el log si hacia falta instalarlo.
-      - name: Papelera de Linux
-        if: runner.os == 'Linux'
-        run: |
-          if command -v gio > /dev/null; then
-            gio version
-          else
-            echo "gio no esta en la imagen: se instala libglib2.0-bin"
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq --no-install-recommends libglib2.0-bin
-          fi
-          # Diagnostico: lo mismo que hara la E2E, a mano y con su error.
-          prueba=$(mktemp)
-          gio trash "$prueba" && echo "gio trash en /tmp: bien" || echo "gio trash en /tmp: falla"
-          ls -ld /tmp "$HOME" ~/.local/share/Trash 2>&1 || true
-          df /tmp "$HOME" 2>&1 || true
-          echo "XDG_DATA_HOME=${XDG_DATA_HOME:-} XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP:-} DESKTOP_SESSION=${DESKTOP_SESSION:-}"
-
       # Desde la 43, Electron baja su binario la primera vez que arranca. Sin
-      # bajarlo antes, la primera prueba E2E se come la descarga dentro de su
-      # tiempo de espera y falla de vez en cuando.
+      # bajarlo antes, esa descarga cae dentro del tiempo de espera de la
+      # primera prueba E2E.
       - name: Bajar el binario de Electron
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npx electron --version
 
       # De punta a punta sobre lo que acaba de construir el paso anterior. En
       # Linux no hay pantalla: xvfb-run le presta una virtual.
+      #
+      # TMPDIR apunta al temporal del runner, en el disco de /home: las
+      # pruebas crean ahi sus carpetas, y en el runner /tmp es un tmpfs, donde
+      # `gio trash` —lo que usa shell.trashItem en Linux— se niega a mandar
+      # nada a la papelera («Trashing on system internal mounts is not
+      # supported»). En Windows Node no mira TMPDIR.
       - name: Pruebas E2E
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
+        env:
+          TMPDIR: ${{ runner.temp }}
 
       # Si la E2E falla, la captura de la ventana en ese momento suele decir
       # mas que el log.
