@@ -140,6 +140,10 @@ export function AboutDialog({ onClose }: Props): React.JSX.Element {
                     {t('about.files.saveHint', { suffix: TEMP_SUFFIX })}
                   </span>
                 </dd>
+                <dt>{t('about.files.transfer')}</dt>
+                <dd>
+                  <span className="about-hint">{t('about.files.transferHint')}</span>
+                </dd>
               </dl>
             </section>
           )}

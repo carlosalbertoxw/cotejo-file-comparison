@@ -67,6 +67,8 @@
       "logsHint": "Seulement en cas d’échec : quelle opération, sur quel chemin et avec quelle erreur. Jamais le contenu des fichiers. Il ne quitte pas votre ordinateur ; joignez-le si vous signalez un problème.",
       "save": "À l’enregistrement",
       "saveHint": "Un fichier temporaire « .<code>{{suffix}} » contenant ce qui est enregistré est d’abord écrit à côté du fichier, puis disparaît à la fin.",
+      "transfer": "Lors d’une copie ou d’un déplacement",
+      "transferHint": "Chaque fichier est d’abord copié dans un fichier temporaire caché « .cotejo-<code>.tmp » à côté de sa destination, puis mis en place à la fin. S’il en reste un, l’opération a été interrompue : il peut être supprimé.",
       "show": "Afficher le dossier"
     }
   },

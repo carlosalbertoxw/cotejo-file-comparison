@@ -40,8 +40,10 @@ npm run check
 `build` deja el sitio en `dist/`, que el `.gitignore` de la raíz ya ignora. `check` comprueba los
 tipos, y es lo que avisa de una traducción incompleta (ver más abajo).
 
-Hace falta **Node 22.12 o posterior**: lo pide Astro 7 y está declarado en `engines`. Los tres
-workflows usan Node 22. En Node 24 sobre Windows el build termina con un `Assertion failed` de
+Hace falta **Node 22.23.4 o posterior**: lo pide Astro desde la 7.4.1, que se niega a arrancar con
+un parche anterior aunque sea Node 22, y está declarado en `engines`. Los tres workflows usan Node
+22, y los dos que construyen el sitio piden con `check-latest` la más reciente, no la que tenga en
+caché el runner. En Node 24 sobre Windows el build termina con un `Assertion failed` de
 libuv después de haber escrito las cuatro páginas: la salida es correcta y completa, pero el
 proceso devuelve un código de error. Es cosa del entorno, no del sitio; con Node 22 no ocurre.
 

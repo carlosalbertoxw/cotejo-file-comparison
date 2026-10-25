@@ -18,6 +18,8 @@ SECURITY.md. La fecha de cada una es la del commit que la puso en marcha.
 | [0004](0004-papelera-antes-que-borrar.md) | Todo lo que se borra o se sobrescribe pasa por la papelera | Aceptada |
 | [0005](0005-sin-telemetria.md) | Sin telemetría: la única conexión es la consulta de versión | Aceptada |
 | [0006](0006-guardar-en-windows-en-el-sitio.md) | En Windows, guardar escribe en el propio archivo | Aceptada |
+| [0007](0007-copiar-y-mover-lo-listado-en-dos-fases.md) | Copiar y mover llevan solo lo listado, y se preparan antes de tocar nada | Aceptada |
+| [0008](0008-portables-como-carpeta.md) | Las versiones sin instalar son una carpeta, no un ejecutable que se descomprime | Aceptada |
 
 ## Plantilla
 

@@ -153,7 +153,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ========================================================================
-@codemirror/view@6.43.14
+@codemirror/view@6.43.15
 Licencia: MIT
 Origen: https://code.haverbeke.berlin/codemirror/view
 ========================================================================
@@ -384,7 +384,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-i18next@26.4.2
+i18next@26.5.4
 Licencia: MIT
 Origen: https://www.i18next.com
 ========================================================================
@@ -440,7 +440,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ========================================================================
-react@19.3.0
+react@19.3.1
 Licencia: MIT
 Origen: https://react.dev/
 ========================================================================
@@ -468,7 +468,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-react-dom@19.3.0
+react-dom@19.3.1
 Licencia: MIT
 Origen: https://react.dev/
 ========================================================================
@@ -496,7 +496,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-react-i18next@17.0.16
+react-i18next@17.1.0
 Licencia: MIT
 Origen: https://github.com/i18next/react-i18next
 ========================================================================
