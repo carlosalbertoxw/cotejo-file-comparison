@@ -194,6 +194,9 @@ export const es = {
       macos:
         'Sin firma de Apple, macOS la bloquea la primera vez con un aviso que parece de archivo dañado. Se abre con clic derecho sobre la aplicación → Abrir, y a partir de ahí funciona con normalidad. Hace falta macOS 13 Ventura o posterior.',
       linux:
+        'La versión sin instalar es una carpeta en un .tar.gz: descomprímela y abre el ejecutable cotejo que hay dentro.',
+      // Releases hasta la 0.8.0, que traian AppImage.
+      linuxAppImage:
         'Al AppImage hay que darle permiso de ejecución la primera vez, con chmod +x, y ya se abre con doble clic.'
     },
     items: {
@@ -201,6 +204,11 @@ export const es = {
         label: 'Instalador',
         detail: 'Se instala y crea su acceso directo. Lo normal.'
       },
+      windowsZip: {
+        label: 'Portable (.zip)',
+        detail: 'La aplicación en una carpeta, lista para usar: descomprímela y abre Cotejo.exe.'
+      },
+      // Releases hasta la 0.8.0: un .exe que se descomprimia al abrirse.
       windowsPortable: {
         label: 'Portable',
         detail: 'Un único .exe que se ejecuta sin instalar nada.'
@@ -229,6 +237,11 @@ export const es = {
         label: 'Fedora / RHEL (.rpm)',
         detail: 'Se instala con el gestor de paquetes del sistema.'
       },
+      linuxTarGz: {
+        label: 'Portable (.tar.gz)',
+        detail: 'La aplicación en una carpeta, lista para usar: descomprímela y abre cotejo.'
+      },
+      // Releases hasta la 0.8.0.
       linuxAppImage: {
         label: 'AppImage',
         detail: 'Un único archivo. Dale permiso con chmod +x y ábrelo.'

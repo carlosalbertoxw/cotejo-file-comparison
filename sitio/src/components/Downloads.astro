@@ -38,7 +38,17 @@ const localeTag = LOCALE_TAG[lang];
           ))}
         </ul>
 
-        <p class="platform-note">{t.downloads.notes[platform.id]}</p>
+        {/* La nota de Linux habla de la versión sin instalar; si la release es
+            de las que aún traían AppImage, la suya. */}
+        <p class="platform-note">
+          {
+            t.downloads.notes[
+              platform.downloads.some((download) => download.key === "linuxAppImage")
+                ? "linuxAppImage"
+                : platform.id
+            ]
+          }
+        </p>
       </article>
     ))
   }

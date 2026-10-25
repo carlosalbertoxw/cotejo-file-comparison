@@ -184,6 +184,9 @@ export const en: Catalog = {
       macos:
         'Without an Apple signature, macOS blocks it the first time with a warning that looks like a damaged file. Right-click the app → Open, and from then on it behaves normally. Requires macOS 13 Ventura or later.',
       linux:
+        'The version without installing is a folder in a .tar.gz: extract it and open the cotejo executable inside.',
+      // Releases hasta la 0.8.0, que traian AppImage.
+      linuxAppImage:
         'The AppImage needs execute permission the first time, with chmod +x, and then it opens with a double click.'
     },
     items: {
@@ -191,6 +194,11 @@ export const en: Catalog = {
         label: 'Installer',
         detail: 'Installs and creates its shortcut. The usual choice.'
       },
+      windowsZip: {
+        label: 'Portable (.zip)',
+        detail: 'The app in a ready-to-use folder: extract it and open Cotejo.exe.'
+      },
+      // Releases hasta la 0.8.0: un .exe que se descomprimia al abrirse.
       windowsPortable: {
         label: 'Portable',
         detail: 'A single .exe that runs without installing anything.'
@@ -219,6 +227,11 @@ export const en: Catalog = {
         label: 'Fedora / RHEL (.rpm)',
         detail: 'Installs through the system package manager.'
       },
+      linuxTarGz: {
+        label: 'Portable (.tar.gz)',
+        detail: 'The app in a ready-to-use folder: extract it and open cotejo.'
+      },
+      // Releases hasta la 0.8.0.
       linuxAppImage: {
         label: 'AppImage',
         detail: 'A single file. Give it chmod +x and open it.'

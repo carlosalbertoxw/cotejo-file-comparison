@@ -20,16 +20,15 @@ function isSafeExternalUrl(url: string): boolean {
 }
 
 /**
- * Los dos formatos portables se ejecutan desde una copia descomprimida en una
- * carpeta temporal: el .exe portable de Windows avisa con
- * `PORTABLE_EXECUTABLE_DIR` y la AppImage con `APPIMAGE`. En ambos casos el
- * ejecutable que corre esta dentro de esa carpeta.
+ * Donde esta el propio programa: la carpeta del ejecutable, o el `.app` entero
+ * en macOS, que es lo que el usuario ve y mueve. En la version sin instalar es
+ * la carpeta que se descomprimio, y no hay otra forma de encontrarla desde la
+ * aplicacion.
  */
-function portableExtractDir(): string | null {
-  if (process.env['PORTABLE_EXECUTABLE_DIR'] || process.env['APPIMAGE']) {
-    return dirname(process.execPath)
-  }
-  return null
+function programLocation(): string {
+  const exe = process.execPath
+  const bundle = exe.lastIndexOf('.app/Contents/MacOS/')
+  return bundle === -1 ? dirname(exe) : exe.slice(0, bundle + '.app'.length)
 }
 
 /**
@@ -57,9 +56,9 @@ export function registerAppHandlers(): void {
       platform: process.platform,
       arch: process.arch,
       paths: {
+        program: programLocation(),
         userData: app.getPath('userData'),
-        logs: app.getPath('logs'),
-        portableExtract: portableExtractDir()
+        logs: app.getPath('logs')
       }
     })
   )

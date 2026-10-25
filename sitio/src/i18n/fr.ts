@@ -188,6 +188,9 @@ export const fr: Catalog = {
       macos:
         'Sans signature Apple, macOS la bloque la première fois avec un avertissement qui ressemble à un fichier endommagé. Clic droit sur l’application → Ouvrir, et ensuite tout se passe normalement. macOS 13 Ventura ou ultérieur est requis.',
       linux:
+        'La version sans installation est un dossier dans un .tar.gz : décompressez-le et ouvrez l’exécutable cotejo qu’il contient.',
+      // Releases hasta la 0.8.0, que traian AppImage.
+      linuxAppImage:
         'L’AppImage a besoin du droit d’exécution la première fois, avec chmod +x, et s’ouvre ensuite d’un double-clic.'
     },
     items: {
@@ -195,6 +198,11 @@ export const fr: Catalog = {
         label: 'Programme d’installation',
         detail: 'S’installe et crée son raccourci. Le choix habituel.'
       },
+      windowsZip: {
+        label: 'Portable (.zip)',
+        detail: 'L’application dans un dossier prêt à l’emploi : décompressez-le et ouvrez Cotejo.exe.'
+      },
+      // Releases hasta la 0.8.0: un .exe que se descomprimia al abrirse.
       windowsPortable: {
         label: 'Portable',
         detail: 'Un seul .exe qui s’exécute sans rien installer.'
@@ -223,6 +231,11 @@ export const fr: Catalog = {
         label: 'Fedora / RHEL (.rpm)',
         detail: 'S’installe avec le gestionnaire de paquets du système.'
       },
+      linuxTarGz: {
+        label: 'Portable (.tar.gz)',
+        detail: 'L’application dans un dossier prêt à l’emploi : décompressez-le et ouvrez cotejo.'
+      },
+      // Releases hasta la 0.8.0.
       linuxAppImage: {
         label: 'AppImage',
         detail: 'Un seul fichier. Donnez-lui chmod +x et ouvrez-le.'

@@ -56,12 +56,15 @@ jobs:
         include:
           - os: windows-latest
             script: package
+            # El instalador y la version sin instalar, que es la carpeta de la
+            # aplicacion en un .zip (scripts/portable-zip.mjs).
             artifacts: |
               release/*.exe
+              release/*.zip
           - os: ubuntu-latest
             script: package:linux
             artifacts: |
-              release/*.AppImage
+              release/*.tar.gz
               release/*.deb
               release/*.rpm
               release/*.cdx.json

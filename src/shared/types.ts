@@ -288,6 +288,11 @@ export interface AppInfo {
 
 export interface AppPaths {
   /**
+   * Donde esta el programa: la carpeta de instalacion, la que se descomprimio
+   * en la version sin instalar, o el `.app` en macOS.
+   */
+  program: string
+  /**
    * Carpeta de datos de Electron. Aqui guarda Chromium el `localStorage` con
    * las preferencias, la sesion, el historial y la ultima comprobacion de
    * versiones, ademas de su propia cache.
@@ -299,11 +304,6 @@ export interface AppPaths {
    * si alguna vez algo fallo.
    */
   logs: string
-  /**
-   * Carpeta temporal a la que se descomprime el ejecutable portable (el .exe
-   * portable de Windows o la AppImage). `null` si la aplicacion esta instalada.
-   */
-  portableExtract: string | null
 }
 
 export interface UpdateCheck {
