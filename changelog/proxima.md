@@ -40,3 +40,7 @@ Ctrl+Tab.
 
 - El mensaje con el resultado de copiar, mover o borrar se quedaba en blanco porque la tabla se
   volvía a comparar justo después. Ahora se queda en la barra de estado.
+
+## Por debajo
+
+- Electron pasa a la 44.9.3.
