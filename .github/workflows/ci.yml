@@ -113,6 +113,12 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -y -qq --no-install-recommends libglib2.0-bin
           fi
+          # Diagnostico: lo mismo que hara la E2E, a mano y con su error.
+          prueba=$(mktemp)
+          gio trash "$prueba" && echo "gio trash en /tmp: bien" || echo "gio trash en /tmp: falla"
+          ls -ld /tmp "$HOME" ~/.local/share/Trash 2>&1 || true
+          df /tmp "$HOME" 2>&1 || true
+          echo "XDG_DATA_HOME=${XDG_DATA_HOME:-} XDG_CURRENT_DESKTOP=${XDG_CURRENT_DESKTOP:-} DESKTOP_SESSION=${DESKTOP_SESSION:-}"
 
       # Desde la 43, Electron baja su binario la primera vez que arranca. Sin
       # bajarlo antes, la primera prueba E2E se come la descarga dentro de su
