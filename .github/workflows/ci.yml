@@ -99,6 +99,27 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      # En Linux, `shell.trashItem` de Electron llama a `gio trash`, que viene
+      # en libglib2.0-bin. Cualquier escritorio lo trae, pero la imagen del
+      # runner no tiene por que: sin el, la E2E de borrar falla sin mas. Se
+      # dice en el log si hacia falta instalarlo.
+      - name: Papelera de Linux
+        if: runner.os == 'Linux'
+        run: |
+          if command -v gio > /dev/null; then
+            gio version
+          else
+            echo "gio no esta en la imagen: se instala libglib2.0-bin"
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends libglib2.0-bin
+          fi
+
+      # Desde la 43, Electron baja su binario la primera vez que arranca. Sin
+      # bajarlo antes, la primera prueba E2E se come la descarga dentro de su
+      # tiempo de espera y falla de vez en cuando.
+      - name: Bajar el binario de Electron
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npx electron --version
+
       # De punta a punta sobre lo que acaba de construir el paso anterior. En
       # Linux no hay pantalla: xvfb-run le presta una virtual.
       - name: Pruebas E2E
