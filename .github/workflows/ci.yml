@@ -99,10 +99,24 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
+      # Desde la 43, Electron baja su binario la primera vez que arranca. Sin
+      # bajarlo antes, esa descarga cae dentro del tiempo de espera de la
+      # primera prueba E2E.
+      - name: Bajar el binario de Electron
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npx electron --version
+
       # De punta a punta sobre lo que acaba de construir el paso anterior. En
       # Linux no hay pantalla: xvfb-run le presta una virtual.
+      #
+      # TMPDIR apunta al temporal del runner, en el disco de /home: las
+      # pruebas crean ahi sus carpetas, y en el runner /tmp es un tmpfs, donde
+      # `gio trash` —lo que usa shell.trashItem en Linux— se niega a mandar
+      # nada a la papelera («Trashing on system internal mounts is not
+      # supported»). En Windows Node no mira TMPDIR.
       - name: Pruebas E2E
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}npm run test:e2e
+        env:
+          TMPDIR: ${{ runner.temp }}
 
       # Si la E2E falla, la captura de la ventana en ese momento suele decir
       # mas que el log.
