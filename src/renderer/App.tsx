@@ -92,11 +92,12 @@ export function App(): React.JSX.Element {
       if (event.key === 'Tab') {
         event.preventDefault()
         const { tabs: list, activeId: current, setActive } = useSession.getState()
-        if (list.length < 2) return
-        const index = list.findIndex((tab) => tab.id === current)
+        if (list.length === 0) return
+        // La de inicio va la primera de la rueda, como en la barra.
+        const ring = [null, ...list.map((tab) => tab.id)]
+        const index = Math.max(0, ring.indexOf(current))
         const step = event.shiftKey ? -1 : 1
-        const next = list[(index + step + list.length) % list.length]
-        if (next) setActive(next.id)
+        setActive(ring[(index + step + ring.length) % ring.length] ?? null)
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -156,7 +157,11 @@ export function App(): React.JSX.Element {
       <UpdateBanner />
       <TabBar onShowAbout={() => setAboutOpen(true)} onClose={requestClose} />
       <div className="tab-panels">
-        {tabs.length === 0 && <WelcomeView onShowAbout={() => setAboutOpen(true)} />}
+        {/* La de inicio siempre esta, aunque haya otras abiertas. Tambien se ve
+            si `activeId` apunta a una pestana que ya no existe. */}
+        <div className="tab-panel" hidden={tabs.some((tab) => tab.id === activeId)}>
+          <WelcomeView onShowAbout={() => setAboutOpen(true)} />
+        </div>
         {/* Las pestanas inactivas se ocultan en vez de desmontarse: asi conservan
             su scroll, su seleccion y sus cambios sin guardar. */}
         {tabs.map((tab) => (

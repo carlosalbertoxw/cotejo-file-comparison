@@ -1,4 +1,9 @@
-import type { DirNode } from '@shared/types'
+import type { DirNode, NodeStatus } from '@shared/types'
+
+/** Lo que «Solo diferencias» deja a la vista. */
+export function isDifference(status: NodeStatus): boolean {
+  return status !== 'same' && status !== 'dirSame'
+}
 
 /**
  * Recorre el arbol de comparacion en profundidad, sin devolver la raiz.

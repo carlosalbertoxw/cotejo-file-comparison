@@ -103,7 +103,9 @@ explorador de archivos.
 **Solo hay una instancia.** Abrir algo con Cotejo ya en marcha añade una pestaña a la ventana que
 ya existe y la trae al frente, en vez de levantar otra aplicación con su propia sesión.
 
-La pantalla de bienvenida recuerda las **últimas comparaciones** que se llegaron a abrir, con sus
+La pantalla de bienvenida es la pestaña **Inicio**, fija a la izquierda de las demás: siempre está
+y no se cierra, así que se vuelve a ella sin cerrar nada. Recuerda las **últimas comparaciones**
+que se llegaron a abrir, con sus
 rutas, para repetirlas de un clic. Se guardan solo las rutas, así que al abrir una se relee del
 disco. Cada entrada se puede quitar por separado, o borrar la lista entera. Repetir una comparación
 que ya está abierta salta a su pestaña en vez de duplicarla.
@@ -154,7 +156,9 @@ elementos secundarios como la numeración de líneas), en tema claro y oscuro.
 - Para transferir menos que un bloque, selecciona el texto y usa **Selección ▶** / **◀ Selección**:
   van las líneas que toque la selección, sobre las que tienen enfrente en el otro lado. Mientras hay
   selección manda su color por encima del color de la diferencia, así que lo resaltado es
-  exactamente lo que se va a transferir.
+  exactamente lo que se va a transferir. `Ctrl+clic` o `Ctrl+arrastrar` (`⌘` en macOS) añade más
+  tramos a la selección y `Alt+arrastrar` selecciona en columna: se transfieren todos a la vez,
+  cada uno frente a sus líneas, y un solo `Ctrl+Z` lo deshace.
 - Cada ruta tiene su propio botón **Guardar**, activo solo si ese lado tiene cambios, para guardar
   uno sin tocar el otro. `Ctrl+S` (`⌘S` en macOS) guarda los dos de una vez. Se guarda siempre
   **preservando los finales de línea y el BOM originales**.
@@ -213,6 +217,10 @@ izquierda para abrir y cerrar carpetas, `Inicio` y `Fin` para los extremos, `AvP
 saltar de pantalla, `Espacio` para añadir o quitar de la selección y `Entrar` para abrir la
 comparación de esa fila.
 
+Se puede **seleccionar más de una fila**, como en un explorador: `Mayús+clic` toma todas las filas
+entre la última pinchada y esta, `Ctrl+clic` (`⌘` en macOS) añade o quita una, `Mayús` con las
+teclas de movimiento extiende la selección, `Ctrl+A` selecciona todo lo que se ve y `Esc` la vacía.
+
 **Los borrados van a la papelera del sistema** —la de Windows, macOS o el escritorio de Linux que
 toque—, y **lo que se sobrescribe, también**: antes de copiar o mover encima de un archivo, el que
 había va a la papelera. Toda operación destructiva o que sobrescriba pide confirmación mostrando
@@ -225,9 +233,16 @@ y borrar se desactivan: actuarían sobre carpetas que no se están viendo. Tampo
 las dos carpetas comparadas a través de un enlace simbólico o una unión de Windows: si una
 subcarpeta del destino apunta a otro sitio, la operación falla en vez de escribir allí.
 
-Una carpeta viaja entera, con lo que la tabla no enseña: los archivos ocultos, los excluidos por
-los filtros y los enlaces simbólicos. Cuando hay algo así dentro de lo seleccionado, el diálogo lo
-avisa y lo lista antes de confirmar.
+**Copiar y mover llevan solo lo que lista la tabla.** De una carpeta seleccionada viaja lo que se
+ve debajo de ella; los archivos ocultos, los excluidos por los filtros y, con «Solo diferencias»,
+los iguales se quedan donde están. Al mover, la carpeta de origen desaparece si se queda vacía.
+Borrar, en cambio, manda la carpeta entera a la papelera, y si dentro hay algo que la tabla no
+enseña, el diálogo lo avisa y lo lista antes de confirmar.
+
+Mientras se copia o se mueve se ve el **porcentaje de avance** y el archivo en curso, y
+**Cancelar** detiene la operación sin cambiar nada: cada archivo se copia primero a un temporal
+`.cotejo-….tmp` junto a su destino, y solo cuando están todos listos pasan a su sitio. Esa última
+parte, que es rápida, ya no se puede cancelar.
 
 ## Acerca de y actualizaciones
 

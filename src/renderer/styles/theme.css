@@ -826,3 +826,10 @@ input[type='text'] {
   white-space: nowrap;
   direction: rtl;
 }
+
+/* Ancho fijo y cifras de igual ancho: que el porcentaje no baile al avanzar. */
+.progress-line .percent {
+  min-width: 3.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

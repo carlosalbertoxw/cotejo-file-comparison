@@ -1,3 +1,4 @@
+import type { EditorState } from '@codemirror/state'
 import type { AlignedRow, Side } from '@shared/types'
 import type { LineRange } from './merge'
 
@@ -67,4 +68,36 @@ export function mapLineRange(rows: AlignedRow[], from: Side, range: LineRange): 
   }
 
   return { start, end }
+}
+
+/**
+ * Lineas [start, end) que toca cada tramo seleccionado, en orden y sin solapes.
+ *
+ * Puede haber varios: Ctrl+clic (⌘ en macOS) añade otro tramo y Alt+arrastrar
+ * selecciona en columna, y transferir los lleva todos a la vez.
+ *
+ * La transferencia trabaja con lineas enteras, asi que una seleccion parcial
+ * arrastra la linea entera. La que termina justo al empezar una linea no la
+ * incluye: es lo que se ve subrayado y lo que espera quien selecciona de arriba
+ * abajo con el raton. Dos tramos que tocan las mismas lineas, o seguidas, se
+ * juntan en uno.
+ */
+export function lineSelectionsOf(state: EditorState): LineRange[] {
+  const ranges: LineRange[] = []
+  for (const range of state.selection.ranges) {
+    if (range.empty) continue
+    const start = state.doc.lineAt(range.from).number - 1
+    const last = state.doc.lineAt(range.to)
+    const end = range.to === last.from && last.number - 1 > start ? last.number - 1 : last.number
+    ranges.push({ start, end })
+  }
+  ranges.sort((a, b) => a.start - b.start)
+
+  const merged: LineRange[] = []
+  for (const range of ranges) {
+    const previous = merged.at(-1)
+    if (previous && range.start <= previous.end) previous.end = Math.max(previous.end, range.end)
+    else merged.push({ ...range })
+  }
+  return merged
 }

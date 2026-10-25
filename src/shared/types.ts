@@ -188,6 +188,11 @@ export type FileOpKind = 'copy' | 'move' | 'delete'
 
 export interface FileOpItem {
   relPath: string
+  /**
+   * En `delete` una carpeta va entera a la papelera. Al copiar o mover solo se
+   * crea en el destino: su contenido viaja como elementos propios, los que la
+   * tabla lista, y lo demas se queda donde estaba.
+   */
   isDir: boolean
   /** Lado de origen. En `delete` indica que lado se borra. */
   from: Side
@@ -201,8 +206,8 @@ export interface FileOpRequest {
   items: FileOpItem[]
   /**
    * Los filtros con los que se escaneo la comparacion. Solo sirven para que el
-   * plan diga que parte del contenido de una carpeta no se veia en la tabla;
-   * la operacion en si copia, mueve o borra la carpeta entera.
+   * plan de un borrado diga que parte del contenido de una carpeta no se veia
+   * en la tabla; el borrado en si manda la carpeta entera a la papelera.
    */
   filters?: ScanFilters
 }
@@ -220,14 +225,25 @@ export interface FileOpPlan {
    */
   overwrites: string[]
   /**
-   * Archivos que viajan dentro de una carpeta seleccionada pero que la tabla
-   * no mostraba: ocultos, excluidos por los filtros o enlaces simbolicos.
+   * Archivos que van a la papelera dentro de una carpeta seleccionada pero que
+   * la tabla no mostraba: ocultos, excluidos por los filtros o enlaces
+   * simbolicos. Siempre vacio al copiar o mover, que solo llevan lo listado.
    */
   unseen: string[]
 }
 
+/**
+ * - `staging`: copiar o mover preparan cada archivo junto a su destino sin
+ *   cambiar nada todavia; se puede cancelar y no queda rastro. `done` y
+ *   `total` cuentan bytes, mas uno por archivo para que los vacios avancen.
+ * - `committing`: cada elemento pasa a su sitio; ya no se cancela. `done` y
+ *   `total` cuentan elementos. Un borrado solo tiene esta fase.
+ */
+export type FileOpPhase = 'staging' | 'committing'
+
 export interface FileOpProgress {
   operationId: string
+  phase: FileOpPhase
   done: number
   total: number
   currentPath: string
@@ -237,6 +253,7 @@ export interface FileOpResult {
   operationId: string
   succeeded: number
   failed: { relPath: string; message: string }[]
+  /** Al copiar o mover, cancelado significa que no se ha cambiado nada. */
   cancelled: boolean
 }
 

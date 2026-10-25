@@ -22,13 +22,11 @@ export function registerFileOpsHandlers(): void {
     try {
       const result = await runFileOp(request, {
         isCancelled: () => cancelled.has(request.operationId),
-        onProgress: (done, total, currentPath) => {
+        onProgress: (progress) => {
           if (event.sender.isDestroyed()) return
           event.sender.send(IPC.fileOpProgress, {
             operationId: request.operationId,
-            done,
-            total,
-            currentPath
+            ...progress
           } satisfies FileOpProgress)
         }
       })

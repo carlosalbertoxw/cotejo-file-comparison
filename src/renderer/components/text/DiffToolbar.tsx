@@ -61,14 +61,14 @@ export function DiffToolbar({
       <button
         onClick={onTransferSelection}
         disabled={readOnly || selectionSide !== 'right'}
-        title={t('textDiff.transferLeftTooltip')}
+        title={t('textDiff.transferLeftTooltip', { mod: MOD_LABEL })}
       >
         {t('textDiff.transferLeft')}
       </button>
       <button
         onClick={onTransferSelection}
         disabled={readOnly || selectionSide !== 'left'}
-        title={t('textDiff.transferRightTooltip')}
+        title={t('textDiff.transferRightTooltip', { mod: MOD_LABEL })}
       >
         {t('textDiff.transferRight')}
       </button>
