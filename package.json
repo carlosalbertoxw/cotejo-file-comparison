@@ -58,16 +58,16 @@
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
-    "i18next": "^26.5.4",
+    "i18next": "^26.5.11",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^17.1.0",
+    "react-i18next": "^17.1.9",
     "sharp": "^0.35.5",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vite": "^7.3.7",
     "vitest": "^5.0.5",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.16"
   },
   "// allowScripts": "Que dependencias pueden ejecutar scripts al instalarse. Con strict-allow-scripts (.npmrc), cualquier otra que traiga uno hace fallar npm ci en vez de ejecutarlo, que es justo por donde entra un paquete comprometido. Van por nombre y no por version: fijadas, cada PR de Dependabot que sube esbuild fallaria hasta aprobarla a mano. esbuild instala su binario y fsevents se compila en macOS para vigilar archivos en desarrollo. electron-winstaller solo sirve al instalador Squirrel, que no se usa, y se le deniega. Electron no aparece porque desde la 43 no tiene script de instalacion: baja su binario la primera vez que se arranca.",
   "allowScripts": {
