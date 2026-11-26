@@ -18,12 +18,19 @@ on:
       - '.github/workflows/sitio.yml'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
+  # Lo llama automerge.yml antes de fusionar un PR de Dependabot sobre sitio/:
+  # este job no esta entre los checks que exige el ruleset de main, y sin esto
+  # el auto-merge solo esperaria al CI de la aplicacion.
+  workflow_call:
 
 permissions:
   contents: read
 
+# Con `github.workflow` y no con un nombre fijo: llamado desde automerge.yml,
+# ese valor es el del que llama, y asi las dos ejecuciones del mismo PR no
+# caen en el mismo grupo ni se cancelan entre si.
 concurrency:
-  group: sitio-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

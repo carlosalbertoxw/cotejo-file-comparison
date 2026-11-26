@@ -1,0 +1,74 @@
+# Fusiona solos los PR de Dependabot con parches y versiones menores, en
+# cuanto pasan los checks que exige el ruleset de main.
+#
+# No fusiona nada por si mismo: activa el auto-merge de GitHub, que espera a
+# los checks obligatorios (`comprobar` en Linux y Windows y `analizar` de
+# CodeQL) y no fusiona si alguno falla. Las mayores se quedan fuera: cada una
+# sigue pidiendo su lectura de notas de cambios y un merge a mano.
+#
+# Los PR del sitio llevan un paso mas. Su build (sitio.yml) no esta entre los
+# checks obligatorios, porque solo corre cuando cambia sitio/, asi que aqui se
+# corre antes de activar el auto-merge: si no compila, el PR se queda abierto.
+#
+# Una limitacion de GitHub: el merge lo hace el GITHUB_TOKEN, y lo que empuja
+# ese token no dispara workflows. El push a main no relanza `ci`, `codeql` ni
+# `pages`; el sitio se vuelve a desplegar con el siguiente cambio en sitio/ o
+# con la siguiente release.
+name: automerge
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  clasificar:
+    # Con el autor y con quien lo disparo: si alguien empuja un commit propio a
+    # un PR de Dependabot, ese PR ya no es solo de Dependabot y se fusiona a
+    # mano.
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      # En un PR agrupado, el cambio mas alto de todo el grupo.
+      update-type: ${{ steps.metadata.outputs.update-type }}
+      directory: ${{ steps.metadata.outputs.directory }}
+    steps:
+      - id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+  sitio:
+    needs: clasificar
+    # Solo si de verdad se va a fusionar: compilar el sitio para una mayor no
+    # sirve de nada, ya lo hace sitio.yml.
+    if: >-
+      needs.clasificar.outputs.directory == '/sitio' &&
+      contains(fromJSON('["version-update:semver-minor","version-update:semver-patch"]'), needs.clasificar.outputs.update-type)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sitio.yml
+
+  fusionar:
+    needs: [clasificar, sitio]
+    # `always()` porque `sitio` se salta en los PR que no son del sitio, y un
+    # job saltado salta tambien a los que dependen de el. Solo parches y
+    # menores explicitos: si Dependabot no sabe decir el tipo, se fusiona a
+    # mano.
+    if: >-
+      always() &&
+      needs.clasificar.result == 'success' &&
+      contains(fromJSON('["version-update:semver-minor","version-update:semver-patch"]'), needs.clasificar.outputs.update-type) &&
+      (needs.sitio.result == 'success' || needs.sitio.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Squash, como los demas PR del repositorio.
+      - run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ github.token }}
