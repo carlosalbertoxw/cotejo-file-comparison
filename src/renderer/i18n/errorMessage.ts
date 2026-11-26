@@ -10,5 +10,7 @@ export function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   const payload = parseIpcError(message)
   if (!payload) return message
-  return i18n.t(`errors.${payload.code}`, payload.params)
+  // Desde i18next 27, los tipos de `t` ya no aceptan `undefined` como
+  // opciones; con un objeto vacio el resultado es el mismo.
+  return i18n.t(`errors.${payload.code}`, payload.params ?? {})
 }
