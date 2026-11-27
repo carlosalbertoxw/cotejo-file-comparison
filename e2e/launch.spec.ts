@@ -65,7 +65,11 @@ test('«Acerca de» dice donde queda el registro de errores, y la carpeta existe
   await expect.poll(() => access(logs).then(() => true, () => false)).toBe(true)
 
   // Y donde esta el propio programa: en la version sin instalar, la carpeta
-  // que se descomprimio. Aqui, la del Electron de desarrollo.
+  // que se descomprimio. Aqui, la del Electron de desarrollo. En macOS es el
+  // `.app` entero y no la carpeta del ejecutable, que queda dentro, en
+  // Contents/MacOS (ver `programLocation` en src/main/ipc/app.ts).
   const exe = await app.evaluate(() => process.execPath)
-  await expect(window.locator('.about-path', { hasText: dirname(exe) })).toBeVisible()
+  const bundle = exe.lastIndexOf('.app/Contents/MacOS/')
+  const program = bundle === -1 ? dirname(exe) : exe.slice(0, bundle + '.app'.length)
+  await expect(window.locator('.about-path', { hasText: program })).toBeVisible()
 })

@@ -70,7 +70,17 @@ export default tseslint.config(
       '@stylistic/eol-last': 'error',
       '@stylistic/no-trailing-spaces': 'error',
       '@stylistic/no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
-      '@stylistic/object-curly-spacing': ['error', 'always'],
+      // Lo que era `object-curly-spacing: always`, obsoleta desde @stylistic 6:
+      // espacio dentro de las llaves en una sola linea. `list-style` mira
+      // tambien corchetes, parentesis y saltos de linea; eso queda apagado.
+      '@stylistic/list-style': [
+        'error',
+        {
+          singleLine: { spacing: 'always' },
+          multiLine: { minItems: 0 },
+          overrides: { '()': 'off', '[]': 'off', '<>': 'off' }
+        }
+      ],
       // El mismo ancho que `.editorconfig`. La sangria no se comprueba: la
       // regla de @stylistic discrepa del codigo en JSX y en ternarios
       // anidados, y ahi manda lo que ya hay.
